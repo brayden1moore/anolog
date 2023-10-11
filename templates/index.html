@@ -1,0 +1,1464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="static/icon.png">
+    <meta charset="UTF-8">
+    <title>Anolog</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif, sans-serif;
+            margin: 70px;
+            margin-left: 150px;
+            margin-right: 150px;
+            background-color: #D3B683;
+        }
+        header {
+            color: rgb(0, 0, 0);
+            text-align: left;
+            justify-content: baseline;
+        }
+        .header-icon {
+            vertical-align: middle;
+            width: 30px;
+            height: 30px;
+            margin-right: 2px;
+            padding-bottom: 7px;
+        }
+        .signin-input {
+            font: inherit;
+            width: 125px;
+            border: none;
+            background: none;
+            border-bottom: 1px solid black;
+            outline: none;
+            color: black;
+            opacity: 0.5;
+            transition: 0.3s ease;
+        }
+        .signin-input:hover {
+            opacity: 1;
+        }
+        /* Webkit browsers like Chrome, Safari */
+        ::-webkit-scrollbar {
+            width: 10px;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background:  #161616;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background:  #161616;
+        }
+
+        /* Firefox */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: #161616 #D3B683;
+        }
+        .content-div{
+            margin-top: 10px;
+            display: flex;
+        }
+        .list-div{
+            margin-right: 40px;
+            width: 33vw;
+        }
+        .divider {
+            margin-top: 30px;
+            border-top: 3px solid black;
+            height: 1px;
+            width: 100%;
+        }
+        .log-divider {
+            margin-top: 10px;
+            margin-bottom: 20px;
+            border-top: 1px solid  #B08E52;
+            height: 1px;
+            width: 90%;
+        }
+        a {
+            color: rgb(0, 0, 0);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: border-bottom 0.3s ease;
+        }
+        a:hover {
+            border-bottom: 1px solid black;
+        }
+        #project-list-ul {
+            width:85%;
+            font-size: large;
+        }
+        #task-list-ul {
+            width: 85%;
+        }
+        #new-project-li, #new-task-li {
+            opacity: 0.3;
+            transition: opacity 0.3s ease;
+        }
+        li {
+            margin-bottom: 5px;
+        }
+        #new-project-input, #new-task-input, .rename-input{
+            font: inherit;
+            width: 125px;
+            border: none;
+            background: none;
+            border-bottom: 1px solid black;
+            outline: none;
+            color: black;
+        }
+        #new-project-li:hover,
+        #new-project-li:focus-within,
+        #new-task-li:hover,
+        #new-task-li:focus-within {
+            opacity: 1;
+        }
+        #log-div {
+            width: 100%;
+            opacity: 0.5;
+            transition: 0.3s ease;
+        }
+        .log-space {
+            margin-top: 25px;
+            background-color: #161616;
+            border: black solid 2px;
+            border-radius: 10px;
+            width: 100%;
+            height: 70%;
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);
+        }
+        #project-space {
+            margin-top: 25px;
+            background-color: #161616;
+            border: black solid 2px;
+            border-radius: 10px;
+            width: 100%;
+            height: auto;
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);
+        }
+        #project-content {
+            margin-left: 30px;
+            margin-right: 30px;
+            color:   #D3B683;
+        }
+        #log-content{
+            visibility: hidden;
+            height: 100%;
+            color:  #D3B683;
+            margin-left: 30px;
+            margin-right: 30px;
+        }
+        .log-input {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin-top: 40px;
+            margin-bottom: 25px;
+            color:  #D3B683;
+            width: 99%;
+            background: none;
+            border: none;
+            outline: none;
+            border-bottom: #D3B683 solid 3px;
+            opacity: 0.5;
+            transition: opacity 0.3s ease;
+        }
+        .log-input::placeholder {
+            color: #D3B683;
+            opacity: 0.5;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif, sans-serif;
+        }
+        .log-input:focus,
+        .log-input:hover {
+            opacity: 1;
+        }
+        .button-common {
+            font-size: 22px;
+            width: 25px;
+            height: 25px;
+            margin: auto;
+            padding: 0px;
+            margin-right: 3px;
+            margin-left: 0px;
+            background: none;
+            color:   #D3B683;
+            border: none;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        .button-common:hover {
+            opacity: 0.5;
+        }
+        .button-rotated {
+            transform: rotate(0deg);
+        }
+        .button-spinning {
+            transform: rotate(360deg);
+        }
+        #time {
+            margin-top: 30px;
+        }
+        #clock-div {
+            margin-top: 20px;
+            display: flex;
+        }
+
+        #task-name {
+            margin: 0;
+            margin-right: 10px;
+            margin-top: auto;
+            margin-bottom: auto;
+            transition: opacity 0.3s ease;
+        }
+        #task-checkbox {
+            margin-left: 0;
+            margin-right: auto;
+            margin-top: 6px;
+            margin-bottom: auto;
+        }
+        #task-name:hover{
+            opacity: 0.5;
+        }
+        #clock {
+            margin-left: 6px;
+            margin-top: auto;
+            margin-bottom: auto;
+        }
+        #log-items-container {
+            margin-top: 10px;
+            height: 45vh;
+            overflow-y: scroll;
+        }
+        #log-items-container::-webkit-scrollbar {
+            width: 10px;
+        }
+        #log-items-container::-webkit-scrollbar-thumb {
+            background: #D3B683; 
+            border-radius: 5px;
+        }
+        #log-items-container::-webkit-scrollbar-thumb:hover {
+            background: #B08E52; 
+        }
+        .log-item {
+            font-size: small;
+            margin-bottom: 10px;
+            transition: opacity 0.5s ease;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .log-item:hover {
+            opacity: 1 !important;
+        }
+        .log-created-at {
+            transition: opacity 0.5s ease;
+            opacity: 0.5;
+        }
+        #task-checkbox {
+            display: none;
+        }
+        #task-checkbox + label {
+            margin-right: auto;
+            position: relative;
+            padding-left: 35px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #task-checkbox + label:before {
+            margin-left: 4px;
+            margin-right: auto;
+            margin-top: auto;
+            margin-bottom: auto;
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 13px;
+            height: 13px;
+            border: 2px solid #D3B683;
+            background-color: transparent;
+            border-radius: 3px;
+        }
+        #task-checkbox:checked + label:before {
+            background-color: #D3B683;
+            border-color: #D3B683;
+        }
+        #task-checkbox + label:after {
+            content: "";
+            position: absolute;
+            top: 4px;
+            left: 5px;
+            width: 4px;
+            height: 8px;
+            border: solid #161616;
+            border-width: 0 4px 4px 0;
+            transform: rotate(45deg) scale(0);
+        }
+        .strikethrough {
+            text-decoration: line-through;
+        }
+        .custom-hover-menu {
+            display: flex;
+            font-size: small;
+            position: absolute;
+            color: #161616;
+            width: 50px;
+            list-style-type: none;
+            border-radius: 5px;
+            padding: 0;
+            margin: 0;
+            margin-left: 5px;
+            z-index: 10;
+            transition: 0.3s ease;
+        }
+        .custom-hover-menu li {
+            padding: 2px;
+            cursor: pointer;
+            transition: 0.3s ease;
+        }
+        .custom-hover-menu li:hover {
+            opacity: 0.5;
+        }
+        .fade-out {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        #export-div, #logout-div {
+            display:inline;
+            width: 350px;
+            margin-left: 50px;
+        }
+        .export-button {
+            background-color: #161616;
+            height: 50px;
+            width: 150px;
+            margin-bottom: 5px;
+            outline: none;
+            border: none;
+            color: #D3B683;
+            border-radius: 10px;
+            transition: 0.3s ease;
+        }
+        .export-button:hover{
+            opacity:0.5;
+        }
+        .logout-button {
+            background-color: #161616;
+            height: 50px;
+            width: 150px;
+            margin-bottom: 5px;
+            outline: none;
+            border: none;
+            color: #D3B683;
+            border-radius: 10px;
+            transition: 0.3s ease;
+        }
+        .logout-button:hover{
+            opacity:0.5;
+        }
+        #side-div {
+            width: 350px;
+            margin-left: 50px;
+        }
+        #pin {
+            margin-right:5px;
+        }
+        #user-id-container{
+            visibility: hidden;
+        }
+    </style>
+</head>
+
+<script src="https://apis.google.com/js/platform.js" async defer></script>
+<meta name="google-signin-client_id" content="791972017240-bjo86do5ri0uj11sphe0dde98j3d656t.apps.googleusercontent.com">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+<body>
+
+    <header>
+        <h1><img src="static/icon-black.png" alt="Logo" class="header-icon"> Anolog</h1>
+    </header>
+
+    <div class="divider"></div>
+    
+    <div class="content-div">
+        <div class="list-div">
+            <h2>Projects</h2>
+            <ul id="project-list-ul">
+            </ul>
+            <h2>Tasks</h2>
+            <ul id="task-list-ul">
+            </ul>
+        </div>
+
+        <div id="log-div">
+            <div id="project-space">
+                <div id="project-content">
+                    <h3 id="project-name"></h3>
+                    <p id="hours-logged"></p>
+                    <!--<textarea class="log-input" style="margin-top: 20px;" type="text" placeholder="Add a description"></textarea>-->
+            </div>
+
+            </div>
+            <div class="log-space">
+                <div id="log-content">
+                    <div id="time">
+                        <input type="checkbox" id="task-checkbox">
+                        <label for="task-checkbox" id="task-name"></label>
+                        
+                        <h4 id="task-name"></h4>
+
+                        <!--<button id="reset-button" class="button-common">
+                            <i id="reset-icon" class="fas fa-undo"></i></i>
+                        </button> -->
+
+                        <div id="clock-div">                        
+                            <button id="toggle-button" class="button-common">
+                            <i id="toggle-icon" class="fas fa-hourglass-end"></i>
+                          </button>
+                          <p id="clock">00.00.00</p>
+                        </div>
+
+                    </div>
+                    <textarea class="log-input" type="text" placeholder="Add a comment"></textarea>
+                    <div id="log-items-container">
+                        <!-- Log items go here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="side-div">
+            <div id="logout-div">
+                <h2>Account</h2>
+                <button class="logout-button" id="logout-button">Logout</button>
+            </div>
+            <div id="export-div">
+                <h2>Export</h2>
+                <button class="export-button" id="project-csv">Projects</button>
+                <button class="export-button" id="task-csv">Tasks</button>
+                <button class="export-button" id="log-csv">Logs</button>
+            </div>
+        </div>
+    </div>
+    <span id="user-id-container">{{user_id}}</span>
+
+<script>
+    // Set global variables
+    var globalUserId = document.getElementById('user-id-container').textContent;
+    var globalProjectId;
+    var globalProjectName;
+    var globalTaskId;
+    var globalLogId;
+    var globalSeconds;
+    let intervalId = null;
+
+    // GET from /projects endpoint and populate list
+    function populateProjects() {
+        const ulElement = document.getElementById('project-list-ul');
+        const newProjectLi = document.getElementById('new-project-li');
+
+        fetch(`/projects`)
+            .then(response => response.json())
+            .then(data => {
+                ulElement.innerHTML = "";
+                // Iterate through the data and create li elements
+                let first = true;
+                data.forEach((project, index) => {
+                    if (project.is_visible !== false){
+                        if (first===true && globalProjectId===undefined){
+                            globalProjectId = project.id;
+                            populateTasks(globalProjectId);
+                            first = false;
+                        }
+                        const newListItem = document.createElement('li');
+                        const newLink = document.createElement('a');
+                        newLink.href = '#';
+                        newLink.textContent = project.name;
+                        newLink.setAttribute('data-id', project.id);
+                        newListItem.appendChild(newLink);
+
+                        if (project.id === globalProjectId){
+                            newLink.style.fontWeight = 'bold';
+                            const projectNameLabel = document.getElementById('project-name');
+                            projectNameLabel.textContent = project.name;
+                        }
+                        
+                        if (project.is_completed) {
+                            newLink.style.textDecoration = 'line-through';
+                        }
+
+                        // Add click event listener to this list item
+                        addProjectClickListener(newLink, project.id, project.name);
+                        
+                        // Add hover listener
+                        addHoverListener(newLink, 'project', data.id);
+                        
+                        ulElement.appendChild(newListItem);
+                    }
+                });
+                
+                // Add the input list item at the end
+                const newProjectLi = document.createElement('li');
+                newProjectLi.id = 'new-project-li';
+                
+                const newProjectInput = document.createElement('input');
+                newProjectInput.type = 'text';
+                newProjectInput.id = 'new-project-input';
+
+                newProjectInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        addProject();
+                        newProjectInput.focus();
+                    }
+                });
+                
+                newProjectLi.appendChild(newProjectInput);
+                ulElement.appendChild(newProjectLi);
+            });
+    }
+
+    // GET from /tasks endpoint and populate list
+    function populateTasks(projectId) {
+
+        // Send projectId to /tasks endpoint
+        fetch(`/tasks?project_id=${projectId}`)
+        .then(response => response.json())
+        .then(taskData => {
+            // Get the tasks ul element
+            const taskUlElement = document.getElementById('task-list-ul');
+
+            // Clear existing tasks
+            taskUlElement.innerHTML = '';
+
+            // Iterate through the taskData and create li elements
+            let first = true;
+            taskData.forEach(task => {
+                if (task.is_visible !== false) {
+                    if (first===true){
+                        globalTaskId=task.id;
+                        populateLogs(globalTaskId);
+                        first = false;
+
+                        const logContent = document.getElementById('log-content');
+                        const logDiv = document.getElementById('log-div');
+                        logContent.style.visibility = 'visible';
+                        logDiv.style.opacity = '1';
+                    }
+     
+                    const newTaskListItem = document.createElement('li');
+                    const newTaskLink = document.createElement('a');
+                    newTaskLink.href = '#';
+                    newTaskLink.textContent = task.name;
+
+                    // Mark completed if is_complete
+                    if (task.is_completed === true) {
+                        newTaskLink.style.textDecoration = 'line-through';
+                    }
+                    else {
+                        newTaskLink.style.textDecoration = '';
+                    }
+
+                    // Make bold if it is the selected task
+                    if (task.id === globalTaskId) {
+                        newTaskLink.style.fontWeight = 'bold';
+                    }
+                    else {
+                        newTaskLink.style.fontWeight = 'normal';
+                    }
+
+                    newTaskLink.setAttribute('data-id', task.id);
+                    newTaskListItem.appendChild(newTaskLink);
+                    taskUlElement.appendChild(newTaskListItem);
+
+                    // Add click listener
+                    addTaskClickListener(newTaskLink, task.id, task.name);
+
+                    // Add hover listener
+                    addHoverListener(newTaskLink, 'task', task.id);
+                }
+            });
+
+            // Add the input list item at the end
+            const newTaskLi = document.createElement('li');
+            newTaskLi.id = 'new-task-li';
+            
+            const newTaskInput = document.createElement('input');
+            newTaskInput.type = 'text';
+            newTaskInput.id = 'new-task-input';
+
+            newTaskInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    addTask(projectId);
+                    newTaskInput.focus();
+                }
+            });
+            
+            newTaskLi.appendChild(newTaskInput);
+            taskUlElement.appendChild(newTaskLi);
+
+        });
+    }
+
+    // GET from /tasks /hours and /logs endpoints and populate content
+    function populateLogs(taskId, animation) {
+        const logItemsContainer = document.getElementById('log-items-container');
+        logItemsContainer.innerHTML = '';
+        
+        const taskName = document.getElementById('task-name');
+        const taskCheckbox = document.getElementById('task-checkbox');
+        
+        getHours(globalProjectId);
+
+        fetch(`/tasks?task_id=${taskId}`)
+            .then(response => response.json())
+            .then(data => {
+
+                // Mark completed if is_complete
+                if (data[0].is_completed === true) {
+                    taskName.style.textDecoration = 'line-through';
+                    taskCheckbox.checked = true;
+                }
+                else {
+                    taskName.style.textDecoration = '';
+                    taskCheckbox.checked = false;
+                }
+                
+                taskName.textContent = data[0].name;
+                globalSeconds = data[0].total_seconds;
+                updateClock();
+
+            });
+
+        fetch(`/logs?task_id=${taskId}`)
+            .then(response => response.json())
+            .then(data => {
+                // Append responses to entry log
+                data.forEach((log, index) => {
+                    const dateObj = new Date(log.created_at);
+                    const localDateStr = dateObj.toLocaleString();
+                    if (animation===false){
+                        opacity = 0.8;
+                    }
+                    else {
+                        opacity = 0;
+                    }
+
+                    let pinIcon = '';
+                    if (log.is_pinned) {
+                        pinIcon = '<i id="pin" class="fa fa-thumbtack" style="color: #D3B683;"></i>'
+                    }
+
+                    const logEntry = `
+                        <div class="log-item" style="opacity: ${opacity}">
+                            ${pinIcon}
+                            <span class="log-created-at">${localDateStr}</span><br>
+                            <span class="log-description" style="white-space: pre-line;">${log.description}</span>
+                            <div class="log-divider"></div>
+                        </div>`;
+                    
+                    
+                    logItemsContainer.insertAdjacentHTML('beforeend', logEntry);
+                    
+                    const logItem = document.querySelectorAll('.log-item')[index];
+                    addLogClickListener(logItem, log.id, log.is_pinned);
+
+                    setTimeout(() => {
+                        const newItem = document.querySelectorAll('.log-item')[index];
+                        if (newItem) {
+                        newItem.style.opacity = log.is_pinned ? '0.9' : '0.6';
+                        }
+                    }, index * 25);  // Delay increases for each item
+                });
+            })
+    }
+
+    // GET to /hours endpoint
+    function getHours(projectId) {
+        const hoursLogged = document.getElementById('hours-logged');
+
+        // Send GET request to Flask API
+        fetch(`/hours?project_id=${projectId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }).then(response => response.json())
+            .then(data => {
+                hoursLogged.textContent = '';
+                hoursLogged.textContent = data.total_hours + ' hours logged';
+            });
+
+    }
+
+    // POST to /projects endpoint and append list
+    function addProject() {
+        const projectUlElement = document.getElementById('project-list-ul');
+        const newProjectLi = document.getElementById('new-project-li');
+        const newProjectInput = document.getElementById('new-project-input');
+        const newProjectName = newProjectInput.value;
+
+        if (newProjectName) {
+            // Construct payload
+            const payload = {
+                name: newProjectName,
+                user_id: globalUserId
+            };
+
+            // Send POST request to Flask API
+            fetch('/projects', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            }).then(response => response.json())
+            .then(data => {
+                if (data.message === "Project created") {
+                    // Create and insert the new list item before the input item
+                    const newListItem = document.createElement('li');
+                    const newLink = document.createElement('a');
+                    newLink.href = '#';
+                    newLink.textContent = newProjectName;
+                    newListItem.appendChild(newLink);
+                    projectUlElement.insertBefore(newListItem, newProjectLi);
+                    newProjectInput.value = '';
+
+                    // Add click event listener to this list item
+                    addProjectClickListener(newLink, data.id, data.name);
+
+                    // Add hover listener
+                    addHoverListener(newLink, 'project', data.id);
+
+                }
+            });
+        }
+    }
+
+    // POST to /tasks endpoint and append list
+    function addTask(projectId) {
+        const newTaskLi = document.getElementById('new-task-li');
+        const newTaskInput = document.getElementById('new-task-input');
+        const newTaskName = newTaskInput.value;
+        const taskUlElement = document.getElementById('task-list-ul');
+        const logDiv = document.getElementById('log-div');
+
+        if (newTaskName) {
+            // Construct payload
+            const payload = {
+                projectId: projectId,
+                taskName: newTaskName
+            };
+
+            // Send POST request to Flask API
+            fetch('/tasks', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            }).then(response => response.json())
+            .then(data => {
+                if (data.message === "Task created") {
+                    // Create and insert the new list item before the input item
+                    const newListItem = document.createElement('li');
+                    const newLink = document.createElement('a');
+                    newLink.href = '#';
+                    newLink.textContent = newTaskName;
+                    newListItem.appendChild(newLink);
+                    taskUlElement.insertBefore(newListItem, newTaskLi);
+                    newTaskInput.value = '';
+                    
+                    populateTasks(projectId);
+
+                    // Add click listener
+                    addTaskClickListener(newLink, data.id, data.name);
+
+                    // Add hover listener
+                    addHoverListener(newLink, 'task', data.id);
+                }
+            });
+        }
+    }
+
+    // POST to /logs endpoint and append list. PUT to /tasks
+    function addLog(taskId, logType) {
+        const initialTaskId = taskId;  // Store the taskId at the time of logging
+
+        const logInput = document.querySelector('.log-input');
+        const clock = document.getElementById('clock');
+        let logText;
+        
+        if (logType === "Start") {
+            logText = `Timer start (${clock.textContent})`;
+        }
+        else if (logType === "Stop") {
+            logText = `Timer stop (${clock.textContent})`;
+        }
+        else {
+            logText = logInput.value;
+        }
+
+        // construct PUT payload
+        const putPayload = {
+            taskId: taskId,
+            totalSeconds: globalSeconds
+        };
+
+        // Send PUT request to Flask API
+        fetch('/tasks', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(putPayload)
+        }).then(response => response.json())
+        .then(data => {
+            if (data.message === "Task updated") {
+                console.log("Task updated")
+            }
+        });
+
+        if (taskId) {
+            // Construct POST payload
+            const postPayload = {
+                taskId: taskId,
+                description: logText,
+                createdAt: new Date()
+            };
+
+            // Send POST request to Flask API
+            fetch('/logs', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(postPayload)
+            }).then(response => response.json())
+            .then(data => {
+                if (data.message === "Log created") {
+                    if (globalTaskId === initialTaskId) {
+                        populateLogs(taskId, animation=false);
+                    }
+                }
+            });
+
+        }
+    }
+
+    // Add a click listener to a project link
+    function addProjectClickListener(newLink, projectId, projectName) {
+        newLink.addEventListener('click', function() {
+
+            // Stop clock if running
+            const toggleIcon = document.getElementById('toggle-icon');
+            if (toggleIcon.classList.contains('fa-hourglass-half')) {
+                toggleClock();
+            }
+
+            // Show tasks
+            if (projectId !== globalProjectId){
+                globalTaskId = undefined;
+                populateTasks(projectId);
+            }
+            
+            // Fade log if picking a new project
+            const logContent = document.getElementById('log-content');
+            const logDiv = document.getElementById('log-div');
+            if (globalProjectId !== projectId) {
+                logContent.style.visibility = 'hidden';
+                logDiv.style.opacity = 0.3;
+            }
+
+            // Update global
+            globalProjectId = projectId;
+
+            // Update project name label
+            const projectNameLabel = document.getElementById('project-name');
+            projectNameLabel.textContent = projectName;
+            
+            const allLinks = document.querySelectorAll('#project-list-ul li a');
+            allLinks.forEach(link => {
+                link.style.fontWeight = 'normal';
+            });
+            newLink.style.fontWeight = 'bold';
+
+        });
+    }
+
+    // Add click event listener to task link
+    function addTaskClickListener(newLink, taskId) {
+        newLink.addEventListener('click', function() {
+            console.log("task clicked", taskId);
+            console.log("current global", globalTaskId);
+
+            // Stop clock if running
+            const toggleIcon = document.getElementById('toggle-icon');
+            if (toggleIcon.classList.contains('fa-hourglass-half') && taskId !== globalTaskId) {
+                toggleClock();
+                updateClock();
+            }
+
+            if (taskId!==globalTaskId) {
+                // Show logs
+                populateLogs(taskId);
+                
+                // Update global
+                globalTaskId = taskId;
+            }
+
+            // Update bold
+            const allLinks = document.querySelectorAll('#task-list-ul li a');
+            allLinks.forEach(link => {
+                link.style.fontWeight = 'normal';
+            });
+            newLink.style.fontWeight = 'bold';
+
+        });
+    }
+
+    // Add click listener to log 
+    function addLogClickListener(logItem, logId, isPinned) {
+        logItem.addEventListener('click', function(e) {
+            pinLog(logId, !isPinned);
+        })
+    }
+
+    // Add unload listener
+    window.addEventListener('beforeunload', function() {
+        const toggleIcon = document.getElementById('toggle-icon');
+        if (toggleIcon.classList.contains('fa-hourglass-half')) {
+            toggleClock();
+        }
+    });
+
+    // Add hover event listener to project link
+    function addHoverListener(newLink, elementType, elementId) {
+        let hoverMenu;
+        let timeoutId;
+
+        newLink.addEventListener('click', function(e) {
+            // Remove existing hover menus
+            const existingMenu = document.querySelector('.custom-hover-menu');
+            if (existingMenu) {
+                existingMenu.remove();
+            }
+
+            // Create custom hover menu
+            hoverMenu = document.createElement('ul');
+            hoverMenu.className = 'custom-hover-menu';
+
+            // Rename option with FontAwesome icon
+            const renameOption = document.createElement('li');
+            const renameIcon = document.createElement('i');
+            renameIcon.className = 'fa fa-pencil-alt';  // FontAwesome class for pencil/edit icon
+            renameOption.appendChild(renameIcon);
+
+            renameOption.addEventListener('click', function() {
+                // Hide hover menu
+                hoverMenu.remove();
+
+                // Create an input element
+                const inputElement = document.createElement('input');
+                inputElement.type = 'text';
+                inputElement.className = 'rename-input';
+                inputElement.value = newLink.textContent;
+
+                // Replace the link with the input element
+                newLink.parentNode.replaceChild(inputElement, newLink);
+
+                // Focus the input and select its content
+                inputElement.focus();
+                inputElement.select();
+
+                // Listen for Enter key press
+                inputElement.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+
+                        if (elementType==='project') {
+                            // Run renameProject function
+                            renameProject(globalProjectId, inputElement.value);
+                        }
+                        else {
+                            // Run renameTask function
+                            renameTask(globalTaskId, inputElement.value);
+                        }
+
+                        // Replace the input back with the link
+                        inputElement.parentNode.replaceChild(newLink, inputElement);
+
+                        // Update the link text
+                        newLink.textContent = inputElement.value;
+                        
+                    }
+                });
+
+                // Revert changes if the user clicks away
+                inputElement.addEventListener('blur', function() {
+                    inputElement.parentNode.replaceChild(newLink, inputElement);
+                });
+            });
+
+            // Complete option with FontAwesome icon
+            const completeOption = document.createElement('li');
+            const completeIcon = document.createElement('i');
+            let isCompleted = true;
+
+            if (newLink.style.textDecoration === 'line-through') {
+                completeIcon.className = 'fa fa-undo';
+                isCompleted = false;
+            }
+            else {
+                completeIcon.className = 'fa fa-check';
+            }
+            
+            completeOption.appendChild(completeIcon);
+            completeOption.addEventListener('click', function() {
+                if (elementType==='project'){
+                    completeProject(globalProjectId, isCompleted);
+                }
+                else {
+                    const taskCheckbox = document.getElementById('task-checkbox');
+                    const taskLabel = document.getElementById('task-name');
+                    completeTask(taskCheckbox, taskLabel, isCompleted);
+                }
+                
+                // Remove the hover menu
+                if (hoverMenu && hoverMenu.parentNode) {
+                    hoverMenu.parentNode.removeChild(hoverMenu);
+                }
+            })
+            
+            // Delete option with FontAwesome icon
+            let deleteConfirmed = false;  
+            const deleteOption = document.createElement('li');
+            const deleteIcon = document.createElement('i');
+            deleteIcon.className = 'fa fa-trash';  // FontAwesome class for trash/delete icon
+            deleteOption.appendChild(deleteIcon);
+
+            deleteOption.addEventListener('click', function() {
+                if (!deleteConfirmed) {
+                    // First click: Ask for confirmation
+                    deleteIcon.className = 'fa fa-question';  // Change to a 'confirm' icon
+                    deleteConfirmed = true;
+                } else {
+                    // Second click: Proceed with deletion
+                    if (elementType==='project') {
+                        deleteProject(globalProjectId);
+                        const taskList = document.getElementById('task-list-ul');
+                        taskList.innerHTML = "";
+                    }
+                    else {
+                        deleteTask(globalTaskId);
+                    }
+
+                    // Remove the hover menu
+                    if (hoverMenu && hoverMenu.parentNode) {
+                        hoverMenu.parentNode.removeChild(hoverMenu);
+                    }
+
+                    deleteConfirmed = false;  // Reset flag
+                }
+            });
+
+            // Append options to hover menu
+            hoverMenu.appendChild(completeOption);
+            hoverMenu.appendChild(renameOption);
+            hoverMenu.appendChild(deleteOption);
+
+            // Append hover menu to document
+            document.body.appendChild(hoverMenu);
+
+            // Position the hover menu to the right of the list item
+            const rect = newLink.getBoundingClientRect();
+            hoverMenu.style.top = `${rect.top}px`;
+            hoverMenu.style.left = `${rect.right}px`;
+
+            // Clear any existing timeout
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+            }
+
+            hoverMenu.addEventListener('mouseleave', function() {
+                // Set a timeout to fade out the menu after 1 second
+                timeoutId = setTimeout(() => {
+                    hoverMenu.classList.add('fade-out');
+                    setTimeout(() => {
+                        hoverMenu.remove();
+                    }, 300);  // Remove after the transition completes
+                }, 300);
+            });
+
+            hoverMenu.addEventListener('mouseenter', function() {
+                // Clear the timeout and fade-out class if the mouse re-enters the menu
+                if (timeoutId) {
+                    clearTimeout(timeoutId);
+                }
+                hoverMenu.classList.remove('fade-out');
+            });
+
+        });
+
+        newLink.addEventListener('mouseleave', function(e) {
+            // If the menu exists and isn't hovered, set a timeout to remove it
+            if (hoverMenu && !hoverMenu.matches(':hover')) {
+                hoverMenu.classList.add('fade-out');
+                timeoutId = setTimeout(() => {
+                    hoverMenu.remove();
+                }, 300);
+            }
+        });
+    }
+
+    // Update clock
+    let currentRotation = 0;
+    let startTime = null;
+    function updateClock(countUp) {
+        const button = document.querySelector('.button-common');
+        if (countUp === true) {
+            currentRotation += 180;
+            button.style.transform = `rotate(${currentRotation}deg)`;
+        }
+
+        if (countUp === true && startTime === null) {
+            startTime = new Date().getTime() - (globalSeconds * 1000);
+        }
+
+        if (startTime !== null) {
+            const currentTime = new Date().getTime();
+            globalSeconds = Math.floor((currentTime - startTime) / 1000);
+        }
+    
+        const hrs = String(Math.floor(globalSeconds / 3600)).padStart(2, '0');
+        const mins = String(Math.floor((globalSeconds % 3600) / 60)).padStart(2, '0');
+        const secs = String(globalSeconds % 60).padStart(2, '0');
+        clock.textContent = `${hrs}.${mins}.${secs}`;
+    }
+
+    // Play pause toggle
+    let toggleClock = (function() {
+        // Rotate hourglass
+        const button = document.querySelector('.button-common');
+
+        // Start or stop timer
+        let intervalId = null;
+        return function() {
+            const toggleIcon = document.getElementById('toggle-icon');
+            
+            if (toggleIcon.classList.contains('fa-hourglass-end')) {
+                    updateClock(true);
+                    //button.style.transform = `rotate(180deg)`;
+                    addLog(globalTaskId, logType="Start");
+                    toggleIcon.classList.remove('fa-hourglass-end');
+                    toggleIcon.classList.add('fa-hourglass-half');
+                    intervalId = setInterval(() => updateClock(true), 1000);
+                } else {
+                    startTime = null;
+                    addLog(globalTaskId, logType="Stop");
+                    toggleIcon.classList.remove('fa-hourglass-half');
+                    toggleIcon.classList.add('fa-hourglass-end');
+                    clearInterval(intervalId);
+                    if (currentRotation%360 == 0) {
+                        button.style.transform = `rotate(${currentRotation-360}deg)`;
+                        currentRotation -= 360;
+                    }
+                    else {
+                        button.style.transform = `rotate(${currentRotation-180}deg)`;
+                        currentRotation -= 180;
+                    }
+
+                }
+            };
+    })();
+
+    document.addEventListener("DOMContentLoaded", function() {
+        // Toggle on click
+        const toggleButton = document.getElementById('toggle-button');
+        toggleButton.addEventListener('click', function() {
+            toggleClock();
+        })
+
+        // Add log upon enter
+        const logInput = document.querySelector('.log-input');
+        logInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                if (e.shiftKey) {
+                    // Add a new line
+                    logInput.value += '\n';
+                } else {
+                    addLog(globalTaskId, logType='Comment');
+                    logInput.value = '';
+                }
+                e.preventDefault(); // Prevent default action
+            }
+        });
+
+        // Mark task as completed or not yet completed when taskbox is checked
+        const taskCheckbox = document.getElementById('task-checkbox');
+        const taskLabel = document.getElementById('task-name');
+
+        taskCheckbox.addEventListener('change', function() {
+            const isCompleted = taskCheckbox.checked ? true : false;
+            completeTask(taskCheckbox, taskLabel, isCompleted);
+            const toggleIcon = document.getElementById('toggle-icon');
+            if (toggleIcon.classList.contains('fa-hourglass-half')){
+                toggleClock();
+            }
+        });
+    });
+
+    // Complete task
+    function completeTask(taskCheckbox, taskLabel, isCompleted) {
+        const selectedTask = document.querySelector(`a[data-id="${globalTaskId}"]`);
+
+        if (isCompleted) {
+            selectedTask.style.textDecoration = 'line-through';
+            taskLabel.style.textDecoration = 'line-through';
+            taskCheckbox.checked = true;
+        }
+        else {
+            taskLabel.style.textDecoration = '';
+            taskCheckbox.checked = false;
+        }
+
+        fetch(`/tasks`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                taskId: globalTaskId,
+                isCompleted: isCompleted,
+                totalSeconds: globalSeconds
+            })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(isCompleted);
+                console.log(data); // Handle the response
+                //populateTasks(globalProjectId);
+            })
+            .catch(error => {
+            console.error(error); // Handle errors
+        });
+    }
+
+    // Complete project
+    function completeProject(projectId, isCompleted) {
+        fetch(`/projects`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                projectId: projectId,
+                isCompleted: isCompleted
+            })
+            })
+            .then(response => response.json())
+            .then(data => {
+                populateProjects();
+            })
+            .catch(error => {
+            console.error(error); // Handle errors
+        }); 
+    }
+
+    // Rename project
+    function renameProject(projectId, newName){
+        fetch(`/projects`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                projectId: projectId,
+                name: newName
+            })
+            })
+            .then(response => response.json())
+            .then(data => {
+            populateProjects();
+            })
+            .catch(error => {
+            console.error(error); // Handle errors
+        });
+    }
+
+    // Delete project
+    function deleteProject(projectId){
+        fetch(`/projects`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                projectId: projectId,
+                isVisible: false
+            })
+            })
+            .then(response => response.json())
+            .then(data => {
+            populateProjects();
+            })
+            .catch(error => {
+            console.error(error); // Handle errors
+        });
+    }
+
+    // Rename task
+    function renameTask(taskId, newName){
+        fetch(`/tasks`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                taskId: taskId,
+                name: newName,
+                totalSeconds: globalSeconds
+            })
+            })
+            .then(response => response.json())
+            .then(data => {
+            populateTasks(globalProjectId);
+            populateLogs(globalTaskId, animation=false);
+            })
+            .catch(error => {
+            console.error(error); // Handle errors
+        });
+    }
+
+    // Delete task
+    function deleteTask(taskId){
+        fetch(`/tasks`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                taskId: taskId,
+                isVisible: false,
+                totalSeconds: globalSeconds
+            })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message === "Task updated") {
+                    const logDiv = document.getElementById('log-div');
+                    const logContent = document.getElementById('log-content');
+                    globalTaskId=undefined;
+                    populateTasks(globalProjectId);
+                }
+            })
+            .catch(error => {
+            console.error(error); // Handle errors
+        });
+    }
+
+    // Pin log
+    function pinLog(logId, pinToggle) {
+        // construct task PUT payload
+        const putPayload = {
+            taskId: globalTaskId,
+            totalSeconds: globalSeconds
+        };
+
+        // Send PUT request to Flask API
+        fetch('/tasks', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(putPayload)
+        }).then(response => response.json())
+        .then(data => {
+            if (data.message === "Task updated") {
+                console.log("Task updated");
+                // Update logs
+                fetch(`logs`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    logId: logId,
+                    isPinned: pinToggle
+                })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message === "Log updated") {
+                        populateLogs(globalTaskId, animation=true);
+                    }
+                })
+            }
+        });
+    }
+
+    // Add click listeners to export buttons
+    const projectExport = document.getElementById('project-csv');
+    projectExport.addEventListener('click', function() {
+        exportCsv('user_id',globalUserId);
+    })
+    const taskExport = document.getElementById('task-csv');
+    taskExport.addEventListener('click', function() {
+        exportCsv('project_id',globalProjectId);
+    })
+    const logExport = document.getElementById('log-csv');
+    logExport.addEventListener('click', function() {
+        exportCsv('task_id',globalTaskId);
+    })
+
+    // Ping export backend
+    function exportCsv(arg, id) {
+        // Generate filename based on arg
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hour = String(now.getHours()).padStart(2, '0');
+        const minute = String(now.getMinutes()).padStart(2, '0');
+
+        let prefix = 'anolog_';
+
+        let dataType = '';
+        if (arg === 'user_id') {
+            dataType = 'projects';
+        } else if (arg === 'project_id') {
+            dataType = 'tasks';
+        } else if (arg === 'task_id') {
+            dataType = 'logs';
+        }
+
+        const filename = `${prefix}${dataType}_${year}${month}${day}${hour}${minute}`;
+
+        // Fetch CSV data and trigger download
+        fetch(`/export_csv?${arg}=${id}`)
+        .then(response => response.blob())
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `${filename}.csv`;  // Use the dynamically generated filename
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    // Logout 
+    document.getElementById('logout-button').addEventListener('click', function() {
+                        window.location.href = '/logout';
+                    });
+
+    populateProjects();
+
+</script>
+
+</body>
+</html>
