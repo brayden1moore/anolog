@@ -1658,6 +1658,19 @@
     dropdownMenu.addEventListener('mouseover', addBorderRadius);
     dropdownMenu.addEventListener('mouseout', removeBorderRadius);
 
+    // Collapse menu only on mobile
+    const listContainer = document.querySelector('.list-container');
+    const menuButton = document.getElementById('menu-button');
+    function setClassForScreenSize() {
+        if (window.innerWidth >= 769) {
+            listContainer.classList.remove('list-collapsed');
+            menuButton.className = "fa-solid fa-square-minus";
+        } else {
+            listContainer.classList.add('list-collapsed');
+        }
+    }
+    setClassForScreenSize();
+    window.addEventListener('resize', setClassForScreenSize);
 
     // Logout 
     document.getElementById('logout-button').addEventListener('click', function() {
