@@ -6,13 +6,17 @@
     <meta charset="UTF-8">
     <title>Anolog</title>
     <style>
+        :root {
+            --primary-color: #D3B683;
+        }
         body {
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif, sans-serif;
             width: 65vw;
+            height: 90vh;
             margin: 50px;
             margin-left: auto;
             margin-right: auto;
-            background-color: #D3B683;
+            background-color: var(--primary-color);
         }
         h1 {
             display: flex;
@@ -72,7 +76,7 @@
         /* Firefox */
         * {
             scrollbar-width: thin;
-            scrollbar-color: #161616 #D3B683;
+            scrollbar-color: #161616 var(--primary-color);
         }
         .content-div{
             margin-top: 25px;
@@ -134,12 +138,12 @@
         .log-divider {
             margin-top: 10px;
             margin-bottom: 20px;
-            border-top: 1px solid  #B08E52;
+            border-top: 1px solid  var(--primary-color);
             height: 1px;
             width: 90%;
         }
         #menu-button {
-            color:#D3B683;
+            color:var(--primary-color);
             cursor: pointer;
             transition: 0.3s ease;
         }
@@ -238,12 +242,12 @@
         }
         #project-content {
             margin-left: 30px;
-            color:   #D3B683;
+            color:   var(--primary-color);
         }
         #log-content{
             visibility: hidden;
             height: 95%;
-            color:  #D3B683;
+            color:  var(--primary-color);
             margin-left: 30px;
             margin-right: 30px;
         }
@@ -251,17 +255,17 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin-top: 30px;
             margin-bottom: 25px;
-            color:  #D3B683;
+            color:  var(--primary-color);
             width: 99%;
             background: none;
             border: none;
             outline: none;
-            border-bottom: #D3B683 solid 3px;
+            border-bottom: var(--primary-color) solid 3px;
             opacity: 0.5;
             transition: opacity 0.3s ease;
         }
         .log-input::placeholder {
-            color: #D3B683;
+            color: var(--primary-color);
             opacity: 0.5;
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif, sans-serif;
         }
@@ -278,7 +282,7 @@
             margin-right: 3px;
             margin-left: 0px;
             background: none;
-            color:   #D3B683;
+            color:  var(--primary-color);
             border: none;
             transition: transform 0.3s ease, opacity 0.3s ease;
         }
@@ -332,11 +336,11 @@
         }
         ::-webkit-scrollbar-thumb {
             cursor: pointer;
-            background: #D3B683 ; 
+            background: var(--primary-color) ; 
             border-radius: 5px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #D3B683; 
+            background: var(--primary-color); 
         }
         .log-item {
             font-size: small;
@@ -376,13 +380,13 @@
             transform: translateY(-50%);
             width: 13px;
             height: 13px;
-            border: 2px solid #D3B683;
+            border: 2px solid var(--primary-color);
             background-color: transparent;
             border-radius: 3px;
         }
         #task-checkbox:checked + label:before {
-            background-color: #D3B683;
-            border-color: #D3B683;
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
         }
         #task-checkbox + label:after {
             content: "";
@@ -436,7 +440,7 @@
             margin-bottom: 0px;
             outline: none;
             border: none;
-            color: #D3B683;
+            color: var(--primary-color);
             border-radius: 10px;
             transition: 0.3s ease;
         }
@@ -454,7 +458,7 @@
             transition: 0.3s ease;
         }
         .export-option:hover {
-            background-color: #D3B683;
+            background-color: var(--primary-color);
         }
         .logout-button {
             background-color: #161616;
@@ -463,13 +467,32 @@
             margin-left: 5px;
             outline: none;
             border: none;
-            color: #D3B683;
+            color: var(--primary-color);
             border-radius: 10px;
             transition: 0.3s ease;
         }
         .logout-button:hover{
             opacity:0.5;
         }
+
+        .color-button {
+            background-color: #161616;
+            height: 40px;
+            width: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-right: 5px;
+            outline: none;
+            border: none;
+            color: var(--primary-color);
+            border-radius: 10px;
+            transition: 0.3s ease;
+        }
+        .color-button:hover{
+            opacity:0.5;
+        }
+
         #side-div {
             width: 350px;
             margin-left: 50px;
@@ -528,6 +551,9 @@
     <header>
         <h1><img src="static/icon-black.png" alt="Logo" class="header-icon"> Anolog</h1>
         <div id="tool-div">
+            <input type="color" title="Recolor" id="color-picker" style="visibility:hidden; height:40px">
+            <div class="color-button"><label for="color-picker"><i class="fa-solid fa-palette"></i></label></div>
+
             <button title="Export" class="export-button" id="export-button"><i class="fa-solid fa-file-arrow-down"></i></button>
             <div class="dropdown-menu" id="dropdown-menu">
                 <button class="export-option" id="project-csv">Projects</button>
@@ -817,7 +843,7 @@
 
                     let pinIcon = '';
                     if (log.is_pinned) {
-                        pinIcon = '<i id="pin" class="fa fa-thumbtack" style="color: #D3B683;"></i>'
+                        pinIcon = '<i id="pin" class="fa fa-thumbtack" style="color: var(--primary-color);"></i>'
                     }
 
                     const logEntry = `
@@ -1670,6 +1696,14 @@
     }
     setClassForScreenSize();
     window.addEventListener('resize', setClassForScreenSize);
+
+    // Pick color
+    document.addEventListener('input', function(event) {
+        if (event.target.id === 'color-picker') {
+            document.documentElement.style.setProperty('--primary-color', event.target.value);
+        }
+    });
+
 
     // Logout 
     document.getElementById('logout-button').addEventListener('click', function() {
