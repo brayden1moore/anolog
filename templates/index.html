@@ -228,7 +228,7 @@
             transition: 0.3s ease;
         }
         #project-space {
-
+            overflow-y: scroll;
             background-color: #161616;
             border: black solid 2px;
             border-radius: 10px;
@@ -237,9 +237,7 @@
             box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);
         }
         #project-content {
-            overflow-y: scroll;
             margin-left: 30px;
-            margin-right: 30px;
             color:   #D3B683;
         }
         #log-content{
@@ -1667,6 +1665,7 @@
             menuButton.className = "fa-solid fa-square-minus";
         } else {
             listContainer.classList.add('list-collapsed');
+            menuButton.className = "fa-solid fa-bars";
         }
     }
     setClassForScreenSize();
