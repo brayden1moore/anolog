@@ -894,9 +894,8 @@
                     newListItem.appendChild(newLink);
                     projectUlElement.insertBefore(newListItem, newProjectLi);
                     newProjectInput.value = '';
-
                     // Add click event listener to this list item
-                    addProjectClickListener(newLink, data.id, data.name);
+                    addProjectClickListener(newLink, data.id, newProjectName);
 
                     // Add hover listener
                     addHoverListener(newLink, 'project', data.id);
@@ -1045,6 +1044,7 @@
             globalProjectId = projectId;
 
             // Update project name label
+            console.log(projectName);
             const projectNameLabel = document.getElementById('project-name');
             projectNameLabel.textContent = projectName;
             
