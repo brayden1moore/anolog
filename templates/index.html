@@ -8,22 +8,36 @@
     <style>
         body {
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif, sans-serif;
-            margin: 70px;
-            margin-left: 150px;
-            margin-right: 150px;
+            width: 65vw;
+            margin: 50px;
+            margin-left: auto;
+            margin-right: auto;
             background-color: #D3B683;
+        }
+        h1 {
+            display: flex;
+            width: 200px;
+            align-items: end;
         }
         header {
             color: rgb(0, 0, 0);
             text-align: left;
-            justify-content: baseline;
+            align-items: center;
+            display: flex;
+        }
+        #tool-div {
+            position: relative;
+            display: flex;
+            width: 100%;
+            margin-left: 25px;
+            justify-content: right;
         }
         .header-icon {
             vertical-align: middle;
             width: 30px;
             height: 30px;
-            margin-right: 2px;
-            padding-bottom: 7px;
+            margin-right: 10px;
+            padding-bottom: 5px;
         }
         .signin-input {
             font: inherit;
@@ -41,6 +55,7 @@
         }
         /* Webkit browsers like Chrome, Safari */
         ::-webkit-scrollbar {
+            cursor: pointer;
             width: 10px;
             border-radius: 5px;
         }
@@ -60,16 +75,59 @@
             scrollbar-color: #161616 #D3B683;
         }
         .content-div{
-            margin-top: 10px;
+            margin-top: 25px;
             display: flex;
         }
+        .list-container {
+            background-color: #B08E52;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            margin-right: 25px;
+            height: 700px;
+            width: 270px;
+            transition: 0.3s ease;
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);
+        }
+        .list-container:focus-within {
+            overflow:visible; 
+            color: #161616;           
+            height: 700px;
+            width: 270px;
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);
+        }
+        .list-collapsed #project-list-ul, .list-collapsed #task-list-ul {
+            transition: 0.3s ease;
+            opacity: 0;
+        }
+        .list-collapsed:hover #project-list-ul, .list-collapsed:hover #task-list-ul, .list-container:focus-within #project-list-ul, .list-container:focus-within #task-list-ul {
+            transition: 0.3s ease;
+            opacity: 1;
+        }
+        .list-collapsed { 
+            color: transparent;   
+            overflow: hidden;     
+            height: 40px;
+            width: 40px;
+            box-shadow: none;
+        }
+        .list-collapsed:hover {   
+            color: #161616; 
+            overflow:visible;            
+            height: 700px;
+            width: 270px;
+        }
+
         .list-div{
+            margin-top: 20px;
+            margin-left: 30px;
             margin-right: 40px;
-            width: 33vw;
+            width: 200px;
         }
         .divider {
-            margin-top: 30px;
-            border-top: 3px solid black;
+            margin-top: 10px;
+            margin-bottom: 25px;
+            border-radius: 5px;
+            border-top: 3px solid #161616;
             height: 1px;
             width: 100%;
         }
@@ -80,6 +138,27 @@
             height: 1px;
             width: 90%;
         }
+        #menu-button {
+            color:#D3B683;
+            cursor: pointer;
+            transition: 0.3s ease;
+        }
+        .toggle {
+            border-radius: 10px 10px 0px 0px;
+            background-color: #161616;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: auto;
+            margin-bottom: 20px;
+            height: 40px;
+            transition: 0.3s ease;
+            cursor: pointer;
+        }
+        .toggle:hover #menu-button {
+            opacity: 0.5;
+            justify-content: left;
+        }
         a {
             color: rgb(0, 0, 0);
             text-decoration: none;
@@ -89,12 +168,25 @@
         a:hover {
             border-bottom: 1px solid black;
         }
+        h2 {
+            margin-top: 5px;
+        }
         #project-list-ul {
-            width:85%;
+            margin-bottom: 30px;
+            width: 95%;
+            height: 130px;
+            overflow-y: scroll;
             font-size: large;
+            margin-left: 0;
+            padding-left: 20px;
         }
         #task-list-ul {
-            width: 85%;
+            width: 95%;
+            height: 320px;
+            overflow-y: scroll;
+            margin-left: 0;
+            padding-left: 20px;
+            list-style-type:circle;
         }
         #new-project-li, #new-task-li {
             opacity: 0.3;
@@ -120,6 +212,8 @@
         }
         #log-div {
             width: 100%;
+            height: 700px;
+            margin-bottom: 25px;
             opacity: 0.5;
             transition: 0.3s ease;
         }
@@ -129,16 +223,17 @@
             border: black solid 2px;
             border-radius: 10px;
             width: 100%;
-            height: 70%;
+            height: 568px;
             box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);
+            transition: 0.3s ease;
         }
         #project-space {
-            margin-top: 25px;
+            overflow-y: scroll;
             background-color: #161616;
             border: black solid 2px;
             border-radius: 10px;
             width: 100%;
-            height: auto;
+            height: 100px;
             box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);
         }
         #project-content {
@@ -148,14 +243,14 @@
         }
         #log-content{
             visibility: hidden;
-            height: 100%;
+            height: 95%;
             color:  #D3B683;
             margin-left: 30px;
             margin-right: 30px;
         }
         .log-input {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin-top: 40px;
+            margin-top: 30px;
             margin-bottom: 25px;
             color:  #D3B683;
             width: 99%;
@@ -228,18 +323,20 @@
         }
         #log-items-container {
             margin-top: 10px;
-            height: 45vh;
+            height: 335px;
             overflow-y: scroll;
         }
-        #log-items-container::-webkit-scrollbar {
-            width: 10px;
+        ::-webkit-scrollbar {
+            cursor: pointer;
+            width: 5px;
         }
-        #log-items-container::-webkit-scrollbar-thumb {
-            background: #D3B683; 
+        ::-webkit-scrollbar-thumb {
+            cursor: pointer;
+            background: #D3B683 ; 
             border-radius: 5px;
         }
-        #log-items-container::-webkit-scrollbar-thumb:hover {
-            background: #B08E52; 
+        ::-webkit-scrollbar-thumb:hover {
+            background: #D3B683; 
         }
         .log-item {
             font-size: small;
@@ -259,6 +356,7 @@
             display: none;
         }
         #task-checkbox + label {
+            display: flex;
             margin-right: auto;
             position: relative;
             padding-left: 35px;
@@ -333,9 +431,9 @@
         }
         .export-button {
             background-color: #161616;
-            height: 50px;
-            width: 150px;
-            margin-bottom: 5px;
+            height: 40px;
+            width: 40px;
+            margin-bottom: 0px;
             outline: none;
             border: none;
             color: #D3B683;
@@ -345,11 +443,24 @@
         .export-button:hover{
             opacity:0.5;
         }
+        .export-option {
+            background-color: #B08E52;
+            height: 40px;
+            width: 80px;
+            margin-bottom: 0px;
+            outline: none;
+            border: none;
+            color:#161616;
+            transition: 0.3s ease;
+        }
+        .export-option:hover {
+            background-color: #D3B683;
+        }
         .logout-button {
             background-color: #161616;
-            height: 50px;
-            width: 150px;
-            margin-bottom: 5px;
+            height: 40px;
+            width: 40px;
+            margin-left: 5px;
             outline: none;
             border: none;
             color: #D3B683;
@@ -362,6 +473,7 @@
         #side-div {
             width: 350px;
             margin-left: 50px;
+            display: none;
         }
         #pin {
             margin-right:5px;
@@ -369,29 +481,81 @@
         #user-id-container{
             visibility: hidden;
         }
+        .dropdown-menu {
+            height: 0px;
+            width: 40px;
+            display: grid;
+            overflow: hidden;
+            position: absolute;
+            top: 100%;
+            right: 45px; 
+            z-index: 1; 
+            transition: 0.3s ease;
+        }
+        #export-button:hover + .dropdown-menu,
+        .dropdown-menu:hover {
+            height: 120px;
+            width: 80px;
+            transition: 0.3s ease;
+        }
+        #export-button:hover  {
+            width: 80px;
+        }
+        #log-csv {
+            border-radius:  0 0 10px 10px;
+        }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            body {
+                width: 85vw;
+            }
+            .list-collapsed:hover {
+                overflow: hidden;
+                height: 40px;
+                width: 40px;
+            }   
+        }
     </style>
 </head>
 
 <script src="https://apis.google.com/js/platform.js" async defer></script>
 <meta name="google-signin-client_id" content="791972017240-bjo86do5ri0uj11sphe0dde98j3d656t.apps.googleusercontent.com">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <body>
 
     <header>
         <h1><img src="static/icon-black.png" alt="Logo" class="header-icon"> Anolog</h1>
+        <div id="tool-div">
+            <button title="Export" class="export-button" id="export-button"><i class="fa-solid fa-file-arrow-down"></i></button>
+            <div class="dropdown-menu" id="dropdown-menu">
+                <button class="export-option" id="project-csv">Projects</button>
+                <button class="export-option" id="task-csv">Tasks</button>
+                <button class="export-option" id="log-csv">Logs</button>
+            </div>
+
+            <button title="Logout" class="logout-button" id="logout-button"><i class="fa-solid fa-right-from-bracket"></i></button>
+
+        </div>
     </header>
 
     <div class="divider"></div>
     
     <div class="content-div">
-        <div class="list-div">
-            <h2>Projects</h2>
-            <ul id="project-list-ul">
-            </ul>
-            <h2>Tasks</h2>
-            <ul id="task-list-ul">
-            </ul>
+        <div class="list-container list-collapsed">
+            <div class="toggle">
+                <i id="menu-button" class="fa-solid fa-bars"></i>
+            </div>
+            <div class="list-div">
+                <h2>Projects</h2>
+                <ul id="project-list-ul">
+                </ul>
+                <div class="divider"></div>
+                <h2>Tasks</h2>
+                <ul id="task-list-ul">
+                </ul>
+            </div>
         </div>
 
         <div id="log-div">
@@ -433,7 +597,7 @@
         <div id="side-div">
             <div id="logout-div">
                 <h2>Account</h2>
-                <button class="logout-button" id="logout-button">Logout</button>
+                <button class="logout-button" id="logout-button"><i class="fa-solid fa-right-from-bracket"></i></button>
             </div>
             <div id="export-div">
                 <h2>Export</h2>
@@ -479,8 +643,10 @@
                         newLink.textContent = project.name;
                         newLink.setAttribute('data-id', project.id);
                         newListItem.appendChild(newLink);
+                        newLink.style.opacity = '0.5';
 
                         if (project.id === globalProjectId){
+                            newLink.style.opacity = '1';
                             newLink.style.fontWeight = 'bold';
                             const projectNameLabel = document.getElementById('project-name');
                             projectNameLabel.textContent = project.name;
@@ -563,9 +729,12 @@
 
                     // Make bold if it is the selected task
                     if (task.id === globalTaskId) {
+                        newTaskLink.style.opacity = '1';
                         newTaskLink.style.fontWeight = 'bold';
+
                     }
                     else {
+                        newTaskLink.style.opacity = '0.5';
                         newTaskLink.style.fontWeight = 'normal';
                     }
 
@@ -881,9 +1050,11 @@
             
             const allLinks = document.querySelectorAll('#project-list-ul li a');
             allLinks.forEach(link => {
+                link.style.opacity = '0.5';
                 link.style.fontWeight = 'normal';
             });
             newLink.style.fontWeight = 'bold';
+            newLink.style.opacity = '1';
 
         });
     }
@@ -891,6 +1062,7 @@
     // Add click event listener to task link
     function addTaskClickListener(newLink, taskId) {
         newLink.addEventListener('click', function() {
+
             console.log("task clicked", taskId);
             console.log("current global", globalTaskId);
 
@@ -912,9 +1084,11 @@
             // Update bold
             const allLinks = document.querySelectorAll('#task-list-ul li a');
             allLinks.forEach(link => {
+                link.style.opacity = '0.5';
                 link.style.fontWeight = 'normal';
             });
             newLink.style.fontWeight = 'bold';
+            newLink.style.opacity = '1';
 
         });
     }
@@ -1450,6 +1624,38 @@
         })
         .catch(error => console.error('Error:', error));
     }
+
+    // Collapse left menu
+    document.querySelector('.toggle').addEventListener('click', function() {
+        const listContainer = document.querySelector('.list-container')
+        const menuButton = document.getElementById('menu-button');
+        if (menuButton.className === "fa-solid fa-bars") {
+            listContainer.classList.remove('list-collapsed');
+            menuButton.className = "fa-solid fa-square-minus";
+        }
+        else {          
+            listContainer.classList.add('list-collapsed');
+            void listContainer.offsetWidth;
+            menuButton.className = "fa-solid fa-bars";
+        }
+    });
+
+    // Open export menu
+    const exportButton = document.getElementById('export-button');
+    const dropdownMenu = document.getElementById('dropdown-menu');
+    function addBorderRadius() {
+        exportButton.style.borderRadius = '10px 10px 0 0';
+        exportButton.style.width = '80px';
+    }
+    function removeBorderRadius() {
+        exportButton.style.borderRadius = '10px';  
+        exportButton.style.width = '40px';
+    }
+    exportButton.addEventListener('mouseover', addBorderRadius);
+    exportButton.addEventListener('mouseout', removeBorderRadius);
+    dropdownMenu.addEventListener('mouseover', addBorderRadius);
+    dropdownMenu.addEventListener('mouseout', removeBorderRadius);
+
 
     // Logout 
     document.getElementById('logout-button').addEventListener('click', function() {
