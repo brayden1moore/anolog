@@ -12,8 +12,13 @@ import json
 import os
 print(os.getcwd())
 
-with open('config.json', 'r') as f:
-    config = json.load(f)
+#with open('config.json', 'r') as f:
+#    config = json.load(f)
+
+config = {'GOOGLE_PASS':os.environ['GOOGLE_PASS'],
+          'POSTGRES_PASS':os.environ['POSTGRES_PASS'],
+          'SALT_PASS':os.environ['SALT_PASS'],
+          'FLASK_KEY':os.environ['FLASK_KEY']}
 
 Session = scoped_session(sessionmaker(bind=engine))
 
