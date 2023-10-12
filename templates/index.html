@@ -794,8 +794,11 @@
             taskData.forEach(task => {
                 if (task.is_visible !== false) {
                     if (first===true){
+                        if (globalTaskId!==task.id) {
+                            populateLogs(globalTaskId);
+                        }
                         globalTaskId=task.id;
-                        populateLogs(globalTaskId);
+                        
                         first = false;
 
                         const logContent = document.getElementById('log-content');
@@ -898,12 +901,6 @@
                 data.forEach((log, index) => {
                     const dateObj = new Date(log.created_at);
                     const localDateStr = dateObj.toLocaleString();
-                    if (animation===false){
-                        opacity = 0.9;
-                    }
-                    else {
-                        opacity = 0.9;
-                    }
 
                     let pinIcon = '';
                     if (log.is_pinned) {
@@ -911,7 +908,7 @@
                     }
 
                     const logEntry = `
-                        <div class="log-item" style="opacity: ${opacity}">
+                        <div class="log-item">
                             ${pinIcon}
                             <span class="log-created-at">${localDateStr}</span><br>
                             <span class="log-description" style="white-space: pre-line;">${log.description}</span>
