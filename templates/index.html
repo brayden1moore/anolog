@@ -566,6 +566,29 @@
             margin: auto;
             height: 40px;
         }
+        .confetti {
+            position: fixed;
+            width: 5px;
+            height: 10px;
+            background-color: var(--primary-color);
+            opacity: 0.7;
+            animation: confetti-animation 1s ease-out;
+            animation-duration: var(--speed, 0.3s);
+
+            --initial-x: 0px;
+            --initial-y: 0px;
+            --rotation: 0deg;
+        }
+
+        @keyframes confetti-animation {
+            0% {
+                transform: translate(var(--initial-x), var(--initial-y)) rotate(var(--rotation));
+            }
+            100% {
+                transform: translate(calc(var(--initial-x) * 4), calc(var(--initial-y) * 4)) rotate(var(--rotation));
+            }
+        }
+
         /* Mobile */
         @media (max-width: 768px) {
             body {
@@ -1255,6 +1278,14 @@
             
             completeOption.appendChild(completeIcon);
             completeOption.addEventListener('click', function() {
+
+                if (completeIcon.className === 'fa fa-check') {
+                    // Confetti
+                    const x = event.clientX;
+                    const y = event.clientY;
+                    createConfetti(x, y);
+                }
+
                 if (elementType==='project'){
                     completeProject(globalProjectId, isCompleted);
                 }
@@ -1431,9 +1462,17 @@
         const taskCheckbox = document.getElementById('task-checkbox');
         const taskLabel = document.getElementById('task-name');
 
-        taskCheckbox.addEventListener('change', function() {
+        taskCheckbox.addEventListener('click', function(event) {
             const isCompleted = taskCheckbox.checked ? true : false;
             completeTask(taskCheckbox, taskLabel, isCompleted);
+
+            if (isCompleted === true) {
+                // Confetti
+                const x = event.clientX;
+                const y = event.clientY;
+                createConfetti(x, y);
+            }
+
             const toggleIcon = document.getElementById('toggle-icon');
             if (toggleIcon.classList.contains('fa-hourglass-half')){
                 toggleClock();
@@ -1470,7 +1509,7 @@
             .then(data => {
                 console.log(isCompleted);
                 console.log(data); // Handle the response
-                //populateTasks(globalProjectId);
+                populateTasks(globalProjectId);
             })
             .catch(error => {
             console.error(error); // Handle errors
@@ -1754,6 +1793,33 @@
             });
         }
     });
+
+    // Confetti
+    function createConfetti(x, y) {
+        const confettiCount = 40;
+        const colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
+
+            for(let i = 0; i < confettiCount; i++) {
+                const confetti = document.createElement('div');
+                const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.backgroundColor = randomColor;
+                confetti.className = 'confetti';
+                confetti.style.left = `${x}px`;
+                confetti.style.top = `${y}px`;
+                document.body.appendChild(confetti);
+
+                // Randomize initial position and rotation
+                confetti.style.setProperty('--initial-x', `${Math.random() * 30 - 15}px`);
+                confetti.style.setProperty('--initial-y', `${Math.random() * 30 - 15}px`);
+                confetti.style.setProperty('--rotation', `${Math.random() * 360}deg`);
+                confetti.style.setProperty('--speed', `${Math.random() * .1 + 0.5}s`);
+
+                // Remove after animation completes
+                confetti.addEventListener('animationend', function() {
+                confetti.remove();
+                });
+            }
+    }
 
     // Logout 
     document.getElementById('logout-button').addEventListener('click', function() {

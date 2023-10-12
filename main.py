@@ -216,7 +216,7 @@ def list_tasks():
         if task_id:
             tasks = session.query(Task).filter(Task.id==task_id).all()
         else:
-            tasks = session.query(Task).filter(Task.project_id==project_id, Task.is_visible==True).order_by(Task.is_completed.asc(), Task.created_at.asc()).all()
+            tasks = session.query(Task).filter(Task.project_id==project_id, Task.is_visible==True).order_by(Task.is_completed.asc(), Task.updated_at.desc()).all()
 
         return jsonify([{'id':task.id,'name':task.name,'total_seconds':task.total_seconds, 'is_completed':task.is_completed, 'is_visible':task.is_visible} for task in tasks])
     
