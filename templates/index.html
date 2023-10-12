@@ -576,7 +576,7 @@
     <header>
         <h1><img src="static/icon-black.png" alt="Logo" class="header-icon"> Anolog</h1>
         <div id="tool-div">
-            <input type="color" title="Recolor" id="color-picker" value={{primary_color}} style="visibility:hidden; height:40px">
+            <input type="color" title="Recolor" id="color-picker" value={{primary_color}} style="height:40px; opacity: 0;">
             <div class="color-button"><label for="color-picker" id="picker-label"><i class="fa-solid fa-palette"></i></label></div>
 
             <button title="Export" class="export-button" id="export-button"><i class="fa-solid fa-file-arrow-down"></i></button>
@@ -1725,6 +1725,9 @@
     window.addEventListener('resize', setClassForScreenSize);
 
     // Pick color
+    document.getElementById('picker-label').addEventListener('click', function() {
+        document.getElementById('color-picker').click();
+    });
     document.addEventListener('input', function(event) {
         if (event.target.id === 'color-picker') {
             document.documentElement.style.setProperty('--primary-color', event.target.value);
