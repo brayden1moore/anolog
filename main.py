@@ -178,9 +178,15 @@ def reset_password_final():
 @app.route('/')
 @login_required
 def homepage():
-    if current_user.is_authenticated:
-        user_id = current_user.id
-    return render_template('index.html', user_id=user_id)
+    try:
+        if current_user.is_authenticated:
+            user_id = current_user.id
+            session = Session()
+            user = session.query(User).filter(User.id==user_id).first()
+            primary_color = '#9bcaad' if not user.color else user.color
+        return render_template('index.html', user_id=user_id, primary_color=primary_color)
+    finally:
+        Session.remove()
 
 # List all projects
 @app.route('/projects', methods=['GET'])
@@ -389,6 +395,27 @@ def update_log():
 
         session.commit()
         return jsonify({"message": "Log updated"}), 200
+    
+    finally:
+        Session.remove()
+
+# Update a user
+@app.route('/user', methods=['PUT'])
+def update_user():
+    session = Session()
+    try:
+        data = request.json
+        print('User put', data)
+
+        user_id = current_user.id
+        color = data.get('color')
+        user = session.query(User).filter(User.id == user_id).first()
+
+        if color is not None:
+            user.color = color 
+        
+        session.commit()
+        return jsonify({"message": "User updated"}), 200
     
     finally:
         Session.remove()

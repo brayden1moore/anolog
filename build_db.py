@@ -6,7 +6,7 @@ import json
 import os
 print(os.getcwd())
 
-#with open('config.json', 'r') as f:
+#with open(r"C:\Users\Brayden\OneDrive - stern.nyu.edu\Brayden Moore LLC\Python\Projects\Anolog - Online\Anolog\app\config.json", 'r') as f:
 #    config = json.load(f)
 
 config = {'GOOGLE_PASS':os.environ['GOOGLE_PASS'],
@@ -23,6 +23,7 @@ class User(Base, UserMixin):
     email = Column(String, unique=True)
     username = Column(String)
     password = Column(String)
+    color = Column(String, default='#d3b683')
 
 class Project(Base):
     __tablename__ = 'projects'

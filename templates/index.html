@@ -7,7 +7,7 @@
     <title>Anolog</title>
     <style>
         :root {
-            --primary-color: #D3B683;
+            --primary-color: {{primary_color}};
         }
         body {
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif, sans-serif;
@@ -527,6 +527,14 @@
         #log-csv {
             border-radius:  0 0 10px 10px;
         }
+        #picker-label {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 40px;
+            margin: auto;
+            height: 40px;
+        }
 
         /* Mobile */
         @media (max-width: 768px) {
@@ -552,7 +560,7 @@
         <h1><img src="static/icon-black.png" alt="Logo" class="header-icon"> Anolog</h1>
         <div id="tool-div">
             <input type="color" title="Recolor" id="color-picker" style="visibility:hidden; height:40px">
-            <div class="color-button"><label for="color-picker"><i class="fa-solid fa-palette"></i></label></div>
+            <div class="color-button"><label for="color-picker" id="picker-label"><i class="fa-solid fa-palette"></i></label></div>
 
             <button title="Export" class="export-button" id="export-button"><i class="fa-solid fa-file-arrow-down"></i></button>
             <div class="dropdown-menu" id="dropdown-menu">
@@ -1704,6 +1712,21 @@
         }
     });
 
+    // Update user's color field
+    document.addEventListener('change', function(event) {
+        if (event.target.id === 'color-picker') {
+            document.documentElement.style.setProperty('--primary-color', event.target.value);
+
+            // Send PUT to /user endpoint
+            fetch('/user', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({userId: globalUserId, color: event.target.value }),
+            });
+        }
+    });
 
     // Logout 
     document.getElementById('logout-button').addEventListener('click', function() {
