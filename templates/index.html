@@ -583,9 +583,11 @@
         @keyframes confetti-animation {
             0% {
                 transform: translate(var(--initial-x), var(--initial-y)) rotate(var(--rotation));
+                opacity: 1;
             }
             100% {
-                transform: translate(calc(var(--initial-x) * 4), calc(var(--initial-y) * 4)) rotate(var(--rotation));
+                transform: translate(calc(var(--initial-x) * 5), calc(var(--initial-y) * 4)) rotate(var(--rotation));
+                opacity: 0;
             }
         }
 
