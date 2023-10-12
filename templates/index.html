@@ -116,11 +116,6 @@
             transition: 0.3s ease;
             opacity: 1;
         }
-        .list-collapsed.mobile-open {
-            overflow: visible;
-            height: 700px;
-            width: 270px;
-        }
         .list-collapsed { 
             border: 0;
             padding: 0;
@@ -300,6 +295,9 @@
             opacity: 1;
         }
         .button-common {
+            display: grid;
+            align-items: center;
+            justify-content: center;
             font-size: 22px;
             width: 25px;
             height: 25px;
@@ -568,7 +566,6 @@
             margin: auto;
             height: 40px;
         }
-
         /* Mobile */
         @media (max-width: 768px) {
             body {
@@ -648,7 +645,7 @@
 
                         <div id="clock-div">                        
                             <button id="toggle-button" class="button-common">
-                            <i id="toggle-icon" class="fa-circle-play"></i>
+                            <i id="toggle-icon" class="fa-solid fa-hourglass-end"></i>
                           </button>
                           <p id="clock">00.00.00</p>
                         </div>
@@ -1090,7 +1087,7 @@
 
             // Stop clock if running
             const toggleIcon = document.getElementById('toggle-icon');
-            if (toggleIcon.classList.contains('fa-circle-stop')) {
+            if (toggleIcon.classList.contains('fa-hourglass-half')) {
                 toggleClock();
             }
 
@@ -1136,7 +1133,7 @@
 
             // Stop clock if running
             const toggleIcon = document.getElementById('toggle-icon');
-            if (toggleIcon.classList.contains('fa-circle-stop') && taskId !== globalTaskId) {
+            if (toggleIcon.classList.contains('fa-hourglass-half') && taskId !== globalTaskId) {
                 toggleClock();
                 updateClock();
             }
@@ -1171,7 +1168,7 @@
     // Add unload listener
     window.addEventListener('beforeunload', function() {
         const toggleIcon = document.getElementById('toggle-icon');
-        if (toggleIcon.classList.contains('fa-circle-stop')) {
+        if (toggleIcon.classList.contains('fa-hourglass-half')) {
             toggleClock();
         }
     });
@@ -1361,8 +1358,7 @@
     function updateClock(countUp) {
         const button = document.querySelector('.button-common');
         if (countUp === true) {
-            currentRotation += 180;
-            //button.style.transform = `rotate(${currentRotation}deg)`;
+            currentRotation = 180;
         }
 
         if (countUp === true && startTime === null) {
@@ -1392,26 +1388,19 @@
             
             if (toggleIcon.classList.contains('fa-hourglass-end')) {
                     updateClock(true);
-                    //button.style.transform = `rotate(180deg)`;
+                    button.style.transform = `rotate(180deg)`;
                     addLog(globalTaskId, logType="Start");
                     toggleIcon.classList.remove('fa-hourglass-end');
-                    toggleIcon.classList.add('fa-circle-stop');
+                    toggleIcon.classList.add('fa-hourglass-half');
                     intervalId = setInterval(() => updateClock(true), 1000);
                 } else {
                     startTime = null;
                     addLog(globalTaskId, logType="Stop");
-                    toggleIcon.classList.remove('fa-circle-stop');
+                    toggleIcon.classList.remove('fa-hourglass-half');
                     toggleIcon.classList.add('fa-hourglass-end');
                     clearInterval(intervalId);
-                    if (currentRotation%360 == 0) {
-                        //button.style.transform = `rotate(${currentRotation-360}deg)`;
-                        currentRotation -= 360;
-                    }
-                    else {
-                        //button.style.transform = `rotate(${currentRotation-180}deg)`;
-                        currentRotation -= 180;
-                    }
-
+                    button.style.transform = `rotate(${currentRotation-180}deg)`;
+                    currentRotation = 0;
                 }
             };
     })();
@@ -1446,7 +1435,7 @@
             const isCompleted = taskCheckbox.checked ? true : false;
             completeTask(taskCheckbox, taskLabel, isCompleted);
             const toggleIcon = document.getElementById('toggle-icon');
-            if (toggleIcon.classList.contains('fa-circle-stop')){
+            if (toggleIcon.classList.contains('fa-hourglass-half')){
                 toggleClock();
             }
         });
@@ -1695,26 +1684,19 @@
     }
 
     // Collapse left menu
-    document.querySelector('.toggle').addEventListener('click', handleToggle);
-    document.querySelector('.toggle').addEventListener('touchend', handleToggle);
-
-    function handleToggle() {
-        const listContainer = document.querySelector('.list-container');
+    document.querySelector('.toggle').addEventListener('click', function() {
+        const listContainer = document.querySelector('.list-container')
         const menuButton = document.getElementById('menu-button');
-        
-        if (window.innerWidth <= 768) {
-            listContainer.classList.toggle('mobile-open');
-        }
-        
         if (menuButton.className === "fa-solid fa-bars") {
             listContainer.classList.remove('list-collapsed');
             menuButton.className = "fa-solid fa-square-minus";
-        } else {          
+        }
+        else {          
             listContainer.classList.add('list-collapsed');
             void listContainer.offsetWidth;
             menuButton.className = "fa-solid fa-bars";
         }
-    }
+    });
 
     // Open export menu
     const exportButton = document.getElementById('export-button');
