@@ -898,12 +898,6 @@
                 data.forEach((log, index) => {
                     const dateObj = new Date(log.created_at);
                     const localDateStr = dateObj.toLocaleString();
-                    if (animation===false){
-                        opacity = 0.8;
-                    }
-                    else {
-                        opacity = 0.8;
-                    }
 
                     let pinIcon = '';
                     if (log.is_pinned) {
