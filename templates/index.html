@@ -795,7 +795,7 @@
                 if (task.is_visible !== false) {
                     if (first===true){
                         if (globalTaskId!==task.id) {
-                            populateLogs(globalTaskId);
+                            populateLogs(task.id);
                         }
                         globalTaskId=task.id;
                         
