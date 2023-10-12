@@ -898,6 +898,12 @@
                 data.forEach((log, index) => {
                     const dateObj = new Date(log.created_at);
                     const localDateStr = dateObj.toLocaleString();
+                    if (animation===false){
+                        opacity = 0.9;
+                    }
+                    else {
+                        opacity = 0.9;
+                    }
 
                     let pinIcon = '';
                     if (log.is_pinned) {
@@ -918,12 +924,11 @@
                     const logItem = document.querySelectorAll('.log-item')[index];
                     addLogClickListener(logItem, log.id, log.is_pinned);
 
-                    setTimeout(() => {
-                        const newItem = document.querySelectorAll('.log-item')[index];
-                        if (newItem) {
-                        newItem.style.opacity = log.is_pinned ? '0.9' : '0.6';
-                        }
-                    }, index * 25);  // Delay increases for each item
+                    const newItem = document.querySelectorAll('.log-item')[index];
+                    if (newItem) {
+                    newItem.style.opacity = log.is_pinned ? '0.9' : '0.9';
+                    }
+
                 });
             })
     }
