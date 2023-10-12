@@ -172,6 +172,16 @@
         a:hover {
             border-bottom: 1px solid black;
         }
+        .task-or-project {
+            display: inline;  
+            cursor: pointer;
+            color: rgb(0, 0, 0);
+            border-bottom: 1px solid transparent;
+            transition: border-bottom 0.3s
+        }
+        .task-or-project:hover {
+            border-bottom: 1px solid black;
+        }
         h2 {
             margin-top: 5px;
         }
@@ -404,20 +414,27 @@
         }
         .custom-hover-menu {
             display: flex;
+            align-items: center;
+            justify-content: center;
             font-size: small;
             position: absolute;
             color: #161616;
-            width: 50px;
+            width: 65px;
+            height: 25px;
             list-style-type: none;
             border-radius: 5px;
             padding: 0;
             margin: 0;
-            margin-left: 5px;
+            margin-left: 8px;
             z-index: 10;
-            transition: 0.3s ease;
+            transition: opacity 0.3s ease;
+            background-color: var(--primary-color);
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);
+
         }
         .custom-hover-menu li {
-            padding: 2px;
+            margin-top: 3px;
+            padding: 4px;
             cursor: pointer;
             transition: 0.3s ease;
         }
@@ -672,8 +689,9 @@
                             first = false;
                         }
                         const newListItem = document.createElement('li');
-                        const newLink = document.createElement('a');
-                        newLink.href = '#';
+                        const newLink = document.createElement('p');
+                        newLink.className = 'task-or-project';
+                        //newLink.href = '#'
                         newLink.textContent = project.name;
                         newLink.setAttribute('data-id', project.id);
                         newListItem.appendChild(newLink);
@@ -749,8 +767,8 @@
                     }
      
                     const newTaskListItem = document.createElement('li');
-                    const newTaskLink = document.createElement('a');
-                    newTaskLink.href = '#';
+                    const newTaskLink = document.createElement('p');
+                    newTaskLink.className = 'task-or-project';
                     newTaskLink.textContent = task.name;
 
                     // Mark completed if is_complete
@@ -922,8 +940,8 @@
                 if (data.message === "Project created") {
                     // Create and insert the new list item before the input item
                     const newListItem = document.createElement('li');
-                    const newLink = document.createElement('a');
-                    newLink.href = '#';
+                    const newLink = document.createElement('p');
+                    newLink.className = 'task-or-project';
                     newLink.textContent = newProjectName;
                     newListItem.appendChild(newLink);
                     projectUlElement.insertBefore(newListItem, newProjectLi);
@@ -966,8 +984,8 @@
                 if (data.message === "Task created") {
                     // Create and insert the new list item before the input item
                     const newListItem = document.createElement('li');
-                    const newLink = document.createElement('a');
-                    newLink.href = '#';
+                    const newLink = document.createElement('p');
+                    newLink.className = 'task-or-project';
                     newLink.textContent = newTaskName;
                     newListItem.appendChild(newLink);
                     taskUlElement.insertBefore(newListItem, newTaskLi);
@@ -1082,7 +1100,7 @@
             const projectNameLabel = document.getElementById('project-name');
             projectNameLabel.textContent = projectName;
             
-            const allLinks = document.querySelectorAll('#project-list-ul li a');
+            const allLinks = document.querySelectorAll('#project-list-ul li p');
             allLinks.forEach(link => {
                 link.style.opacity = '0.5';
                 link.style.fontWeight = 'normal';
@@ -1116,7 +1134,7 @@
             }
 
             // Update bold
-            const allLinks = document.querySelectorAll('#task-list-ul li a');
+            const allLinks = document.querySelectorAll('#task-list-ul li p');
             allLinks.forEach(link => {
                 link.style.opacity = '0.5';
                 link.style.fontWeight = 'normal';
@@ -1281,8 +1299,9 @@
 
             // Position the hover menu to the right of the list item
             const rect = newLink.getBoundingClientRect();
-            hoverMenu.style.top = `${rect.top}px`;
-            hoverMenu.style.left = `${rect.right}px`;
+            hoverMenu.style.top = (rect.top + window.scrollY) + 'px';
+            hoverMenu.style.left = (rect.right + window.scrollX) + 'px';
+
 
             // Clear any existing timeout
             if (timeoutId) {
@@ -1419,7 +1438,7 @@
 
     // Complete task
     function completeTask(taskCheckbox, taskLabel, isCompleted) {
-        const selectedTask = document.querySelector(`a[data-id="${globalTaskId}"]`);
+        const selectedTask = document.querySelector(`p[data-id="${globalTaskId}"]`);
 
         if (isCompleted) {
             selectedTask.style.textDecoration = 'line-through';
