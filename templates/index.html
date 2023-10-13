@@ -931,14 +931,16 @@
                         const dateObj = new Date(log.created_at);
                         const localDateStr = dateObj.toLocaleString();
 
+                        let pin = '';
                         let opacity = '0.5';
                         if (log.is_pinned) {
                             opacity = '0.9';
+                            pin = '<i class="fa-solid fa-thumbtack" id="pin" style="font-size: 8pt"></i>';
                         }
 
                         const logEntry = `
                             <div class="log-item" data-logId="${log.id}" data-isPinned=${log.is_pinned} style="opacity:${opacity};">
-                                <br>
+                                <br id="first-break">${pin}
                                 <span class="log-created-at">${localDateStr}</span><br>
                                 <span class="log-description" style="white-space: pre-line;">${log.description}</span>
                                 <div class="log-divider"></div>
@@ -964,6 +966,8 @@
                 const unpinnedItems = logItemsContainer.querySelectorAll('.log-item');
                 unpinnedItems.forEach((unpinnedItem,index) => {
                     if (unpinnedItem.getAttribute('data-isPinned') === 'true') {
+                        pin = unpinnedItem.querySelector('#pin')
+                        unpinnedItem.removeChild(pin);
                         unpinnedItem.style.height = '0px';
                         unpinnedItem.style.opacity = '0.5';
                         unpinnedItem.setAttribute('data-isPinned', 'false');
@@ -1106,7 +1110,7 @@
             const formattedDate = dateObj.toLocaleString('en-US');
             const logEntry = `
                                 <div class="log-item" data-logId="tmp${tempId}" data-isPinned=false style="opacity:0.5;">
-                                    <br>
+                                    <br id="first-break">
                                     <span class="log-created-at">${formattedDate}</span><br>
                                     <span class="log-description" style="white-space: pre-line;">${logText}</span>
                                     <div class="log-divider"></div>
@@ -1717,7 +1721,6 @@
         const isPinned = logItem.getAttribute('data-isPinned');
 
         if (logItem) {
-            let clonedLogItem = logItem.cloneNode(true);  
             if (isPinned === 'true') {
                 // Unpin if pinned
                 hiddenLogItem = logItemsContainer.querySelector(`[data-logId="${logId}"]`);
@@ -1727,8 +1730,13 @@
                 logItem.setAttribute('data-isPinned', 'false');
             } else {
                 // Pin if not pinned
+                let clonedLogItem = logItem.cloneNode(true);  
+                firstBreak = clonedLogItem.querySelector('#first-break');
+                clonedLogItem.removeChild(firstBreak);
                 logItem.style.height = '0px';
                 logItem.style.overflow = 'hidden';
+                pin = '<br><i class="fa-solid fa-thumbtack" style="font-size: 8pt"></i>';
+                clonedLogItem.insertAdjacentHTML('afterBegin',pin);
                 clonedLogItem.style.opacity = '0.9';
                 pinnedLogsContainer.appendChild(clonedLogItem);
                 clonedLogItem.setAttribute('data-isPinned', 'true');
