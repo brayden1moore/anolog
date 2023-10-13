@@ -148,7 +148,7 @@
         }
         .log-divider {
             margin-top: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 0px;
             border-top: 1px solid  var(--primary-color);
             height: 1px;
             width: 100%;
@@ -239,7 +239,6 @@
             width: 100%;
             height: 700px;
             margin-bottom: 25px;
-            opacity: 0.5;
             transition: 0.3s ease;
         }
         .log-space {
@@ -275,14 +274,15 @@
         .log-input {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin-top: 30px;
-            margin-bottom: 25px;
+            margin-bottom: 0px;
             color:  var(--primary-color);
             width: 99%;
+            height: 25px;
             background: none;
             border: none;
             outline: none;
             border-bottom: var(--primary-color) solid 3px;
-            opacity: 0.5;
+            opacity: 0.7;
             transition: opacity 0.3s ease;
         }
         .log-input::placeholder {
@@ -350,8 +350,13 @@
         }
         #log-items-container {
             margin-top: 10px;
-            height: 335px;
+            height: 320px;
+            opacity: 1;
             overflow-y: scroll;
+        }
+        #pinned-logs-container {
+            opacity: 1;
+            box-shadow: 0 16px 13px -6px rgba(0, 0, 0, 0.5)
         }
         ::-webkit-scrollbar {
             background: #161616;
@@ -367,17 +372,16 @@
             background: var(--primary-color); 
         }
         .log-item {
+            overflow: hidden;
+            transition: opacity 0.3s ease;
             font-size: small;
-            margin-bottom: 10px;
-            transition: opacity 0.5s ease;
-            opacity: 0.9;
+            margin-bottom: 0px;
             cursor: pointer;
         }
         .log-item:hover {
             opacity: 1 !important;
         }
         .log-created-at {
-            transition: opacity 0.5s ease;
             opacity: 0.5;
         }
         #task-checkbox {
@@ -676,7 +680,10 @@
                         </div>
 
                     </div>
-                    <textarea class="log-input" type="text" placeholder="Add a comment"></textarea>
+                    <textarea class="log-input" type="text" placeholder="Add a log entry"></textarea>
+                    <div id="pinned-logs-container">
+                        <!--Pinned logs go here -->
+                    </div>
                     <div id="log-items-container">
                         <!-- Log items go here -->
                     </div>
@@ -707,11 +714,23 @@
     var globalLogId;
     var globalSeconds;
     let intervalId = null;
+    let firstLoad = true;
+
+    // Adjust log container height
+    function adjustLogItemsContainerHeight() {
+        const pinnedLogsContainer = document.getElementById('pinned-logs-container');
+        const logItemsContainer = document.getElementById('log-items-container');
+
+        const pinnedHeight = pinnedLogsContainer.offsetHeight;
+        logItemsContainer.style.height = `${330 - pinnedHeight}px`;
+    }
 
     // GET from /projects endpoint and populate list
     function populateProjects() {
         const ulElement = document.getElementById('project-list-ul');
         const newProjectLi = document.getElementById('new-project-li');
+        const projectNameLabel = document.getElementById('project-name');
+        projectNameLabel.style.opacity = "0";
 
         fetch(`/projects`)
             .then(response => response.json())
@@ -729,17 +748,17 @@
                         const newListItem = document.createElement('li');
                         const newLink = document.createElement('p');
                         newLink.className = 'task-or-project';
-                        //newLink.href = '#'
+
                         newLink.textContent = project.name;
-                        newLink.setAttribute('data-id', project.id);
+                        newLink.setAttribute('data-projectId', project.id);
                         newListItem.appendChild(newLink);
                         newLink.style.opacity = '0.5';
 
                         if (project.id === globalProjectId){
                             newLink.style.opacity = '1';
                             newLink.style.fontWeight = 'bold';
-                            const projectNameLabel = document.getElementById('project-name');
                             projectNameLabel.textContent = project.name;
+                            projectNameLabel.style.opacity = "1";
                         }
                         
                         if (project.is_completed) {
@@ -831,7 +850,7 @@
                         newTaskLink.style.fontWeight = 'normal';
                     }
 
-                    newTaskLink.setAttribute('data-id', task.id);
+                    newTaskLink.setAttribute('data-taskId', task.id);
                     newTaskListItem.appendChild(newTaskLink);
                     taskUlElement.appendChild(newTaskListItem);
 
@@ -868,9 +887,13 @@
     function populateLogs(taskId, animation) {
         const logItemsContainer = document.getElementById('log-items-container');
         logItemsContainer.innerHTML = '';
+
+        const pinnedLogsContainer = document.getElementById('pinned-logs-container');
+        pinnedLogsContainer.innerHTML = '';
         
         const taskName = document.getElementById('task-name');
         const taskCheckbox = document.getElementById('task-checkbox');
+        taskName.style.opacity = '0';
         
         getHours(globalProjectId);
 
@@ -891,43 +914,65 @@
                 taskName.textContent = data[0].name;
                 globalSeconds = data[0].total_seconds;
                 updateClock();
+                taskName.style.opacity = '1';
 
             });
 
+        let logIds = [];
+        let logPinnedStatuses = [];
         fetch(`/logs?task_id=${taskId}`)
             .then(response => response.json())
             .then(data => {
                 // Append responses to entry log
                 data.forEach((log, index) => {
-                    const dateObj = new Date(log.created_at);
-                    const localDateStr = dateObj.toLocaleString();
+                    showIt = (log.description.includes("Timer stop (") || log.description.includes("Timer start (")) ? false : true;
+                    console.log(showIt);
+                    if (showIt) {
+                        const dateObj = new Date(log.created_at);
+                        const localDateStr = dateObj.toLocaleString();
 
-                    let pinIcon = '';
-                    if (log.is_pinned) {
-                        pinIcon = '<i id="pin" class="fa fa-thumbtack" style="color: var(--primary-color);"></i>'
+                        let opacity = '0.5';
+                        if (log.is_pinned) {
+                            opacity = '0.9';
+                        }
+
+                        const logEntry = `
+                            <div class="log-item" data-logId="${log.id}" data-isPinned=${log.is_pinned} style="opacity:${opacity};">
+                                <br>
+                                <span class="log-created-at">${localDateStr}</span><br>
+                                <span class="log-description" style="white-space: pre-line;">${log.description}</span>
+                                <div class="log-divider"></div>
+                            </div>`;
+                        
+                        if (log.is_pinned) {
+                            pinnedLogsContainer.insertAdjacentHTML('beforeend', logEntry);
+                            logItemsContainer.insertAdjacentHTML('beforeend', logEntry);
+                        }
+                        else{
+                            logItemsContainer.insertAdjacentHTML('beforeend', logEntry);
+                        }
+                        logIds.push(log.id);
+                        logPinnedStatuses.push(log.is_pinned);
                     }
-
-                    const logEntry = `
-                        <div class="log-item">
-                            ${pinIcon}
-                            <span class="log-created-at">${localDateStr}</span><br>
-                            <span class="log-description" style="white-space: pre-line;">${log.description}</span>
-                            <div class="log-divider"></div>
-                        </div>`;
-                    
-                    
-                    logItemsContainer.insertAdjacentHTML('beforeend', logEntry);
-                    
-                    const logItem = document.querySelectorAll('.log-item')[index];
-                    addLogClickListener(logItem, log.id, log.is_pinned);
-
-                    const newItem = document.querySelectorAll('.log-item')[index];
-                    if (newItem) {
-                        newItem.style.boxShadow = log.is_pinned ? '0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, .8)' : '';
-                    }
-
                 });
+
+                // Add click listeners after
+                const logItems = document.querySelectorAll('.log-item');
+                logItems.forEach((logItem, index) => {
+                    addLogClickListener(logItem, logIds[index]);
+                });
+                const unpinnedItems = logItemsContainer.querySelectorAll('.log-item');
+                unpinnedItems.forEach((unpinnedItem,index) => {
+                    if (unpinnedItem.getAttribute('data-isPinned') === 'true') {
+                        unpinnedItem.style.height = '0px';
+                        unpinnedItem.style.opacity = '0.5';
+                        unpinnedItem.setAttribute('data-isPinned', 'false');
+                    }
+                });
+                adjustLogItemsContainerHeight();   
+ 
             })
+            
     }
 
     // GET to /hours endpoint
@@ -1025,7 +1070,7 @@
                     taskUlElement.insertBefore(newListItem, newTaskLi);
                     newTaskInput.value = '';
                     
-                    populateTasks(projectId);
+                    //populateTasks(projectId);
 
                     // Add click listener
                     addTaskClickListener(newLink, data.id, data.name);
@@ -1040,7 +1085,7 @@
     // POST to /logs endpoint and append list. PUT to /tasks
     function addLog(taskId, logType) {
         const initialTaskId = taskId;  // Store the taskId at the time of logging
-
+        let isTimer = true;
         const logInput = document.querySelector('.log-input');
         const clock = document.getElementById('clock');
         let logText;
@@ -1053,6 +1098,23 @@
         }
         else {
             logText = logInput.value;
+            isTimer = false;
+            
+            // Build log entry
+            const tempId = Math.floor(Math.random() * 90000) + 10000;
+            const dateObj = new Date();
+            const formattedDate = dateObj.toLocaleString('en-US');
+            const logEntry = `
+                                <div class="log-item" data-logId="tmp${tempId}" data-isPinned=false style="opacity:0.5;">
+                                    <br>
+                                    <span class="log-created-at">${formattedDate}</span><br>
+                                    <span class="log-description" style="white-space: pre-line;">${logText}</span>
+                                    <div class="log-divider"></div>
+                                </div>`;
+            const logItemsContainer = document.getElementById('log-items-container');
+            logItemsContainer.insertAdjacentHTML('afterBegin', logEntry);
+            const logItem = logItemsContainer.querySelector(`[data-logId="tmp${tempId}"]`);
+            addLogClickListener(logItem);
         }
 
         // construct PUT payload
@@ -1093,8 +1155,9 @@
             }).then(response => response.json())
             .then(data => {
                 if (data.message === "Log created") {
-                    if (globalTaskId === initialTaskId) {
-                        populateLogs(taskId, animation=false);
+                    if (globalTaskId === initialTaskId && isTimer === false) {
+                        // Add log to list
+                        //populateLogs(taskId, animation=false);
                     }
                 }
             });
@@ -1123,7 +1186,7 @@
             const logDiv = document.getElementById('log-div');
             if (globalProjectId !== projectId) {
                 logContent.style.visibility = 'hidden';
-                logDiv.style.opacity = 0.3;
+                logDiv.style.opacity = "0.5";
             }
 
             // Update global
@@ -1180,9 +1243,9 @@
     }
 
     // Add click listener to log 
-    function addLogClickListener(logItem, logId, isPinned) {
+    function addLogClickListener(logItem) {
         logItem.addEventListener('click', function(e) {
-            pinLog(logId, !isPinned);
+            pinLog(logItem);
         })
     }
 
@@ -1233,10 +1296,19 @@
                 inputElement.focus();
                 inputElement.select();
 
+                // Revert changes if the user clicks away
+                const blurHandler = function() {
+                    if (inputElement.parentNode) {
+                        inputElement.parentNode.replaceChild(newLink, inputElement);
+                    }
+                };
+                inputElement.addEventListener('blur', blurHandler);
+
                 // Listen for Enter key press
                 inputElement.addEventListener('keypress', function(e) {
                     if (e.key === 'Enter') {
-
+                        inputElement.removeEventListener('blur', blurHandler);
+                        
                         if (elementType==='project') {
                             // Run renameProject function
                             renameProject(globalProjectId, inputElement.value);
@@ -1247,17 +1319,14 @@
                         }
 
                         // Replace the input back with the link
-                        inputElement.parentNode.replaceChild(newLink, inputElement);
+                        if (inputElement.parentNode) {
+                            inputElement.parentNode.replaceChild(newLink, inputElement);
+                        }
 
                         // Update the link text
                         newLink.textContent = inputElement.value;
                         
                     }
-                });
-
-                // Revert changes if the user clicks away
-                inputElement.addEventListener('blur', function() {
-                    inputElement.parentNode.replaceChild(newLink, inputElement);
                 });
             });
 
@@ -1480,7 +1549,7 @@
 
     // Complete task
     function completeTask(taskCheckbox, taskLabel, isCompleted) {
-        const selectedTask = document.querySelector(`p[data-id="${globalTaskId}"]`);
+        const selectedTask = document.querySelector(`p[data-taskId="${globalTaskId}"]`);
 
         if (isCompleted) {
             selectedTask.style.textDecoration = 'line-through';
@@ -1488,6 +1557,7 @@
             taskCheckbox.checked = true;
         }
         else {
+            selectedTask.style.textDecoration = '';
             taskLabel.style.textDecoration = '';
             taskCheckbox.checked = false;
         }
@@ -1507,7 +1577,7 @@
             .then(data => {
                 console.log(isCompleted);
                 console.log(data); // Handle the response
-                populateTasks(globalProjectId);
+                //populateTasks(globalProjectId);
             })
             .catch(error => {
             console.error(error); // Handle errors
@@ -1516,6 +1586,15 @@
 
     // Complete project
     function completeProject(projectId, isCompleted) {
+        const selectedProject = document.querySelector(`p[data-projectId="${globalProjectId}"]`);
+
+        if (isCompleted) {
+            selectedProject.style.textDecoration = 'line-through';
+        }
+        else {
+            selectedProject.style.textDecoration = '';
+        }
+
         fetch(`/projects`, {
             method: 'PUT',
             headers: {
@@ -1528,7 +1607,7 @@
             })
             .then(response => response.json())
             .then(data => {
-                populateProjects();
+                //populateProjects();
             })
             .catch(error => {
             console.error(error); // Handle errors
@@ -1579,6 +1658,7 @@
 
     // Rename task
     function renameTask(taskId, newName){
+
         fetch(`/tasks`, {
             method: 'PUT',
             headers: {
@@ -1592,8 +1672,8 @@
             })
             .then(response => response.json())
             .then(data => {
-            populateTasks(globalProjectId);
-            populateLogs(globalTaskId, animation=false);
+                const taskLabel = document.getElementById('task-name');
+                taskLabel.textContent = newName;
             })
             .catch(error => {
             console.error(error); // Handle errors
@@ -1628,7 +1708,36 @@
     }
 
     // Pin log
-    function pinLog(logId, pinToggle) {
+    function pinLog(logItem) {
+
+        const logItemsContainer = document.getElementById('log-items-container');
+        const pinnedLogsContainer = document.getElementById('pinned-logs-container');
+
+        const logId = logItem.getAttribute('data-logId');
+        const isPinned = logItem.getAttribute('data-isPinned');
+
+        if (logItem) {
+            let clonedLogItem = logItem.cloneNode(true);  
+            if (isPinned === 'true') {
+                // Unpin if pinned
+                hiddenLogItem = logItemsContainer.querySelector(`[data-logId="${logId}"]`);
+                hiddenLogItem.style.height = 'auto';
+                hiddenLogItem.setAttribute('data-isPinned', 'false');
+                pinnedLogsContainer.removeChild(logItem);
+                logItem.setAttribute('data-isPinned', 'false');
+            } else {
+                // Pin if not pinned
+                logItem.style.height = '0px';
+                logItem.style.overflow = 'hidden';
+                clonedLogItem.style.opacity = '0.9';
+                pinnedLogsContainer.appendChild(clonedLogItem);
+                clonedLogItem.setAttribute('data-isPinned', 'true');
+                addLogClickListener(clonedLogItem);
+            }
+        
+        adjustLogItemsContainerHeight();
+        }
+
         // construct task PUT payload
         const putPayload = {
             taskId: globalTaskId,
@@ -1654,13 +1763,12 @@
                 },
                 body: JSON.stringify({
                     logId: logId,
-                    isPinned: pinToggle
+                    isPinned: isPinned !== 'true'
                 })
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.message === "Log updated") {
-                        populateLogs(globalTaskId, animation=true);
                     }
                 })
             }
