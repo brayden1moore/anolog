@@ -9,6 +9,13 @@
         :root {
             --primary-color: {{primary_color}};
         }
+        .logo {
+            width: 24px;
+            height: 24px;
+            background: conic-gradient(transparent 0% 25%, black 25% 100%);
+            border-radius: 50%;
+            margin-right: 8px;
+        }
         body {
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif, sans-serif;
             width: 65vw;
@@ -16,12 +23,13 @@
             margin: 50px;
             margin-left: auto;
             margin-right: auto;
-            background-color: var(--primary-color);
+            background-color:var(--primary-color);
+            transition: 0.3s ease;
         }
         h1 {
             display: flex;
             width: 200px;
-            align-items: end;
+            align-items: center;
         }
         header {
             color: rgb(0, 0, 0);
@@ -130,6 +138,7 @@
             overflow:visible;            
             height: 700px;
             width: 270px;
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);
         }
 
         .list-div{
@@ -190,6 +199,9 @@
             border-bottom: 1px solid transparent;
             transition: border-bottom 0.3s
         }
+        .task-or-project.darkmode {
+            color: var(--primary-color);
+        }
         .task-or-project:hover {
             border-bottom: 1px solid black;
         }
@@ -244,7 +256,7 @@
         .log-space {
             margin-top: 25px;
             background-color: #161616;
-            border: black solid 2px;
+            border:  #161616 solid 2px;
             border-radius: 10px;
             width: 100%;
             height: 568px;
@@ -254,7 +266,7 @@
         #project-space {
             overflow-y: scroll;
             background-color: #161616;
-            border: black solid 2px;
+            border:  #161616 solid 2px;
             border-radius: 10px;
             width: 100%;
             height: 100px;
@@ -528,6 +540,24 @@
             opacity:0.5;
         }
 
+        .darkmode-button {
+            background-color: #161616;
+            height: 40px;
+            width: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            outline: none;
+            border: none;
+            color: var(--primary-color);
+            border-radius: 10px;
+            transition: 0.3s ease;
+        }
+
+        .darkmode-button:hover{
+            opacity:0.5;
+        }
+
         #side-div {
             width: 350px;
             margin-left: 50px;
@@ -616,8 +646,9 @@
 <body>
 
     <header>
-        <h1><img src="static/icon-black.png" alt="Logo" class="header-icon"> Anolog</h1>
+        <h1 class="header"><div class="logo"></div> Anolog</h1>
         <div id="tool-div">
+            <div class="darkmode-button"><i id="darkmode-icon" class="fa-regular fa-moon"></i></div>
             <input type="color" title="Recolor" id="color-picker" value={{primary_color}} style="height:40px; width:0px; opacity: 0;">
             <div class="color-button"><label for="color-picker" id="picker-label"><i class="fa-solid fa-palette"></i></label></div>
 
@@ -641,11 +672,11 @@
                 <i id="menu-button" class="fa-solid fa-bars"></i>
             </div>
             <div class="list-div">
-                <h2>Projects</h2>
+                <h2 class="header">Projects</h2>
                 <ul id="project-list-ul">
                 </ul>
                 <div class="divider"></div>
-                <h2>Tasks</h2>
+                <h2 class="header">Tasks</h2>
                 <ul id="task-list-ul">
                 </ul>
             </div>
@@ -713,6 +744,7 @@
     var globalTaskId;
     var globalLogId;
     var globalSeconds;
+    var darkmode = {{ darkmode|lower }};
     let intervalId = null;
     let firstLoad = true;
 
@@ -763,6 +795,16 @@
                         
                         if (project.is_completed) {
                             newLink.style.textDecoration = 'line-through';
+                        }
+
+                        // Adjust colors for darkmode
+                        if (darkmode) {
+                            ulElement.style.color = "#161616";
+                            newLink.style.color = "{{primary_color}}";
+                        }
+                        else {
+                            ulElement.style.color = "black";
+                            newLink.style.color = "black";
                         }
 
                         // Add click event listener to this list item
@@ -848,6 +890,16 @@
                     else {
                         newTaskLink.style.opacity = '0.5';
                         newTaskLink.style.fontWeight = 'normal';
+                    }
+
+                    // Adjust colors for darkmode
+                    if (darkmode) {
+                        taskUlElement.style.color = "#161616";
+                        newTaskLink.style.color = "{{primary_color}}";
+                        }
+                    else {
+                        taskUlElement.style.color = "black";
+                        newTaskLink.style.color = "black";
                     }
 
                     newTaskLink.setAttribute('data-taskId', task.id);
@@ -1026,6 +1078,7 @@
                     const newLink = document.createElement('p');
                     newLink.className = 'task-or-project';
                     newLink.textContent = newProjectName;
+
                     newListItem.appendChild(newLink);
                     projectUlElement.insertBefore(newListItem, newProjectLi);
                     newProjectInput.value = '';
@@ -1896,7 +1949,7 @@
     document.addEventListener('change', function(event) {
         if (event.target.id === 'color-picker') {
             document.documentElement.style.setProperty('--primary-color', event.target.value);
-
+            updateFavicon(event.target.value);
             // Send PUT to /user endpoint
             fetch('/user', {
                 method: 'PUT',
@@ -1940,6 +1993,102 @@
                         window.location.href = '/logout';
                     });
 
+    // Toggle darkmode
+    function toggleDarkmode(initialToggle) {
+        console.log('Darkmode', darkmode);
+        const list = document.querySelector('.list-container');
+        const listItems = document.querySelectorAll('.task-or-project');
+        const logo = document.querySelector('.logo');
+        const headers = document.querySelectorAll('h2');
+        const title = document.querySelector('h1');
+        const darkmodeIcon = document.querySelector('#darkmode-icon');
+        const projectList = document.getElementById('project-list-ul');
+        const taskList = document.getElementById('task-list-ul');
+
+        if (initialToggle) {
+            darkmode = !darkmode;
+        }
+
+        if (darkmode) {
+            darkmode = false;
+            document.body.style.backgroundColor = "var(--primary-color)";
+            
+            for (let header of headers) {
+                header.style.color = "black";
+            }
+            for (let item of listItems) {
+                item.style.color =  "black";
+            }
+
+            projectList.style.color = "black";
+            taskList.style.color = "black";
+            darkmodeIcon.className = "fa-regular fa-moon";
+            darkmodeIcon.style.fontSize = "14pt";
+            list.style.backgroundColor = '#DDDDDD';
+            title.style.color = "black";
+            logo.style.background = "conic-gradient(transparent 0% 25%, black 25% 100%)";
+        }
+        else {
+            darkmode = true;
+            document.body.style.backgroundColor = "#252525";
+            
+            for (let header of headers) {
+                header.style.color = "var(--primary-color)";
+            }
+            for (let item of listItems) {
+                item.style.color =  "var(--primary-color)";
+            }
+
+            projectList.style.color = "#161616";
+            taskList.style.color = "#161616";
+            darkmodeIcon.className = "fa-solid fa-moon";
+            darkmodeIcon.style.fontSize = "14pt";
+            list.style.backgroundColor = "transparent";
+            title.style.color =  "var(--primary-color)";
+            logo.style.background = "conic-gradient(transparent 0% 25%, var(--primary-color) 25% 100%)";
+        }
+
+        // Send PUT to /user endpoint
+        fetch('/user', {
+            method: 'PUT',
+            headers: {
+                    'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({userId: globalUserId, darkmode: darkmode }),
+        });
+    }
+    const darkmodeButton = document.querySelector('.darkmode-button');
+    darkmodeButton.addEventListener('click', function() {
+        toggleDarkmode();
+    })
+    toggleDarkmode(initialToggle=true);
+
+    // Dynamically change icon
+    function updateFavicon(color) {
+        let canvas = document.createElement('canvas');
+        canvas.width = 32;
+        canvas.height = 32;
+        let ctx = canvas.getContext('2d');
+        
+        // Draw the 3/4 filled circle
+        ctx.beginPath();
+        ctx.arc(16, 16, 16, -0.5 * Math.PI, -2 * Math.PI, true);
+        ctx.lineTo(16, 16);
+        ctx.fillStyle = color;
+        ctx.fill();
+
+        // Update favicon
+        let link = document.querySelector("link[rel~='icon']");
+        if (!link) {
+            link = document.createElement('link');
+            link.rel = 'icon';
+            document.getElementsByTagName('head')[0].appendChild(link);
+        }
+        link.href = canvas.toDataURL('image/x-icon');
+    }
+    updateFavicon('{{ primary_color }}');
+
+    // Load
     populateProjects();
 
 </script>

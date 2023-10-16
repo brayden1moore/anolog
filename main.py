@@ -28,6 +28,8 @@ app.config['SECRET_KEY'] = config['FLASK_KEY']
 ## Login
 
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+import re
+
 login_manager = LoginManager()
 login_manager.login_view = 'login'
 login_manager.init_app(app)
@@ -47,6 +49,10 @@ def login():
         session = Session()
         try:
             email = request.form['email']
+            if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+                message = "Try a different email"
+                return render_template('login.html', message=message)
+
             password = request.form['password']
             user = session.query(User).filter_by(email=email).first()
 
@@ -184,7 +190,9 @@ def homepage():
             session = Session()
             user = session.query(User).filter(User.id==user_id).first()
             primary_color = '#9bcaad' if not user.color else user.color
-        return render_template('index.html', user_id=user_id, primary_color=primary_color)
+            darkmode = False if not user.darkmode else user.darkmode
+            print(darkmode)
+        return render_template('index.html', user_id=user_id, primary_color=primary_color, darkmode=darkmode)
     finally:
         Session.remove()
 
@@ -409,10 +417,13 @@ def update_user():
 
         user_id = current_user.id
         color = data.get('color')
+        darkmode = data.get('darkmode')
         user = session.query(User).filter(User.id == user_id).first()
 
         if color is not None:
             user.color = color 
+        if darkmode is not None:
+            user.darkmode = darkmode
         
         session.commit()
         return jsonify({"message": "User updated"}), 200

@@ -24,6 +24,7 @@ class User(Base, UserMixin):
     username = Column(String)
     password = Column(String)
     color = Column(String, default='#d3b683')
+    darkmode = Column(Boolean, default=False)
 
 class Project(Base):
     __tablename__ = 'projects'
