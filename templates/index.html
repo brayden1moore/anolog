@@ -241,6 +241,10 @@
             outline: none;
             color: black;
         }
+        #new-project-input.darkmode, #new-task-input.darkmode, .rename-input.darkmode{
+            color: var(--primary-color);
+            border-bottom: 1px solid var(--primary-color);
+        }
         #new-project-li:hover,
         #new-project-li:focus-within,
         #new-task-li:hover,
@@ -762,7 +766,7 @@
         const ulElement = document.getElementById('project-list-ul');
         const newProjectLi = document.getElementById('new-project-li');
         const projectNameLabel = document.getElementById('project-name');
-        projectNameLabel.style.opacity = "0";
+        //projectNameLabel.style.opacity = "0";
 
         fetch(`/projects`)
             .then(response => response.json())
@@ -824,6 +828,9 @@
                 const newProjectInput = document.createElement('input');
                 newProjectInput.type = 'text';
                 newProjectInput.id = 'new-project-input';
+                if (darkmode) {
+                    newProjectInput.classList.add('darkmode');
+                }
 
                 newProjectInput.addEventListener('keypress', function(e) {
                     if (e.key === 'Enter') {
@@ -921,6 +928,9 @@
             const newTaskInput = document.createElement('input');
             newTaskInput.type = 'text';
             newTaskInput.id = 'new-task-input';
+            if (darkmode) {
+                    newTaskInput.classList.add('darkmode');
+            }
 
             newTaskInput.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
@@ -1079,6 +1089,11 @@
                     newLink.className = 'task-or-project';
                     newLink.textContent = newProjectName;
 
+                    // Adjust colors for darkmode
+                    if (darkmode) {
+                        newLink.classList.add('darkmode');
+                    }
+
                     newListItem.appendChild(newLink);
                     projectUlElement.insertBefore(newListItem, newProjectLi);
                     newProjectInput.value = '';
@@ -1126,8 +1141,11 @@
                     newListItem.appendChild(newLink);
                     taskUlElement.insertBefore(newListItem, newTaskLi);
                     newTaskInput.value = '';
-                    
-                    //populateTasks(projectId);
+
+                    // Adjust colors for darkmode
+                    if (darkmode) {
+                        newLink.classList.add('darkmode');
+                    }
 
                     // Add click listener
                     addTaskClickListener(newLink, data.id, data.name);
@@ -2008,8 +2026,23 @@
         if (initialToggle) {
             darkmode = !darkmode;
         }
+        else {
+            // Toggle new task inputs if they exist
+            const newProjectInput = document.getElementById('new-project-input');
+            const newTaskInput = document.getElementById('new-task-input');
+            
+            if (darkmode) {
+                newProjectInput.classList.remove('darkmode');
+                newTaskInput.classList.remove('darkmode');
+            }
+            else {
+                newProjectInput.classList.add('darkmode');
+                newTaskInput.classList.add('darkmode');
+            }
+        }
 
         if (darkmode) {
+            // Make lightmode
             darkmode = false;
             document.body.style.backgroundColor = "var(--primary-color)";
             
@@ -2029,6 +2062,7 @@
             logo.style.background = "conic-gradient(transparent 0% 25%, black 25% 100%)";
         }
         else {
+            // Make darkmode
             darkmode = true;
             document.body.style.backgroundColor = "#252525";
             
