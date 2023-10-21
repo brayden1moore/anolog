@@ -1174,6 +1174,9 @@
         else {
             logText = logInput.value;
             isTimer = false;
+            const tempId = Math.floor(Math.random() * 90000) + 10000;
+            const dateObj = new Date();
+            const formattedDate = dateObj.toLocaleString('en-US');
             
             // Build log entry
             const logItem = document.createElement("div");
