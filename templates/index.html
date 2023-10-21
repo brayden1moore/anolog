@@ -1176,19 +1176,28 @@
             isTimer = false;
             
             // Build log entry
-            const tempId = Math.floor(Math.random() * 90000) + 10000;
-            const dateObj = new Date();
-            const formattedDate = dateObj.toLocaleString('en-US');
-            const logEntry = `
-                                <div class="log-item" data-logId="tmp${tempId}" data-isPinned=false style="opacity:0.5;">
-                                    <br id="first-break">
-                                    <span class="log-created-at">${formattedDate}</span><br>
-                                    <span class="log-description" style="white-space: pre-line;">${logText}</span>
-                                    <div class="log-divider"></div>
-                                </div>`;
-            const logItemsContainer = document.getElementById('log-items-container');
-            logItemsContainer.insertAdjacentHTML('afterBegin', logEntry);
-            const logItem = logItemsContainer.querySelector(`[data-logId="tmp${tempId}"]`);
+            const logItem = document.createElement("div");
+            logItem.className = "log-item";
+            logItem.dataset.logId = `tmp${tempId}`;
+            logItem.dataset.isPinned = false;
+            logItem.style.opacity = "0.5";
+
+            const logCreatedAt = document.createElement("span");
+            logCreatedAt.className = "log-created-at";
+            logCreatedAt.textContent = formattedDate;
+            logItem.appendChild(logCreatedAt);
+
+            const logDescription = document.createElement("span");
+            logDescription.className = "log-description";
+            logDescription.style.whiteSpace = "pre-line";
+            logDescription.textContent = logText;
+            logItem.appendChild(logDescription);
+
+            const logDivider = document.createElement("div");
+            logDivider.className = "log-divider";
+            logItem.appendChild(logDivider);
+
+            logItemsContainer.prepend(logItem);
             addLogClickListener(logItem);
         }
 
