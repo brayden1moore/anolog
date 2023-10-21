@@ -115,6 +115,8 @@
             align-items: center;
         }
         .demo {
+            position: relative;
+            z-index: 0;
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
             overflow: hidden;
             border-radius: 30px;
@@ -132,12 +134,23 @@
                 margin-top: 20px;
                 width: 100%;
                 max-width: 440px;
-                margin-bottom: -60%;
+                margin-bottom: -70%;
             }
             .container {
                 margin: 0;
                 backdrop-filter: blur(15px);
                 -webkit-backdrop-filter: blur(15px);
+            }
+            @keyframes bounce {
+                0%, 100% {
+                    transform: translateY(0);
+                }
+                50% {
+                    transform: translateY(-10px);
+                }
+            }
+            .demo-bounce {
+                animation: bounce 1s ease-in-out;
             }
         }
     </style>
@@ -188,8 +201,62 @@
         });
     });
 
-    // 
+    // Bring demo to front or back on click
+    let demoFront = false;
+    let demoClicked = false;
+    const demo = document.querySelector('.demo');
+    const container = document.querySelector('.container');
 
+    function swapCards() {
+        demoClicked = true;
+        demo.classList.remove('demo-bounce');
+        demo.style.transition = "all 0.4s ease";
+        demo.style.transform = "translateY(-60%)";
+
+        container.style.transition = "all 0.4s ease";
+        container.style.transform = "translateY(20%)";
+
+        setTimeout(() => {
+            if (demoFront) {
+                demo.style.zIndex = "0";
+            } else {
+                demo.style.zIndex = "2";
+            }
+            demoFront = !demoFront;
+        }, 250);
+
+        setTimeout(() => {
+            demo.style.transform = "translateY(0%)";
+            container.style.transform = "translateY(0%)";
+        }, 400);
+
+    }
+
+    function isPortrait() {
+        return window.matchMedia("(orientation: portrait)").matches;
+    }
+
+    demo.addEventListener('click', function() {
+        if (isPortrait()) {
+            swapCards();
+        }
+    });
+
+    container.addEventListener('click', function() {
+        if (isPortrait() && demoFront) {
+            swapCards();
+        }
+    });
+
+    // Bounce
+    function bounceDemo() {
+        if (demoClicked === false) {
+            demo.classList.add('demo-bounce');
+            setTimeout(() => demo.classList.remove('demo-bounce'), 1000);
+        }
+    }
+    bounceDemo();
+    setInterval(bounceDemo, 2000);
 
     </script>
 </body>
