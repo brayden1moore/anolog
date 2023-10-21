@@ -1200,6 +1200,7 @@
             logDivider.className = "log-divider";
             logItem.appendChild(logDivider);
 
+            const logItemsContainer = document.getElementById('log-items-container');
             logItemsContainer.prepend(logItem);
             addLogClickListener(logItem);
         }
