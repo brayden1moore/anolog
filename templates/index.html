@@ -1142,6 +1142,7 @@
                     newListItem.appendChild(newLink);
                     taskUlElement.insertBefore(newListItem, newTaskLi);
                     newTaskInput.value = '';
+                    newLink.setAttribute('data-taskId', data.id);
 
                     // Adjust colors for darkmode
                     if (darkmode) {
