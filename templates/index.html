@@ -618,6 +618,16 @@
             --rotation: 0deg;
         }
 
+        .toggle-completed {
+            font-size: 10pt;
+            opacity: 0.2;
+            cursor: pointer;
+            transition: 0.3s ease;
+        }
+        .toggle-completed:hover {
+            opacity: 0.6;
+        }
+
         @keyframes confetti-animation {
             0% {
                 transform: translate(var(--initial-x), var(--initial-y)) rotate(var(--rotation));
@@ -676,11 +686,11 @@
                 <i id="menu-button" class="fa-solid fa-bars"></i>
             </div>
             <div class="list-div">
-                <h2 class="header">Projects</h2>
+                <h2 class="header">Projects <i id="toggle-completed-projects" title="Show Completed Projects" class="toggle-completed fa-solid fa-eye-slash"></i></h2>
                 <ul id="project-list-ul">
                 </ul>
                 <div class="divider"></div>
-                <h2 class="header">Tasks</h2>
+                <h2 class="header">Tasks <i id="toggle-completed-tasks" title="Show Completed Tasks" class="toggle-completed fa-solid fa-eye-slash"></i></h2>
                 <ul id="task-list-ul">
                 </ul>
             </div>
@@ -751,6 +761,8 @@
     var darkmode = {{ darkmode|lower }};
     let intervalId = null;
     let firstLoad = true;
+    let showCompletedTasks = false;
+    let showCompletedProjects = false;
 
     // Adjust log container height
     function adjustLogItemsContainerHeight() {
@@ -799,6 +811,13 @@
                         
                         if (project.is_completed) {
                             newLink.style.textDecoration = 'line-through';
+                            newListItem.setAttribute('data-completed', true);
+                            newListItem.style.height = '0px';
+                            newListItem.style.overflow = 'hidden';
+                            newListItem.style.margin = 'auto';
+                        }
+                        else {
+                            newListItem.setAttribute('data-completed', false);
                         }
 
                         // Adjust colors for darkmode
@@ -883,9 +902,14 @@
                     // Mark completed if is_complete
                     if (task.is_completed === true) {
                         newTaskLink.style.textDecoration = 'line-through';
+                        newTaskListItem.setAttribute('data-completed', true);
+                        newTaskListItem.style.height = '0px';
+                        newTaskListItem.style.overflow = 'hidden';
+                        newTaskListItem.style.margin = 'auto';
                     }
                     else {
                         newTaskLink.style.textDecoration = '';
+                        newTaskListItem.setAttribute('data-completed', false);
                     }
 
                     // Make bold if it is the selected task
@@ -1089,6 +1113,7 @@
                     const newLink = document.createElement('p');
                     newLink.className = 'task-or-project';
                     newLink.textContent = newProjectName;
+                    newListItem.setAttribute('data-completed', false);
 
                     // Adjust colors for darkmode
                     if (darkmode) {
@@ -1139,6 +1164,8 @@
                     const newLink = document.createElement('p');
                     newLink.className = 'task-or-project';
                     newLink.textContent = newTaskName;
+                    newListItem.setAttribute('data-completed', false);
+
                     newListItem.appendChild(newLink);
                     taskUlElement.insertBefore(newListItem, newTaskLi);
                     newTaskInput.value = '';
@@ -1628,16 +1655,19 @@
     // Complete task
     function completeTask(taskCheckbox, taskLabel, isCompleted) {
         const selectedTask = document.querySelector(`p[data-taskId="${globalTaskId}"]`);
+        const listItem = selectedTask.closest('li');
 
         if (isCompleted) {
             selectedTask.style.textDecoration = 'line-through';
             taskLabel.style.textDecoration = 'line-through';
             taskCheckbox.checked = true;
+            listItem.setAttribute('data-completed',true);
         }
         else {
             selectedTask.style.textDecoration = '';
             taskLabel.style.textDecoration = '';
             taskCheckbox.checked = false;
+            listItem.setAttribute('data-completed',false);
         }
 
         fetch(`/tasks`, {
@@ -1665,12 +1695,15 @@
     // Complete project
     function completeProject(projectId, isCompleted) {
         const selectedProject = document.querySelector(`p[data-projectId="${globalProjectId}"]`);
-
+        const listItem = selectedProject.closest('li');
+        
         if (isCompleted) {
             selectedProject.style.textDecoration = 'line-through';
+            listItem.setAttribute('data-completed',true);
         }
         else {
             selectedProject.style.textDecoration = '';
+            listItem.setAttribute('data-completed',false);
         }
 
         fetch(`/projects`, {
@@ -2124,6 +2157,59 @@
         link.href = canvas.toDataURL('image/x-icon');
     }
     updateFavicon('{{ primary_color }}');
+
+    // Toggle show completed
+    function toggleShowCompleted(type) {
+        let completed = document.querySelectorAll(`#${type}-list-ul li[data-completed=true]`);
+        if (type === 'task') {
+            showCompleted = showCompletedTasks;
+        }
+        else {
+            showCompleted = showCompletedProjects;
+        }
+        completed.forEach(item => {
+            if (showCompleted) {
+                item.style.height = '0px';
+                item.style.overflow = 'hidden';
+                item.style.margin = 'auto';
+            } else {
+                item.style.height = 'auto';
+                item.style.overflow = 'visible';
+                item.style.marginBottom = '5px';
+            }
+        });
+        if (type === 'task') {
+            showCompletedTasks = !showCompletedTasks;
+        }
+        else {
+            showCompletedProjects = !showCompletedProjects;
+        }
+
+    }
+
+    const showCompletedTaskToggle = document.getElementById('toggle-completed-tasks');
+    showCompletedTaskToggle.addEventListener('click', function() {
+        toggleShowCompleted('task');
+        if (showCompletedTasks) {
+            showCompletedTaskToggle.className = 'toggle-completed fa-solid fa-eye';
+            showCompletedTaskToggle.title = "Hide Completed Tasks";
+        } else {
+            showCompletedTaskToggle.className = 'toggle-completed fa-solid fa-eye-slash';
+            showCompletedTaskToggle.title = "Hide Completed Tasks";
+        }
+    });
+
+    const showCompletedProjectToggle = document.getElementById('toggle-completed-projects');
+    showCompletedProjectToggle.addEventListener('click', function() {
+        toggleShowCompleted('project');
+        if (showCompletedProjects) {
+            showCompletedProjectToggle.className = 'toggle-completed fa-solid fa-eye';
+            showCompletedProjectToggle.title = "Hide Completed Projects";
+        } else {
+            showCompletedProjectToggle.className = 'toggle-completed fa-solid fa-eye-slash';
+            showCompletedProjectToggle.title = "Hide Completed Projects";
+        }
+    });
 
     // Load
     populateProjects();
