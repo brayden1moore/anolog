@@ -619,14 +619,34 @@
         }
 
         .toggle-completed {
+            margin-left: 2px;
+            width: 15px;
+            color: var(--primary-color);
             font-size: 10pt;
-            opacity: 0.2;
             cursor: pointer;
             transition: 0.3s ease;
+            opacity: 0;  
+        }
+        .list-container:hover .toggle-completed {
+            opacity: 0.6; 
         }
         .toggle-completed:hover {
-            opacity: 0.6;
+            opacity: 1; 
         }
+        .add-button {
+            color: var(--primary-color);
+            font-size: 12pt;
+            cursor: pointer;
+            transition: 0.3s ease;
+            opacity: 0; 
+        }
+        .list-container:hover .add-button {
+            opacity: 0.6; 
+        }
+        .add-button:hover {
+            opacity: 1; 
+        }
+
 
         @keyframes confetti-animation {
             0% {
@@ -686,11 +706,16 @@
                 <i id="menu-button" class="fa-solid fa-bars"></i>
             </div>
             <div class="list-div">
-                <h2 class="header">Projects <i id="toggle-completed-projects" title="Show Completed Projects" class="toggle-completed fa-solid fa-eye-slash"></i></h2>
+                <h2 class="header">Projects 
+                    <i id="toggle-completed-projects" title="Show Completed Projects" class="toggle-completed fa-solid fa-eye-slash"></i>
+                    <i id="add-a-project" title="Add a Project" class="add-button fa-solid fa-plus"></i>
+                </h2>
                 <ul id="project-list-ul">
                 </ul>
                 <div class="divider"></div>
-                <h2 class="header">Tasks <i id="toggle-completed-tasks" title="Show Completed Tasks" class="toggle-completed fa-solid fa-eye-slash"></i></h2>
+                <h2 class="header">Tasks 
+                    <i id="toggle-completed-tasks" title="Show Completed Tasks" class="toggle-completed fa-solid fa-eye-slash"></i>
+                    <i id="add-a-task" title="Add a Task" class="add-button fa-solid fa-plus"></i></h2>
                 <ul id="task-list-ul">
                 </ul>
             </div>
@@ -839,27 +864,7 @@
                         ulElement.appendChild(newListItem);
                     }
                 });
-                
-                // Add the input list item at the end
-                const newProjectLi = document.createElement('li');
-                newProjectLi.id = 'new-project-li';
-                
-                const newProjectInput = document.createElement('input');
-                newProjectInput.type = 'text';
-                newProjectInput.id = 'new-project-input';
-                if (darkmode) {
-                    newProjectInput.classList.add('darkmode');
-                }
 
-                newProjectInput.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') {
-                        addProject();
-                        newProjectInput.focus();
-                    }
-                });
-                
-                newProjectLi.appendChild(newProjectInput);
-                ulElement.appendChild(newProjectLi);
             });
     }
 
@@ -944,27 +949,6 @@
                     addHoverListener(newTaskLink, 'task', task.id);
                 }
             });
-
-            // Add the input list item at the end
-            const newTaskLi = document.createElement('li');
-            newTaskLi.id = 'new-task-li';
-            
-            const newTaskInput = document.createElement('input');
-            newTaskInput.type = 'text';
-            newTaskInput.id = 'new-task-input';
-            if (darkmode) {
-                    newTaskInput.classList.add('darkmode');
-            }
-
-            newTaskInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    addTask(projectId);
-                    newTaskInput.focus();
-                }
-            });
-            
-            newTaskLi.appendChild(newTaskInput);
-            taskUlElement.appendChild(newTaskLi);
 
         });
     }
@@ -2186,7 +2170,6 @@
         }
 
     }
-
     const showCompletedTaskToggle = document.getElementById('toggle-completed-tasks');
     showCompletedTaskToggle.addEventListener('click', function() {
         toggleShowCompleted('task');
@@ -2198,7 +2181,6 @@
             showCompletedTaskToggle.title = "Hide Completed Tasks";
         }
     });
-
     const showCompletedProjectToggle = document.getElementById('toggle-completed-projects');
     showCompletedProjectToggle.addEventListener('click', function() {
         toggleShowCompleted('project');
@@ -2210,6 +2192,54 @@
             showCompletedProjectToggle.title = "Hide Completed Projects";
         }
     });
+
+    // Add a task or project
+    function addNewItem(type) {
+        const projectUlElement = document.getElementById('project-list-ul');
+        const taskUlElement = document.getElementById('task-list-ul');
+        const targetUl = type === 'project' ? projectUlElement : taskUlElement;
+
+        const newLi = document.createElement('li');
+        newLi.id = `new-${type}-li`;
+
+        const newInput = document.createElement('input');
+        newInput.type = 'text';
+        newInput.id = `new-${type}-input`;
+        if (darkmode) {
+            newInput.classList.add('darkmode');
+        }
+
+        newInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                if (type === 'project') {
+                    addProject();
+                } else if (type === 'task') {
+                    addTask(globalProjectId);
+                }
+                newInput.focus();
+            }
+        });
+
+        // Remove the input when it loses focus
+        newInput.addEventListener('blur', function() {
+            targetUl.removeChild(newLi);
+        });
+
+        newLi.appendChild(newInput);
+        targetUl.insertBefore(newLi, targetUl.firstChild);
+        newInput.focus();
+    }
+
+    document.querySelectorAll('.add-button').forEach(button => {
+        button.addEventListener('click', function() {
+            if (this.id === 'add-a-task') {
+                addNewItem('task');
+            } else if (this.id === 'add-a-project') {
+                addNewItem('project');
+            }
+        });
+    });
+
 
     // Load
     populateProjects();
