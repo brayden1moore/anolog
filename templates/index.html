@@ -73,12 +73,12 @@
         }
 
         ::-webkit-scrollbar-thumb {
-            background:  #161616;
+            background:  var(--primary-color);
             border-radius: 5px;
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background:  #161616;
+            background:  var(--primary-color);
         }
         .fa-solid, .fas {
             font-size: 16px;
@@ -146,12 +146,13 @@
             margin-left: 30px;
             margin-right: 40px;
             width: 200px;
+            height: auto;
         }
         .divider {
             margin-top: 10px;
             margin-bottom: 25px;
             border-radius: 5px;
-            border-top: 3px solid #161616;
+            border-top: 3px solid var(--primary-color);
             height: 1px;
             width: 100%;
         }
@@ -211,7 +212,8 @@
         #project-list-ul {
             margin-bottom: 30px;
             width: 95%;
-            height: 130px;
+            height: auto;
+            max-height: 155px;
             overflow-y: scroll;
             font-size: large;
             margin-left: 0;
@@ -219,7 +221,6 @@
         }
         #task-list-ul {
             width: 95%;
-            height: 320px;
             overflow-y: scroll;
             margin-left: 0;
             padding-left: 20px;
@@ -375,7 +376,6 @@
             box-shadow: 0 16px 13px -6px rgba(0, 0, 0, 0.5)
         }
         ::-webkit-scrollbar {
-            background: #161616;
             cursor: pointer;
             width: 5px;
         }
@@ -625,10 +625,10 @@
             font-size: 10pt;
             cursor: pointer;
             transition: 0.3s ease;
-            opacity: 0;  
+            opacity: 0.5;  
         }
         .list-container:hover .toggle-completed {
-            opacity: 0.6; 
+            opacity: 0.8; 
         }
         .toggle-completed:hover {
             opacity: 1; 
@@ -638,10 +638,10 @@
             font-size: 12pt;
             cursor: pointer;
             transition: 0.3s ease;
-            opacity: 0; 
+            opacity: 0.5; 
         }
         .list-container:hover .add-button {
-            opacity: 0.6; 
+            opacity: 0.8; 
         }
         .add-button:hover {
             opacity: 1; 
@@ -697,11 +697,9 @@
 
         </div>
     </header>
-
-    <div class="divider"></div>
     
     <div class="content-div">
-        <div class="list-container list-collapsed">
+        <div id='list-container' class="list-container list-collapsed">
             <div class="toggle">
                 <i id="menu-button" class="fa-solid fa-bars"></i>
             </div>
@@ -712,7 +710,6 @@
                 </h2>
                 <ul id="project-list-ul">
                 </ul>
-                <div class="divider"></div>
                 <h2 class="header">Tasks 
                     <i id="toggle-completed-tasks" title="Show Completed Tasks" class="toggle-completed fa-solid fa-eye-slash"></i>
                     <i id="add-a-task" title="Add a Task" class="add-button fa-solid fa-plus"></i></h2>
@@ -2238,6 +2235,19 @@
                 addNewItem('project');
             }
         });
+    });
+
+    // Keep project and task list heights OK
+    function adjustTaskListHeight() {
+        const projectList = document.getElementById('project-list-ul');
+        const taskList = document.getElementById('task-list-ul');
+        const listContainer = document.getElementById('list-container');
+
+        const additionalHeight = 335 + (155 - projectList.offsetHeight);
+        taskList.style.height = `${additionalHeight}px`;
+    }
+    document.querySelectorAll('.list-container').forEach(div => {
+        div.addEventListener('click', adjustTaskListHeight);
     });
 
 
