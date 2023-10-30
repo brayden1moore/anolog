@@ -999,7 +999,7 @@
                         const localDateStr = dateObj.toLocaleString();
 
                         let pin = '';
-                        let opacity = '0.5';
+                        let opacity = '0.8';
                         if (log.is_pinned) {
                             opacity = '0.9';
                             pin = '<i class="fa-solid fa-thumbtack" id="pin" style="font-size: 8pt"></i>';
@@ -1037,7 +1037,7 @@
                         pin = unpinnedItem.querySelector('#pin')
                         unpinnedItem.removeChild(pin);
                         unpinnedItem.style.height = '0px';
-                        unpinnedItem.style.opacity = '0.5';
+                        unpinnedItem.style.opacity = '0.8';
                         unpinnedItem.setAttribute('data-isPinned', 'false');
                     }
                 });
