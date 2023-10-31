@@ -992,7 +992,7 @@
             .then(data => {
                 // Append responses to entry log
                 data.forEach((log, index) => {
-                    showIt = (log.description.includes("Timer stop (") || log.description.includes("Timer start (")) ? false : true;
+                    showIt = (log.description.includes("Timer stop (") || log.description.includes("Timer start (") || log.description.includes("Timer edited to (")) ? false : true;
                     console.log(showIt);
                     if (showIt) {
                         const dateObj = new Date(log.created_at);
