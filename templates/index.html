@@ -1181,10 +1181,12 @@
         else if (logType === "Stop") {
             logText = `Timer stop (${clock.textContent})`;
         }
+        else if (logType === "Edit") {
+            logText = `Timer edited to (${clock.textContent})`;
+        }
         else {
             logText = logInput.value;
             isTimer = false;
-
             // Build log entry
             const tempId = Math.floor(Math.random() * 90000) + 10000;
             const dateObj = new Date();
@@ -1559,6 +1561,54 @@
         const secs = String(globalSeconds % 60).padStart(2, '0');
         clock.textContent = `${hrs}.${mins}.${secs}`;
     }
+
+    // Handle clock edit
+    document.getElementById('clock').addEventListener('click', makeEditable);
+    function makeEditable() {
+        // Convert current time to editable format
+        let currentText = this.innerText;
+        let input = document.createElement('input');
+        input.value = currentText;
+        input.className = 'rename-input darkmode';
+        this.replaceWith(input);
+        
+        // Focus and select the input content
+        input.focus();
+        input.select();
+
+        // Add event listener for blur and key events
+        input.addEventListener('blur', processEdit);
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                processEdit.call(this, e);
+            }
+        });
+    }
+    function processEdit(e) {
+            this.removeEventListener('blur', processEdit);
+            this.removeEventListener('keydown', processEdit);
+            let value = e.target.value;
+            let newClock = document.createElement('p');
+            newClock.id = 'clock';
+            newClock.addEventListener('click', makeEditable);
+            if (isValidTime(value)) {
+                let seconds = convertToSeconds(value);
+                console.log(seconds);
+                globalSeconds = seconds;
+                newClock.textContent = value;
+                e.target.replaceWith(newClock);
+                addLog(globalTaskId, 'Edit');
+            }
+    }
+    function isValidTime(time) {
+        let regex = /^([0-9]{2}\.){2}[0-9]{2}$/;
+        return regex.test(time);
+    }
+    function convertToSeconds(time) {
+        let [hours, minutes, seconds] = time.split('.').map(Number);
+        return hours * 3600 + minutes * 60 + seconds;
+    }
+
 
     // Play pause toggle
     let toggleClock = (function() {
