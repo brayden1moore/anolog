@@ -2093,20 +2093,6 @@
         if (initialToggle) {
             darkmode = !darkmode;
         }
-        else {
-            // Toggle new task inputs if they exist
-            const newProjectInput = document.getElementById('new-project-input');
-            const newTaskInput = document.getElementById('new-task-input');
-            
-            if (darkmode) {
-                newProjectInput.classList.remove('darkmode');
-                newTaskInput.classList.remove('darkmode');
-            }
-            else {
-                newProjectInput.classList.add('darkmode');
-                newTaskInput.classList.add('darkmode');
-            }
-        }
 
         if (darkmode) {
             // Make lightmode

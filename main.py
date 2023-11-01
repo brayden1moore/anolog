@@ -76,13 +76,14 @@ def login():
                 return redirect(url_for('homepage'))
 
             if user:
-                print(user.password)
-                print(bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8'))
-                if bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
-                    login_user(user)
-                    return redirect(url_for('homepage'))
+                if user.password.startswith('$2b$'):  
+                    if bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
+                        login_user(user)
+                        return redirect(url_for('homepage'))
+                    else:
+                        message = 'Incorrect Password'
                 else:
-                    message = 'Incorrect Password'
+                    message = 'Invalid stored password format'
 
         finally:
             Session.remove()
