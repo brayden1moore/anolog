@@ -198,6 +198,7 @@ def homepage():
 
 # List all projects
 @app.route('/projects', methods=['GET'])
+@login_required
 def list_projects():
     if current_user.is_authenticated:
         user_id = current_user.id
@@ -215,6 +216,7 @@ def list_projects():
 
 # List tasks
 @app.route('/tasks', methods=['GET'])
+@login_required
 def list_tasks():
     session = Session()
     try:
@@ -233,6 +235,7 @@ def list_tasks():
 
 # List log entries
 @app.route('/logs', methods=['GET'])
+@login_required
 def list_logs():
     session = Session()
     try:
@@ -245,6 +248,7 @@ def list_logs():
 
 # Get up-to-date project hours
 @app.route('/hours', methods=['GET'])
+@login_required
 def get_hours():
     session = Session()
     try:
@@ -260,6 +264,7 @@ def get_hours():
 
 # Create a new project
 @app.route('/projects', methods=['POST'])
+@login_required
 def create_project():
     session = Session()
     try:
@@ -280,6 +285,7 @@ def create_project():
 
 # Create a new task
 @app.route('/tasks', methods=['POST'])
+@login_required
 def create_task():
     session = Session()
     try:
@@ -300,6 +306,7 @@ def create_task():
 
 # Create a new log
 @app.route('/logs', methods=['POST'])
+@login_required
 def create_log():
     session = Session()
     try:
@@ -324,6 +331,7 @@ def create_log():
 
 # Update a project
 @app.route('/projects', methods=['PUT'])
+@login_required
 def update_project():
     session = Session()
     try:
@@ -353,6 +361,7 @@ def update_project():
 
 # Update a task
 @app.route('/tasks', methods=['PUT'])
+@login_required
 def update_task():
     session = Session()
     try:
@@ -387,6 +396,7 @@ def update_task():
 
 # Update a log
 @app.route('/logs', methods=['PUT'])
+@login_required
 def update_log():
     session = Session()
     try:
@@ -409,6 +419,7 @@ def update_log():
 
 # Update a user
 @app.route('/user', methods=['PUT'])
+@login_required
 def update_user():
     session = Session()
     try:
@@ -433,6 +444,7 @@ def update_user():
 
 # Export as csv
 @app.route('/export_csv', methods=['GET'])
+@login_required
 def export_csv():
     session = Session() 
     user_id = request.args.get('user_id')
