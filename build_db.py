@@ -1,5 +1,5 @@
 from sqlalchemy import text, Boolean, create_engine, Column, Integer, String, ForeignKey, DateTime, func
-from sqlalchemy.orm import relationship, sessionmaker, declarative_base
+from sqlalchemy.orm import relationship, sessionmaker, declarative_base, object_session
 from flask_login import UserMixin
 import json
 
@@ -13,7 +13,6 @@ config = {'GOOGLE_PASS':os.environ['GOOGLE_PASS'],
           'POSTGRES_PASS':os.environ['POSTGRES_PASS'],
           'SALT_PASS':os.environ['SALT_PASS'],
           'FLASK_KEY':os.environ['FLASK_KEY']}
-
 Base = declarative_base()
 
 class User(Base, UserMixin):
@@ -55,6 +54,17 @@ class Log(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     description = Column(String)
     is_pinned = Column(Boolean, default=False)
+
+class Time(Base):
+    __tablename__ = 'time'
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'))
+    project_id = Column(Integer, ForeignKey('projects.id'))
+    task_id = Column(Integer, ForeignKey('tasks.id'))
+    start = Column(DateTime(timezone=True))
+    end = Column(DateTime(timezone=True))
+    duration = Column(Integer, default=0)
+    is_visible = Column(Boolean, default=True)
 
 username = 'doadmin'
 password = config['POSTGRES_PASS']
