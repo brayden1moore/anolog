@@ -1,9 +1,9 @@
 from urllib import response
 from flask import Flask, request, jsonify, render_template, Response, redirect, url_for
-from build_db import User, Project, Task, Log, engine
+from build_db import User, Project, Task, Log, Time, engine
 from sqlalchemy.orm import relationship, sessionmaker, scoped_session
 from sqlalchemy import desc, func
-from datetime import datetime
+from datetime import datetime, timedelta
 from io import StringIO
 import csv
 import bcrypt
@@ -192,11 +192,11 @@ def homepage():
             user = session.query(User).filter(User.id==user_id).first()
             primary_color = '#9bcaad' if not user.color else user.color
             darkmode = False if not user.darkmode else user.darkmode
-            print(darkmode)
         return render_template('index.html', user_id=user_id, primary_color=primary_color, darkmode=darkmode)
     finally:
         Session.remove()
 
+## Get
 # List all projects
 @app.route('/projects', methods=['GET'])
 @login_required
@@ -205,10 +205,8 @@ def list_projects():
         user_id = current_user.id
         session = Session()
         try:
-            user_id = current_user.id
+            print('')
             projects = session.query(Project).filter(Project.user_id==user_id, Project.is_visible==True).order_by(Project.is_completed.asc(), Project.updated_at.desc()).all()
-            for i in projects:
-                print(i.id, i.name, i.is_visible)
             return jsonify([{'id':project.id,'name':project.name,'user_id':project.user_id, 'is_visible':project.is_visible, 'is_completed':project.is_completed}for project in projects])
         finally:
             Session.remove()
@@ -247,6 +245,58 @@ def list_logs():
     finally:
         Session.remove()
 
+# List time blocks
+@app.route('/time', methods=['GET'])
+@login_required
+def list_time():
+    session = Session()
+    try:
+        project_id = request.args.get('project_id')
+        query_results = (
+            session.query(Time.id, Task.id, Task.name, Time.start, Time.end, Time.duration)
+            .join(Task, Time.task_id == Task.id)
+            .filter(Time.project_id == project_id, Time.is_visible == True)
+            .order_by(Time.start)
+        ).all()
+
+        assert len(query_results) > 0 
+        print(query_results)
+        time_entries = [
+            {
+                'id': time_id, 
+                'task_id': task_id,
+                'task_name': task_name,
+                'start': start.strftime('%Y-%m-%dT%H:%M'), 
+                'end': end.strftime('%Y-%m-%dT%H:%M'), 
+                'duration': duration
+            } 
+            for time_id, task_id, task_name, start, end, duration in query_results
+        ]
+        return jsonify(time_entries)
+    
+    except AssertionError:
+        print('Creating new time blocks')
+        tasks = session.query(Task).filter(Task.project_id==project_id, Task.is_visible==True).order_by(Task.created_at.asc()).all()
+        for task in tasks:
+            start = task.created_at
+            duration = task.total_seconds
+            end = start + timedelta(seconds=duration)
+            new_time = Time(user_id=current_user.id, project_id=task.project_id, task_id=task.id, start=start, end=end, duration=duration, is_visible=True)
+            session.add(new_time)
+        Session.commit()
+
+        time_entry = {
+            'id': new_time.id, 
+            'task_name': task.name,
+            'start': start.strftime('%Y-%m-%dT%H:%M'), 
+            'end': end.strftime('%Y-%m-%dT%H:%M'), 
+            'duration': duration
+        }
+        return jsonify(time_entry)
+
+    finally:    
+        Session.remove()
+
 # Get up-to-date project hours
 @app.route('/hours', methods=['GET'])
 @login_required
@@ -263,6 +313,7 @@ def get_hours():
     finally:
         Session.remove()
 
+## Create
 # Create a new project
 @app.route('/projects', methods=['POST'])
 @login_required
@@ -330,6 +381,30 @@ def create_log():
     finally:
         Session.remove()
 
+# Create a new time block
+@app.route('/time', methods=['POST'])
+@login_required
+def create_time():
+    session = Session()
+    try:
+        data = request.json
+        print(data)
+        project_id = data['projectId']
+        task_id = data['taskId']
+        start = data['start']
+        end = data['end']
+        duration = data['duration']
+
+        new_time = Time(user_id=current_user.id, project_id=project_id, task_id=task_id, start=start, end=end, duration=duration)
+        session.add(new_time)
+        session.commit()
+        return jsonify({"message": "Time block created", "id":new_time.id}), 201
+    
+    finally:
+        Session.remove()
+
+
+## Update
 # Update a project
 @app.route('/projects', methods=['PUT'])
 @login_required
@@ -418,6 +493,35 @@ def update_log():
     finally:
         Session.remove()
 
+# Update a time block
+@app.route('/time', methods=['PUT'])
+@login_required
+def update_time():
+    session = Session()
+    try:
+        data = request.json
+        time_id = data.get('timeId')
+        time = session.query(Time).filter(Time.id == time_id).first()
+
+        new_start = data.get('start')
+        new_end = data.get('end')
+        new_duration = data.get('duration')
+        new_is_visible = data.get('isVisible')
+
+        if new_is_visible is not None:
+            time.is_visible = new_is_visible
+        else:
+            time.start = new_start
+            time.end = new_end
+            time.duration = new_duration
+
+        session.commit()
+        return jsonify({"message": "Time block updated"}), 200
+
+    finally:
+        Session.remove()
+
+
 # Update a user
 @app.route('/user', methods=['PUT'])
 @login_required
@@ -443,6 +547,7 @@ def update_user():
     finally:
         Session.remove()
 
+## Export
 # Export as csv
 @app.route('/export_csv', methods=['GET'])
 @login_required
@@ -451,6 +556,7 @@ def export_csv():
     user_id = request.args.get('user_id')
     project_id = request.args.get('project_id')
     task_id = request.args.get('task_id')
+    time = request.args.get('time')
 
     output = StringIO()
     csv_writer = csv.writer(output)
@@ -470,6 +576,14 @@ def export_csv():
             data = session.query(Log).filter(Log.task_id==task_id).order_by(Log.created_at.asc()).all()
             model = Log
             filename = f"anolog_logs_{the_time}"
+        elif time:
+            data = (
+                session.query(Time)
+                .filter(Time.project_id == time, Time.is_visible == True)
+                .order_by(Time.start)
+            ).all()     
+            model = Time
+            filename = f"anolog_time_{the_time}"
 
         if model:
             csv_writer.writerow([column.name for column in model.__table__.columns])
