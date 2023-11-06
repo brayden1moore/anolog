@@ -1909,7 +1909,7 @@
     let toggleClock = (function() {
         const button = document.querySelector('.button-common');
         const toggleIcon = document.getElementById('toggle-icon');
-        const projectSpace = document.getElementById('project-space');
+        const clockDiv = document.getElementById('clock-div');
 
         let timerStartDateTime = null;
         let timerDuration = 0;
@@ -1917,7 +1917,7 @@
 
         return function() {
             if (toggleIcon.classList.contains('fa-hourglass-end')) {
-                    projectSpace.classList.add('fade-in-animation');
+                    clockDiv.classList.add('fade-in-animation');
                     updateClock(true);
                     timerDuration = 0;
                     timerStartDateTime = new Date();
@@ -1929,7 +1929,7 @@
                         updateClock(true);
                     }, 1000);
                 } else {
-                    projectSpace.classList.remove('fade-in-animation');
+                    clockDiv.classList.remove('fade-in-animation');
                     clockStartTime = null;
                     toggleIcon.classList.remove('fa-hourglass-half');
                     toggleIcon.classList.add('fa-hourglass-end');
