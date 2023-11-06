@@ -136,10 +136,10 @@
             width: 40px !important;
         }
         #project-list-container {
-            width: 100%;
+            width: 90%;
         }
         #task-list-container {
-            width: 100%;
+            width: 90%;
         }
 
         .list-div {
@@ -217,7 +217,7 @@
         #project-list-ul {
             margin-top: 5px;
             margin-bottom: 20px;
-            width: 95%;
+            width: 90%;
             height: auto;
             max-height: 140px;
             overflow-y: scroll;
@@ -228,7 +228,7 @@
         #task-list-ul {
             margin-top: 5px;
             margin-bottom: 10px;
-            width: 95%;
+            width: 90%;
             height: auto;
             max-height: 250px;
             overflow-y: scroll;
@@ -276,7 +276,7 @@
             border-radius: 10px;
             height: 600px;
             box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);
-            transition: 0.3s ease;
+            transition: opacity 0.5s ease;
         }
         #project-name {
             font-size: 16pt;
@@ -657,10 +657,10 @@
             font-size: 10pt;
             cursor: pointer;
             transition: 0.3s ease;
-            opacity: 0.3;  
+            opacity: 0.1;  
         }
         .list-container:hover .toggle-completed {
-            opacity: 0.5; 
+            opacity: 0.3; 
         }
         .toggle-completed:hover {
             opacity: 1; 
@@ -670,10 +670,10 @@
             font-size: 12pt;
             cursor: pointer;
             transition: 0.3s ease;
-            opacity: 0.3; 
+            opacity: 0.1; 
         }
         .list-container:hover .add-button {
-            opacity: 0.5; 
+            opacity: 0.3; 
         }
         .add-button:hover {
             opacity: 1; 
@@ -703,7 +703,7 @@
             background-color:none;
             opacity: 1;
             height: 100%;
-            transition: background-color 0.3s ease;
+            transition: 0.3s ease;
             border: 2px dotted var(--primary-color);
         }
         .time-block:hover {
@@ -787,6 +787,18 @@
         #delete-time-block-button:hover {
             opacity: 0.6;
         }
+
+        @keyframes fadeIn {
+            0%, 100% {
+                opacity: 1;
+            }
+            33% {
+                opacity: 0.9;
+            }
+        }
+        .fade-in-animation {
+            animation: fadeIn 1s ease infinite;
+        }
       
         @keyframes confetti-animation {
             0% {
@@ -808,7 +820,7 @@
                 display: block;
             }
             .list-div {
-                width: 100%;
+                width: 90%;
                 display: flex;
             }
             #project-list-container {
@@ -1827,6 +1839,7 @@
     let clockStartTime = null;
     function updateClock(countUp) {
         const button = document.querySelector('.button-common');
+        const projectSpace = document.getElementById('project-space');
         if (countUp === true) {
             currentRotation = 180;
         }
@@ -1896,6 +1909,7 @@
     let toggleClock = (function() {
         const button = document.querySelector('.button-common');
         const toggleIcon = document.getElementById('toggle-icon');
+        const projectSpace = document.getElementById('project-space');
 
         let timerStartDateTime = null;
         let timerDuration = 0;
@@ -1903,6 +1917,7 @@
 
         return function() {
             if (toggleIcon.classList.contains('fa-hourglass-end')) {
+                    projectSpace.classList.add('fade-in-animation');
                     updateClock(true);
                     timerDuration = 0;
                     timerStartDateTime = new Date();
@@ -1914,6 +1929,7 @@
                         updateClock(true);
                     }, 1000);
                 } else {
+                    projectSpace.classList.remove('fade-in-animation');
                     clockStartTime = null;
                     toggleIcon.classList.remove('fa-hourglass-half');
                     toggleIcon.classList.add('fa-hourglass-end');
@@ -2342,13 +2358,13 @@
         if (menuButton.className === "fa-solid fa-bars") {
             listContainer.classList.remove('list-collapsed');
             menuButton.className = "fa-solid fa-square-minus";
-            resizeTimeBlocks();
+            setTimeout(resizeTimeBlocks,150);
         }
         else {          
             listContainer.classList.add('list-collapsed');
             void listContainer.offsetWidth;
             menuButton.className = "fa-solid fa-bars";
-            resizeTimeBlocks();
+            setTimeout(resizeTimeBlocks,150);
         }
     });
 
@@ -2375,17 +2391,22 @@
         if (window.innerWidth >= 769) {
             listContainer.classList.remove('list-collapsed');
             menuButton.className = "fa-solid fa-square-minus";
-        } else {
             resizeTimeBlocks();
+        } else {
             listContainer.classList.add('list-collapsed');
             menuButton.className = "fa-solid fa-bars";
+            resizeTimeBlocks();
         }
     }
+
     //setClassForScreenSize();
     window.addEventListener('resize', calculateListHeight);
-    window.addEventListener('resize', resizeTimeBlocks);
     window.addEventListener('resize', adjustLogItemsContainerHeight);
-    
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(resizeTimeBlocks, 100);
+    });
     
     // Pick color
     document.getElementById('picker-label').addEventListener('click', function() {
@@ -2476,7 +2497,7 @@
             taskList.style.color = "#161616";
             darkmodeIcon.className = "fa-regular fa-moon";
             darkmodeIcon.style.fontSize = "14pt";
-            list.style.backgroundColor = 'transparent';
+            list.style.backgroundColor = '#DDDDDD';
             title.style.color = "#161616";
             logo.style.background = "conic-gradient(transparent 0% 25%, #161616 25% 100%)";
         }
