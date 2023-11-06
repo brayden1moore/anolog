@@ -6,13 +6,14 @@ import json
 import os
 print(os.getcwd())
 
-#with open(r"C:\Users\Brayden\OneDrive - stern.nyu.edu\Brayden Moore LLC\Python\Projects\Anolog - Online\Anolog\app\config.json", 'r') as f:
-#    config = json.load(f)
-
-config = {'GOOGLE_PASS':os.environ['GOOGLE_PASS'],
-          'POSTGRES_PASS':os.environ['POSTGRES_PASS'],
-          'SALT_PASS':os.environ['SALT_PASS'],
-          'FLASK_KEY':os.environ['FLASK_KEY']}
+try:
+    with open(r"C:\Users\Brayden\OneDrive - stern.nyu.edu\Brayden Moore LLC\Python\Projects\Anolog - Online\Anolog\app\config.json", 'r') as f:
+        config = json.load(f)
+except:
+    config = {'GOOGLE_PASS':os.environ['GOOGLE_PASS'],
+            'POSTGRES_PASS':os.environ['POSTGRES_PASS'],
+            'SALT_PASS':os.environ['SALT_PASS'],
+            'FLASK_KEY':os.environ['FLASK_KEY']}
 Base = declarative_base()
 
 class User(Base, UserMixin):
@@ -22,7 +23,7 @@ class User(Base, UserMixin):
     email = Column(String, unique=True)
     username = Column(String)
     password = Column(String)
-    color = Column(String, default='#d3b683')
+    color = Column(String, default='#DDDDDD')
     darkmode = Column(Boolean, default=False)
 
 class Project(Base):
