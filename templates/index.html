@@ -135,12 +135,18 @@
             height: 40px !important;
             width: 40px !important;
         }
+        #project-list-container {
+            width: 100%;
+        }
+        #task-list-container {
+            width: 100%;
+        }
 
-        .list-div{
+        .list-div {
+            display: block;
             margin-top: 20px;
             margin-left: 30px;
-            margin-right: 40px;
-            width: 200px;
+            width: 240px;
             height: auto;
         }
         .divider {
@@ -194,7 +200,7 @@
             cursor: pointer;
             color: rgb(0, 0, 0);
             border-bottom: 1px solid transparent;
-            transition: border-bottom 0.3s
+            transition: 0.3s ease;
         }
         .task-or-project.darkmode {
             color: var(--primary-color);
@@ -203,12 +209,13 @@
             border-bottom: 1px solid #161616;
         }
         h2 {
-            font-size:16pt;
+            font-size:12pt;
+            color: #161616;
             margin-top: 5px;
             margin-bottom: 0px;
         }
         #project-list-ul {
-            margin-top: 10px;
+            margin-top: 5px;
             margin-bottom: 20px;
             width: 95%;
             height: auto;
@@ -216,11 +223,10 @@
             overflow-y: scroll;
             font-size: large;
             margin-left: 0;
-            padding-left: 0px;
-            list-style: none;
+            padding-left: 20px;
         }
         #task-list-ul {
-            margin-top: 10px;
+            margin-top: 5px;
             margin-bottom: 10px;
             width: 95%;
             height: auto;
@@ -423,7 +429,7 @@
             display: none;
         }
         #task-checkbox + label {
-            font-size: 12pt;
+            font-size: 14pt;
             display: flex;
             margin-right: auto;
             position: relative;
@@ -647,27 +653,27 @@
         .toggle-completed {
             margin-left: 2px;
             width: 15px;
-            color: var(--primary-color);
+            color: #161616;
             font-size: 10pt;
             cursor: pointer;
             transition: 0.3s ease;
-            opacity: 0.5;  
+            opacity: 0.3;  
         }
         .list-container:hover .toggle-completed {
-            opacity: 0.8; 
+            opacity: 0.5; 
         }
         .toggle-completed:hover {
             opacity: 1; 
         }
         .add-button {
-            color: var(--primary-color);
+            color: #161616;
             font-size: 12pt;
             cursor: pointer;
             transition: 0.3s ease;
-            opacity: 0.5; 
+            opacity: 0.3; 
         }
         .list-container:hover .add-button {
-            opacity: 0.8; 
+            opacity: 0.5; 
         }
         .add-button:hover {
             opacity: 1; 
@@ -698,7 +704,7 @@
             opacity: 1;
             height: 100%;
             transition: background-color 0.3s ease;
-            border: 1px dotted var(--primary-color);
+            border: 2px dotted var(--primary-color);
         }
         .time-block:hover {
             opacity: 0.7 !important;
@@ -755,7 +761,7 @@
         #x-axis-container {
             position: relative;
             width: 100%;
-            height: 20px; /* Adjust as needed */
+            height: 20px;
         }
         .x-axis {
             width: 100%;
@@ -798,6 +804,27 @@
             body {
                 width: 85vw;
             }
+            .content-div {
+                display: block;
+            }
+            .list-div {
+                width: 100%;
+                display: flex;
+            }
+            #project-list-container {
+                width: 50%;
+            }
+            #task-list-container {
+                width: 50%;
+            }
+            .list-collapsed {
+                width: 100% !important;
+                margin-bottom: 25px;
+            }
+            .list-container {
+                width: 100% !important;
+                margin-bottom: 25px;
+            }
             .list-collapsed:hover {
                 overflow: hidden;
                 height: 40px;
@@ -832,26 +859,33 @@
     </header>
     
     <div class="content-div">
-        <div id='list-container' class="list-container list-collapsed">
+        <div id='list-container' class="list-container">
             <div class="toggle">
-                <i id="menu-button" class="fa-solid fa-bars"></i>
+                <i id="menu-button" class="fa-solid fa-square-minus"></i>
             </div>
             <div class="list-div">
-                <h2 class="header">Projects 
-                    <i id="toggle-completed-projects" title="Show Completed Projects" class="toggle-completed fa-solid fa-eye-slash"></i>
-                    <i id="add-a-project" title="Add a Project" class="add-button fa-solid fa-plus"></i>
-                </h2>
-                <ul id="project-list-ul">
-                </ul>
-                <h2 class="header">Tasks 
-                    <i id="toggle-completed-tasks" title="Show Completed Tasks" class="toggle-completed fa-solid fa-eye-slash"></i>
-                    <i id="add-a-task" title="Add a Task" class="add-button fa-solid fa-plus"></i></h2>
-                <ul id="task-list-ul">
-                </ul>
+                <div id="project-list-container">
+                    <h2 class="header">Projects 
+                        <i id="toggle-completed-projects" title="Show Completed Projects" class="toggle-completed fa-solid fa-eye-slash"></i>
+                        <i id="add-a-project" title="Add a Project" class="add-button fa-solid fa-plus"></i>
+                    </h2>
+                    <ul id="project-list-ul">
+                    </ul>
+                </div>
+
+                <div id="task-list-container">
+                    <h2 class="header">Tasks 
+                        <i id="toggle-completed-tasks" title="Show Completed Tasks" class="toggle-completed fa-solid fa-eye-slash"></i>
+                        <i id="add-a-task" title="Add a Task" class="add-button fa-solid fa-plus"></i></h2>
+                    <ul id="task-list-ul">
+                    </ul>
+                </div>
+
             </div>
         </div>
 
         <div id="log-div">
+
             <div id="project-space">
                 <div id="project-content">
                     <h3 id="project-name"></h3>
@@ -899,8 +933,6 @@
                         <!-- Log items go here -->
                     </div>
                 </div>
-                <div id="grip" style="width: 10px; height: 10px; background: gray; position: absolute; bottom: 0; right: 0; cursor: nwse-resize;"></div>
-
             </div>
         </div>
         <div id="side-div">
@@ -983,7 +1015,7 @@
 
                         // Adjust colors for darkmode
                         if (darkmode) {
-                            ulElement.style.color = "#161616";
+                            ulElement.style.color = "{{primary_color}}";
                             newLink.style.color = "{{primary_color}}";
                         }
                         else {
@@ -1054,7 +1086,7 @@
 
                     // Adjust colors for darkmode
                     if (darkmode) {
-                        taskUlElement.style.color = "#161616";
+                        taskUlElement.style.color = "{{primary_color}}";
                         newTaskLink.style.color = "{{primary_color}}";
                         }
                     else {
@@ -1538,6 +1570,7 @@
             
             const allLinks = document.querySelectorAll('#project-list-ul li p');
             allLinks.forEach(link => {
+                link.style.fontSize = '12pt';
                 link.style.opacity = '0.5';
                 link.style.fontWeight = 'normal';
             });
@@ -1599,7 +1632,9 @@
         let hoverMenu;
         let timeoutId;
 
-        newLink.addEventListener('click', function(e) {
+        newLink.addEventListener('contextmenu', function(e) {
+            event.preventDefault();
+
             // Remove existing hover menus
             const existingMenu = document.querySelector('.custom-hover-menu');
             if (existingMenu) {
@@ -1613,7 +1648,7 @@
             // Rename option with FontAwesome icon
             const renameOption = document.createElement('li');
             const renameIcon = document.createElement('i');
-            renameIcon.className = 'fa fa-pencil-alt';  // FontAwesome class for pencil/edit icon
+            renameIcon.className = 'fa fa-pencil-alt'; 
             renameOption.appendChild(renameIcon);
 
             renameOption.addEventListener('click', function() {
@@ -2307,11 +2342,13 @@
         if (menuButton.className === "fa-solid fa-bars") {
             listContainer.classList.remove('list-collapsed');
             menuButton.className = "fa-solid fa-square-minus";
+            resizeTimeBlocks();
         }
         else {          
             listContainer.classList.add('list-collapsed');
             void listContainer.offsetWidth;
             menuButton.className = "fa-solid fa-bars";
+            resizeTimeBlocks();
         }
     });
 
@@ -2339,13 +2376,13 @@
             listContainer.classList.remove('list-collapsed');
             menuButton.className = "fa-solid fa-square-minus";
         } else {
+            resizeTimeBlocks();
             listContainer.classList.add('list-collapsed');
             menuButton.className = "fa-solid fa-bars";
         }
     }
-    setClassForScreenSize();
-
-    window.addEventListener('resize', setClassForScreenSize);
+    //setClassForScreenSize();
+    window.addEventListener('resize', calculateListHeight);
     window.addEventListener('resize', resizeTimeBlocks);
     window.addEventListener('resize', adjustLogItemsContainerHeight);
     
@@ -2428,18 +2465,18 @@
             darkmode = false;
             document.body.style.backgroundColor = "var(--primary-color)";
             
-            for (let header of headers) {
-                header.style.color = "#161616";
-            }
             for (let item of listItems) {
                 item.style.color =  "#161616";
+            }
+            for (let header of headers) {
+                header.style.color =  "#161616";
             }
 
             projectList.style.color = "#161616";
             taskList.style.color = "#161616";
             darkmodeIcon.className = "fa-regular fa-moon";
             darkmodeIcon.style.fontSize = "14pt";
-            list.style.backgroundColor = '#DDDDDD';
+            list.style.backgroundColor = 'transparent';
             title.style.color = "#161616";
             logo.style.background = "conic-gradient(transparent 0% 25%, #161616 25% 100%)";
         }
@@ -2447,16 +2484,16 @@
             // Make darkmode
             darkmode = true;
             document.body.style.backgroundColor = "#252525";
-            
-            for (let header of headers) {
-                header.style.color = "var(--primary-color)";
-            }
+        
             for (let item of listItems) {
                 item.style.color =  "var(--primary-color)";
             }
+            for (let header of headers) {
+                header.style.color =  "var(--primary-color)";
+            }
 
-            projectList.style.color = "#161616";
-            taskList.style.color = "#161616";
+            projectList.style.color = "var(--primary-color)";
+            taskList.style.color = "var(--primary-color)";
             darkmodeIcon.className = "fa-solid fa-moon";
             darkmodeIcon.style.fontSize = "14pt";
             list.style.backgroundColor = "transparent";
@@ -2624,24 +2661,29 @@
     });
 
     // Keep list container correct size
+    const listDiv = document.querySelector('.list-div');
     function calculateListHeight() {
-        var taskListUl = document.getElementById('task-list-ul');
-        var projectListUl = document.getElementById('project-list-ul');
-
-        // Get the height of both lists
-        var taskListHeight = taskListUl.offsetHeight;
-        var projectListHeight = projectListUl.offsetHeight;
+        let listHeight = listDiv.offsetHeight;
+        let listWidth = listDiv.offsetHeight;
 
         // Calculate the sum of both heights
-        var totalHeight = taskListHeight + projectListHeight + 185;
+        listHeight = listDiv.offsetHeight;
+        listWidth = listDiv.offsetHeight;
+        var totalHeight = listHeight + 80;
 
         // Set the height of listContainer
         listContainer.style.height = totalHeight + 'px';
-        listContainer.style.width = 270 + 'px';
+        if (window.innerWidth >= 769) {
+            listContainer.style.width = 270 + 'px';
+        }
+        else {
+            listContainer.style.width = 'auto';
+        }
     }
     listContainer.addEventListener('click', function() {
         calculateListHeight();
     });
+    calculateListHeight();
 
     // Update duration text
     const startTimeInput = document.getElementById('start-time-input');
