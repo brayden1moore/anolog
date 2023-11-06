@@ -274,26 +274,6 @@ def list_time():
             for time_id, task_id, task_name, start, end, duration in query_results
         ]
         return jsonify(time_entries)
-    
-    except AssertionError:
-        print('Creating new time blocks')
-        tasks = session.query(Task).filter(Task.project_id==project_id, Task.is_visible==True).order_by(Task.created_at.asc()).all()
-        for task in tasks:
-            start = task.created_at
-            duration = task.total_seconds
-            end = start + timedelta(seconds=duration)
-            new_time = Time(user_id=current_user.id, project_id=task.project_id, task_id=task.id, start=start, end=end, duration=duration, is_visible=True)
-            session.add(new_time)
-        Session.commit()
-
-        time_entry = {
-            'id': new_time.id, 
-            'task_name': task.name,
-            'start': start.strftime('%Y-%m-%dT%H:%M'), 
-            'end': end.strftime('%Y-%m-%dT%H:%M'), 
-            'duration': duration
-        }
-        return jsonify(time_entry)
 
     finally:    
         Session.remove()
