@@ -25,6 +25,7 @@ Session = scoped_session(sessionmaker(bind=engine))
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = config['FLASK_KEY']
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(weeks=4)
 
 ## Login
 
