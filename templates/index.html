@@ -1257,9 +1257,6 @@
             .then(data => {
                 
                 const totalDuration = data.reduce((sum, time) => sum + time.duration, 0);
-                const hoursLogged = document.getElementById('hours-logged');
-                hoursLogged.textContent = `${(totalDuration / 60 / 60).toFixed(2)} hours logged`;
-            
 
                 data.forEach((time, index) => {
 
@@ -1995,14 +1992,22 @@
     // Resize time blocks
     function resizeTimeBlocks() {
         const timeBlocks = document.querySelectorAll(".time-block");
+        const today = new Date();
+        const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
         let totalDuration = 0;
+        let totalDurationToday = 0;
 
         timeBlocks.forEach(block => {
             totalDuration += parseInt(block.dataset.duration, 10);
+
+            if (Date.parse(block.dataset.startTime) >= startOfToday && Date.parse(block.dataset.startTime) < new Date(startOfToday).setDate(startOfToday.getDate() + 1)) {
+                totalDurationToday += parseInt(block.dataset.duration, 10);
+            }
         });
-        
+
         const hoursLogged = document.getElementById('hours-logged');
-        hoursLogged.textContent = `${(totalDuration/60/60).toFixed(2)} hours logged`; 
+        hoursLogged.textContent = `${(totalDuration / 60 / 60).toFixed(2)} hours logged, ${(totalDurationToday / 60 / 60).toFixed(2)} today`;
 
         timeBlocks.forEach(block => {
             let duration = parseInt(block.dataset.duration, 10);
