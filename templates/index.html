@@ -1945,7 +1945,8 @@
                     clearInterval(intervalId);
                     button.style.transform = `rotate(${currentRotation-180}deg)`;
                     currentRotation = 0;
-                    timerEndDateTime = new Date()
+                    timerEndDateTime = new Date();
+                    timerDuration = Math.floor((timerEndDateTime - timerStartDateTime) / 1000);
 
                     newBlock = document.createElement('div');
                     newBlock.className = 'time-block';
