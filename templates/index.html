@@ -2580,26 +2580,36 @@
     // Dynamically change icon
     function updateFavicon(color) {
         let canvas = document.createElement('canvas');
-        canvas.width = 32;
-        canvas.height = 32;
+        canvas.width = 180; 
+        canvas.height = 180;
         let ctx = canvas.getContext('2d');
-        
+
         // Draw the 3/4 filled circle
         ctx.beginPath();
-        ctx.arc(16, 16, 16, -0.5 * Math.PI, -2 * Math.PI, true);
-        ctx.lineTo(16, 16);
+        ctx.arc(90, 90, 90, -0.5 * Math.PI, -2 * Math.PI, true);
+        ctx.lineTo(90, 90);
         ctx.fillStyle = color;
         ctx.fill();
 
         // Update favicon
-        let link = document.querySelector("link[rel~='icon']");
-        if (!link) {
-            link = document.createElement('link');
-            link.rel = 'icon';
-            document.getElementsByTagName('head')[0].appendChild(link);
+        let faviconLink = document.querySelector("link[rel~='icon']");
+        if (!faviconLink) {
+            faviconLink = document.createElement('link');
+            faviconLink.rel = 'icon';
+            document.getElementsByTagName('head')[0].appendChild(faviconLink);
         }
-        link.href = canvas.toDataURL('image/x-icon');
+        faviconLink.href = canvas.toDataURL('image/x-icon');
+
+        // Update Apple touch icon
+        let appleIconLink = document.querySelector("link[rel~='apple-touch-icon']");
+        if (!appleIconLink) {
+            appleIconLink = document.createElement('link');
+            appleIconLink.rel = 'apple-touch-icon';
+            document.getElementsByTagName('head')[0].appendChild(appleIconLink);
+        }
+        appleIconLink.href = canvas.toDataURL();
     }
+
     updateFavicon('{{ primary_color }}');
 
     // Toggle show completed
