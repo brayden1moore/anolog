@@ -71,7 +71,7 @@ def login():
                 new_task = Task(project_id=new_project.id, name='New Task')
                 session.add(new_task)
                 session.commit()
-                login_user(new_user)
+                login_user(new_user, remember=True)
                 
                 html = render_template('welcome_email.html')
                 send_email(email, 'Anolog - Welcome', html)
@@ -80,7 +80,7 @@ def login():
             if user:
                 if user.password.startswith('$2b$'):  
                     if bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
-                        login_user(user)
+                        login_user(user, remember=True)
                         return redirect(url_for('homepage'))
                     else:
                         message = 'Incorrect Password'
@@ -262,7 +262,6 @@ def list_time():
         ).all()
 
         assert len(query_results) > 0 
-        print(query_results)
         time_entries = [
             {
                 'id': time_id, 

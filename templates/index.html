@@ -752,7 +752,7 @@
 
         #commit-time-block-button {
             cursor: pointer;
-            color: yellow;
+            color: #161616;
             display: none;
             margin-left: 10px;
             opacity: 1;
@@ -1266,7 +1266,7 @@
                     const newBlock = document.createElement('div');
                     const widthPercent = totalDuration > 0 ? (time.duration * 100 / totalDuration) : 0;
                     newBlock.className = 'time-block';
-                    newBlock.textContent = (time.duration / 60 / 60).toFixed(2);
+                    //newBlock.textContent = (time.duration / 60 / 60).toFixed(2);
                     newBlock.dataset.id = time.id;
                     newBlock.dataset.taskId = time.task_id;
                     newBlock.dataset.startTime = convertUTCToLocalForInput(time.start); 
@@ -1953,7 +1953,7 @@
 
                     newBlock = document.createElement('div');
                     newBlock.className = 'time-block';
-                    newBlock.textContent = (timerDuration / 60 / 60).toFixed(2);
+                    //newBlock.textContent = (timerDuration / 60 / 60).toFixed(2);
                     newBlock.dataset.startTime = convertUTCToLocalForInput(timerStartDateTime.toISOString().slice(0,16));
                     newBlock.dataset.endTime = convertUTCToLocalForInput(timerEndDateTime.toISOString().slice(0,16));
                     newBlock.dataset.duration = timerDuration;
