@@ -10,6 +10,8 @@
             --primary-color: {{primary_color}};
         }
         .logo {
+            position: relative;
+            top: 2px;
             width: 24px;
             height: 24px;
             background: conic-gradient(transparent 0% 25%, #161616 25% 100%);
@@ -2424,6 +2426,8 @@
     let resizeTimeout;
     window.addEventListener('resize', () => {
         clearTimeout(resizeTimeout);
+        calculateListHeight();
+        adjustLogItemsContainerHeight();
         resizeTimeout = setTimeout(resizeTimeBlocks, 100);
     });
     
@@ -2495,6 +2499,8 @@
         const darkmodeIcon = document.querySelector('#darkmode-icon');
         const projectList = document.getElementById('project-list-ul');
         const taskList = document.getElementById('task-list-ul');
+        const addButtons = document.querySelectorAll('.add-button');
+        const toggleButtons = document.querySelectorAll('.toggle-completed');
 
         if (initialToggle) {
             darkmode = !darkmode;
@@ -2510,6 +2516,12 @@
             }
             for (let header of headers) {
                 header.style.color =  "#161616";
+            }
+            for (let button of addButtons) {
+                button.style.color =  "#161616";
+            }
+            for (let button of toggleButtons) {
+                button.style.color =  "#161616";
             }
 
             projectList.style.color = "#161616";
@@ -2530,6 +2542,12 @@
             }
             for (let header of headers) {
                 header.style.color =  "var(--primary-color)";
+            }
+            for (let button of addButtons) {
+                button.style.color =  "var(--primary-color)";
+            }
+            for (let button of toggleButtons) {
+                button.style.color =  "var(--primary-color)";
             }
 
             projectList.style.color = "var(--primary-color)";
