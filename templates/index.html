@@ -2579,37 +2579,37 @@
 
     // Dynamically change icon
     function updateFavicon(color) {
-        let canvas = document.createElement('canvas');
-        canvas.width = 180; 
-        canvas.height = 180;
-        let ctx = canvas.getContext('2d');
+        let faviconCanvas = createIconCanvas(color, 32, 0);
+        updateLinkInHead('icon', faviconCanvas.toDataURL('image/x-icon'));
 
-        // Draw the 3/4 filled circle
-        ctx.beginPath();
-        ctx.arc(90, 90, 90, -0.5 * Math.PI, -2 * Math.PI, true);
-        ctx.lineTo(90, 90);
-        ctx.fillStyle = color;
-        ctx.fill();
-
-        // Update favicon
-        let faviconLink = document.querySelector("link[rel~='icon']");
-        if (!faviconLink) {
-            faviconLink = document.createElement('link');
-            faviconLink.rel = 'icon';
-            document.getElementsByTagName('head')[0].appendChild(faviconLink);
-        }
-        faviconLink.href = canvas.toDataURL('image/x-icon');
-
-        // Update Apple touch icon
-        let appleIconLink = document.querySelector("link[rel~='apple-touch-icon']");
-        if (!appleIconLink) {
-            appleIconLink = document.createElement('link');
-            appleIconLink.rel = 'apple-touch-icon';
-            document.getElementsByTagName('head')[0].appendChild(appleIconLink);
-        }
-        appleIconLink.href = canvas.toDataURL();
+        let appleIconCanvas = createIconCanvas(color, 180, 20); // 20 is the padding
+        updateLinkInHead('apple-touch-icon', appleIconCanvas.toDataURL());
     }
 
+    function createIconCanvas(color, size, padding) {
+        let canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        let ctx = canvas.getContext('2d');
+
+        let radius = (size / 2) - padding;
+        ctx.beginPath();
+        ctx.arc(size / 2, size / 2, radius, -0.5 * Math.PI, -2 * Math.PI, true);
+        ctx.lineTo(size / 2, size / 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+        return canvas;
+    }
+
+    function updateLinkInHead(relValue, href) {
+        let link = document.querySelector(`link[rel~='${relValue}']`);
+        if (!link) {
+            link = document.createElement('link');
+            link.rel = relValue;
+            document.getElementsByTagName('head')[0].appendChild(link);
+        }
+        link.href = href;
+    }
     updateFavicon('{{ primary_color }}');
 
     // Toggle show completed
