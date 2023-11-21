@@ -2733,22 +2733,18 @@
     // Keep list container correct size
     const listDiv = document.querySelector('.list-div');
     function calculateListHeight() {
-        let listHeight = listDiv.offsetHeight;
-        let listWidth = listDiv.offsetHeight;
-
-        // Calculate the sum of both heights
-        listHeight = listDiv.offsetHeight;
-        listWidth = listDiv.offsetHeight;
-        var totalHeight = listHeight + 80;
-
-        // Set the height of listContainer
-        listContainer.style.height = totalHeight + 'px';
-        if (window.innerWidth >= 769) {
-            listContainer.style.width = 270 + 'px';
-        }
-        else {
-            listContainer.style.width = 'auto';
-        }
+        setTimeout(function() {
+            let listHeight = listDiv.offsetHeight;
+            var totalHeight = listHeight + 80;
+            
+            listContainer.style.height = totalHeight + 'px';
+            if (window.innerWidth >= 769) {
+                listContainer.style.width = 270 + 'px';
+            }
+            else {
+                listContainer.style.width = 'auto';
+            }
+        }, 310);
     }
     listContainer.addEventListener('click', function() {
         calculateListHeight();
