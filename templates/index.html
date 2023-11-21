@@ -2665,6 +2665,7 @@
 
     // Add a task or project
     function addNewItem(type) {
+        calculateListHeight();
         const projectUlElement = document.getElementById('project-list-ul');
         const taskUlElement = document.getElementById('task-list-ul');
         const targetUl = type === 'project' ? projectUlElement : taskUlElement;
@@ -2688,6 +2689,7 @@
                 }
                 newInput.focus();
             }
+            calculateListHeight();
         });
 
         // Remove the input when it loses focus
