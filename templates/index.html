@@ -661,29 +661,50 @@
             font-size: 10pt;
             cursor: pointer;
             transition: 0.2s ease;
-            opacity: 0.1;  
+            opacity: 0.2;  
+            width: 16px;
+            overflow: hidden;
         }
         .list-container:hover .toggle-completed {
-            opacity: 0.3; 
+            opacity: 0.5; 
         }
         .toggle-completed:hover {
-            opacity: 1; 
+            opacity: 1 !important; 
         }
         .add-button {
             color: #161616;
             font-size: 12pt;
             cursor: pointer;
             transition: 0.2s ease;
-            opacity: 0.1; 
+            opacity: 0.2; 
+            width: 16px;
+            overflow: hidden;
         }
         .list-container:hover .add-button {
-            opacity: 0.3; 
+            opacity: 0.5; 
         }
         .add-button:hover {
-            opacity: 1; 
+            opacity: 1 !important; 
+        }
+
+        #add-a-time-block {
+            color: #161616;
+            font-size: 12pt;
+            cursor: pointer;
+            transition: 0.2s ease;
+            opacity: 0.2; 
+            overflow: hidden;
+            width: 16px;
+        }
+        #add-a-time-block:hover {
+            opacity: 1 !important; 
+        }
+        #project-space:hover #add-a-time-block {
+            opacity: 0.5; 
         }
 
         #time-div {
+            width: 100%;
             padding-top: 3px;
             padding-bottom: 3px;
             align-items: center;
@@ -919,7 +940,10 @@
                     <p id="hours-logged" style="margin:0; font-size:12pt;"></p>
                 </div>
                 <div id="time-content">
-                    <div id="time-div">
+                    <div style="display: flex; width: 100%; align-items: center;">
+                        <div id="time-div">
+                        </div>
+                        <i id="add-a-time-block" title="Add a Time Block" class="add-button fa-solid fa-plus" style="color: var(--primary-color);"></i>
                     </div>
     
                     <div id="time-description-container">
@@ -1310,6 +1334,7 @@
 
     // Add click listeners
     const timeDiv = document.getElementById('time-div');
+    const timeContent = document.getElementById('time-content');
     const timeDescription = document.getElementById('time-description');
     const timeDescriptionContainer = document.getElementById('time-description-container');
     let activeBlock = null;
@@ -1338,9 +1363,18 @@
                 b.style.opacity = "0.3";
                 b.style.borderRadius = '5px';
             });
+
+        // If click on new time block
         if (activeBlock !== block) {
                 if (activeBlock) {
+                    if (activeBlock.dataset.id === "-1") {
+                        blockToRemove = activeBlock;
+                        blockToRemove.style.width = '0px';
+                        timeDiv.removeChild(blockToRemove);
+                        resizeTimeBlocks();            
+                    }
                     timeDescriptionContainer.style.height = '0px';
+                    timeDescriptionContainer.style.opacity = '0.7';
                     block.style.opacity = "1";
                     block.style.backgroundColor = 'var(--primary-color)';
                     activeBlock = block;
@@ -1349,8 +1383,11 @@
                     updateTimeDescription(block);
                     timeDescriptionHeight = timeDescription.offsetHeight;
                     timeDescriptionContainer.style.height = `${timeDescriptionHeight}px`;
+                    setTimeout(() => timeDescriptionContainer.style.opacity = '1', 100);
 
                 } else {
+                    addTimeBlockButton.removeEventListener('click', createTimeBlock);
+                    addTimeBlockButton.style.width = '0px';
                     block.style.opacity = "1";
                     block.style.backgroundColor = 'var(--primary-color)';
                     activeBlock = block;
@@ -1361,19 +1398,38 @@
                     timeDescriptionContainer.style.height = `${timeDescriptionHeight}px`;
                 }
         } 
+        // If click on active block
         else {
-            timeDescriptionHeight = timeDescription.offsetHeight;
-            timeBlocks.forEach(function(b) {
-                b.style.opacity = "1";
-                b.style.backgroundColor = 'var(--primary-color)';
-                b.style.borderRadius = '5px';
-            });
-            timeDescriptionContainer.style.height = '0px';
-            timeDiv.style.borderRadius = '7px';
-            activeBlock = null;
+            closeTimeDescription() 
         }
     }
 
+    function closeTimeDescription() {
+        if (activeBlock && activeBlock.dataset.id === "-1") {
+            blockToRemove = activeBlock;
+            blockToRemove.style.width = '0px';
+            timeDiv.removeChild(blockToRemove);
+            resizeTimeBlocks();
+        }
+
+        const timeBlocks = document.querySelectorAll('.time-block');
+        addTimeBlockButton.addEventListener('click', createTimeBlock);
+        addTimeBlockButton.style.width = '16px';
+        timeDescriptionHeight = timeDescription.offsetHeight;
+        timeBlocks.forEach(function(b) {
+            b.style.opacity = "1";
+            b.style.backgroundColor = 'var(--primary-color)';
+            b.style.borderRadius = '5px';
+        });
+        timeDescriptionContainer.style.height = '0px';
+        timeDiv.style.borderRadius = '7px';
+        activeBlock = null;
+    }
+    document.getElementById('project-space').addEventListener('click', function(event) {
+        if (!timeContent.contains(event.target)) {
+            closeTimeDescription();
+        }
+    });
     // POST to /projects endpoint and append list
     function addProject() {
         const projectUlElement = document.getElementById('project-list-ul');
@@ -1953,7 +2009,6 @@
 
                     newBlock = document.createElement('div');
                     newBlock.className = 'time-block';
-                    //newBlock.textContent = (timerDuration / 60 / 60).toFixed(2);
                     newBlock.dataset.startTime = convertUTCToLocalForInput(timerStartDateTime.toISOString().slice(0,16));
                     newBlock.dataset.endTime = convertUTCToLocalForInput(timerEndDateTime.toISOString().slice(0,16));
                     newBlock.dataset.duration = timerDuration;
@@ -1992,6 +2047,31 @@
             };
     })();
     document.getElementById('clock').addEventListener('click', toggleClock);
+
+    // Create a new time block on click
+    addTimeBlockButton = document.getElementById('add-a-time-block');
+    function createTimeBlock() {
+        newBlock = document.createElement('div');
+        newBlock.className = 'time-block';
+        newBlock.dataset.duration = 3600;
+        timerStartDateTime = new Date();
+        timerEndDateTime = new Date();
+        timerEndDateTime.setSeconds(timerEndDateTime.getSeconds() + parseInt(newBlock.dataset.duration));
+        newBlock.dataset.startTime = convertUTCToLocalForInput(timerStartDateTime.toISOString().slice(0,16));
+        newBlock.dataset.endTime = convertUTCToLocalForInput(timerEndDateTime.toISOString().slice(0,16));
+        newBlock.dataset.duration = 3600;
+        newBlock.dataset.id = -1;
+        newBlock.dataset.taskId = globalTaskId;
+        newBlock.dataset.taskName = document.getElementById('task-name').textContent;
+        newBlock.addEventListener('click', () => openTimeDescription(newBlock));
+        timeDiv.appendChild(newBlock);
+        openTimeDescription(newBlock);
+        resizeTimeBlocks();
+        newBlock.style.backgroundColor = 'transparent';
+        newBlock.style.border = '2px dashed var(--primary-color)';
+        showCommitTimeButton(endTimeInput);
+    }
+    addTimeBlockButton.addEventListener('click', createTimeBlock);
 
     // Resize time blocks
     function resizeTimeBlocks() {
@@ -2688,6 +2768,7 @@
                     addTask(globalProjectId);
                 }
                 newInput.focus();
+                targetUl.removeChild(newLi);
             }
             calculateListHeight();
         });
@@ -2778,16 +2859,21 @@
         activeBlock.dataset.startTime = convertUTCToLocalForInput(startTime.toISOString().slice(0,16));
         activeBlock.dataset.endTime = convertUTCToLocalForInput(endTime.toISOString().slice(0,16));
         activeBlock.dataset.duration = duration;
+        activeBlock.style.border = '0px';
+        activeBlock.style.backgroundColor = 'var(--primary-color)';
         resizeTimeBlocks();
         
         console.log(startTime);
         // construct task PUT payload
         const putPayload = {
+            projectId: globalProjectId,
+            taskId: globalTaskId,
             timeId: activeBlock.dataset.id,
             start: startTime,
             end: endTime,
             duration: duration
         };
+        console.log(putPayload);
 
         // Send PUT request to Flask API
         fetch('/time', {
@@ -2801,6 +2887,7 @@
         .then(data => {
             if (data.message === "Time block updated") {
                 console.log("Time block updated")
+                activeBlock.dataset.id = data.time_id;
                 calculateTaskTotalTime(activeBlock.dataset.taskId, changed=true);
             }
         });
@@ -2828,6 +2915,7 @@
     endTimeInput.addEventListener('change', function(e) {
         showCommitTimeButton(endTimeInput);
     }); 
+    
 
     // Commit and update stylings upon save
     commitTimeBlockButton.addEventListener('click', () => {

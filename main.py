@@ -482,22 +482,30 @@ def update_time():
     try:
         data = request.json
         time_id = data.get('timeId')
-        time = session.query(Time).filter(Time.id == time_id).first()
+        project_id = data.get('projectId')
+        task_id = data.get('taskId')
+        start = data.get('start')
+        end = data.get('end')
+        duration = data.get('duration')
+        is_visible = data.get('isVisible')
 
-        new_start = data.get('start')
-        new_end = data.get('end')
-        new_duration = data.get('duration')
-        new_is_visible = data.get('isVisible')
-
-        if new_is_visible is not None:
-            time.is_visible = new_is_visible
+        if time_id == '-1':
+                    time = Time(user_id=current_user.id, project_id=project_id, task_id=task_id, start=start, end=end, duration=duration)
+                    session.add(time)
+                    session.commit()
         else:
-            time.start = new_start
-            time.end = new_end
-            time.duration = new_duration
+            time = session.query(Time).filter(Time.id == time_id).first()
 
-        session.commit()
-        return jsonify({"message": "Time block updated"}), 200
+            if is_visible is not None:
+                time.is_visible = is_visible
+            else:
+                time.start = start
+                time.end = end
+                time.duration = duration
+
+            session.commit()
+        return jsonify({"message": "Time block updated",
+                        "time_id": time.id}), 200
 
     finally:
         Session.remove()
