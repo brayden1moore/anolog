@@ -293,7 +293,7 @@ def list_time():
                 for time_id, task_id, task_name, start, end, duration in query_results
             ]
 
-            flask_session[f'time_cache_{project_id}'] = time_json
+            #flask_session[f'time_cache_{project_id}'] = time_json
         else:
             print('time read from session cache')
 
