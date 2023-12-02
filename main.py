@@ -1,4 +1,5 @@
 from urllib import response
+from flask import session as flask_session
 from flask import Flask, request, jsonify, render_template, Response, redirect, url_for
 from build_db import User, Project, Task, Log, Time, engine
 from sqlalchemy.orm import relationship, sessionmaker, scoped_session
@@ -204,12 +205,19 @@ def homepage():
 @login_required
 def list_projects():
     if current_user.is_authenticated:
-        user_id = current_user.id
         session = Session()
         try:
-            print('')
-            projects = session.query(Project).filter(Project.user_id==user_id, Project.is_visible==True).order_by(Project.is_completed.asc(), Project.updated_at.desc()).all()
-            return jsonify([{'id':project.id,'name':project.name,'user_id':project.user_id, 'is_visible':project.is_visible, 'is_completed':project.is_completed}for project in projects])
+            user_id = current_user.id
+            projects_json = flask_session.get(f'projects_cache_{user_id}')
+
+            if projects_json is None: 
+                projects = session.query(Project).filter(Project.user_id==user_id, Project.is_visible==True).order_by(Project.is_completed.asc(), Project.updated_at.desc()).all()
+                projects_json = [{'id':project.id,'name':project.name,'user_id':project.user_id, 'is_visible':project.is_visible, 'is_completed':project.is_completed}for project in projects]
+                flask_session[f'projects_cache_{user_id}'] = projects_json
+            else:
+                print('projects read from session cache')
+            
+            return projects_json
         finally:
             Session.remove()
     else:
@@ -222,15 +230,16 @@ def list_tasks():
     session = Session()
     try:
         project_id = request.args.get('project_id')
-        task_id = request.args.get('task_id')
+        tasks_json = flask_session.get(f'tasks_cache_{project_id}')
 
-        if task_id:
-            tasks = session.query(Task).filter(Task.id==task_id).all()
-        else:
+        if tasks_json is None:
             tasks = session.query(Task).filter(Task.project_id==project_id, Task.is_visible==True).order_by(Task.is_completed.asc(), Task.updated_at.desc()).all()
-
-        return jsonify([{'id':task.id,'name':task.name,'total_seconds':task.total_seconds, 'is_completed':task.is_completed, 'is_visible':task.is_visible} for task in tasks])
-    
+            tasks_json = [{'id':task.id,'name':task.name,'total_seconds':task.total_seconds, 'is_completed':task.is_completed, 'is_visible':task.is_visible} for task in tasks]
+            flask_session[f'tasks_cache_{project_id}'] = tasks_json            
+        else:
+            print('tasks read from session cache')
+        
+        return tasks_json
     finally:
         Session.remove()
 
@@ -241,8 +250,16 @@ def list_logs():
     session = Session()
     try:
         task_id = request.args.get('task_id')
-        logs = session.query(Log).filter(Log.task_id == task_id).order_by(func.coalesce(Log.is_pinned, False).desc(), desc(Log.created_at)).all()
-        return jsonify([{'id':log.id,'description':log.description,'created_at':log.created_at, 'is_pinned':log.is_pinned} for log in logs])
+        logs_json = flask_session.get(f'logs_cache_{task_id}')
+
+        if logs_json is None:
+            logs = session.query(Log).filter(Log.task_id == task_id).order_by(func.coalesce(Log.is_pinned, False).desc(), desc(Log.created_at)).all()
+            logs_json = [{'id':log.id,'description':log.description,'created_at':log.created_at, 'is_pinned':log.is_pinned} for log in logs]
+            flask_session[f'logs_cache_{task_id}'] = logs_json
+        else: 
+            print('logs read from session cache')
+
+        return logs_json
     
     finally:
         Session.remove()
@@ -254,26 +271,33 @@ def list_time():
     session = Session()
     try:
         project_id = request.args.get('project_id')
-        query_results = (
-            session.query(Time.id, Task.id, Task.name, Time.start, Time.end, Time.duration)
-            .join(Task, Time.task_id == Task.id)
-            .filter(Time.project_id == project_id, Time.is_visible == True)
-            .order_by(Time.start)
-        ).all()
+        time_json = flask_session.get(f'time_cache_{project_id}')
 
-        assert len(query_results) > 0 
-        time_entries = [
-            {
-                'id': time_id, 
-                'task_id': task_id,
-                'task_name': task_name,
-                'start': start.strftime('%Y-%m-%dT%H:%M'), 
-                'end': end.strftime('%Y-%m-%dT%H:%M'), 
-                'duration': duration
-            } 
-            for time_id, task_id, task_name, start, end, duration in query_results
-        ]
-        return jsonify(time_entries)
+        if time_json is None:
+            query_results = (
+                session.query(Time.id, Task.id, Task.name, Time.start, Time.end, Time.duration)
+                .join(Task, Time.task_id == Task.id)
+                .filter(Time.project_id == project_id, Time.is_visible == True)
+                .order_by(Time.start)
+            ).all()
+
+            time_json = [
+                {
+                    'id': time_id, 
+                    'task_id': task_id,
+                    'task_name': task_name,
+                    'start': start.strftime('%Y-%m-%dT%H:%M'), 
+                    'end': end.strftime('%Y-%m-%dT%H:%M'), 
+                    'duration': duration
+                } 
+                for time_id, task_id, task_name, start, end, duration in query_results
+            ]
+
+            flask_session[f'time_cache_{project_id}'] = time_json
+        else:
+            print('time read from session cache')
+
+        return time_json
 
     finally:    
         Session.remove()
@@ -305,6 +329,7 @@ def create_project():
         new_project = Project(name=data['name'], user_id=data['user_id'])
         session.add(new_project)
         session.commit()
+        flask_session[f'projects_json_{current_user.id}'] = None 
     
         new_task = Task(project_id=new_project.id, name='New Task', is_visible=True)
         print('Project id',new_project.id)
@@ -332,6 +357,7 @@ def create_task():
         new_task = Task(name=task_name, project_id=project_id)
         session.add(new_task)
         session.commit()
+        flask_session[f'tasks_cache_{project_id}'] = None
         return jsonify({"message": "Task created", "id":new_task.id, "name":task_name}), 201
     
     finally:
@@ -357,6 +383,7 @@ def create_log():
         new_log = Log(task_id=task_id, created_at=created_at, description=description)
         session.add(new_log)
         session.commit()
+        flask_session[f'logs_cache_{task_id}'] = None
         return jsonify({"message": "Log created", "id":new_log.id, "created_at":new_log.created_at, "description":new_log.description}), 201
     
     finally:
@@ -379,6 +406,8 @@ def create_time():
         new_time = Time(user_id=current_user.id, project_id=project_id, task_id=task_id, start=start, end=end, duration=duration)
         session.add(new_time)
         session.commit()
+
+        flask_session[f'time_cache_{project_id}'] = None
         return jsonify({"message": "Time block created", "id":new_time.id}), 201
     
     finally:
@@ -410,6 +439,8 @@ def update_project():
         if is_completed is not None:
             project.is_completed = is_completed
 
+        flask_session[f'projects_cache_{current_user.id}'] = None
+
         session.commit()
         return jsonify({"message": "Project updated"}), 200
     
@@ -427,7 +458,8 @@ def update_task():
         task_id = data.get('taskId')
         
         task = session.query(Task).filter(Task.id == task_id).first()
-        project = session.query(Project).filter(Project.id == task.project_id).first()
+        project_id = task.project_id
+        project = session.query(Project).filter(Project.id == project_id).first()
         task.updated_at = datetime.now()
         project.updated_at = datetime.now()
 
@@ -444,6 +476,8 @@ def update_task():
             task.is_visible = is_visible
         if total_seconds:
             task.total_seconds = total_seconds
+
+        flask_session[f'tasks_cache_{project_id}'] = None
 
         session.commit()
         return jsonify({"message": "Task updated"}), 200
@@ -468,6 +502,9 @@ def update_log():
         if is_pinned is not None:
             log.is_pinned = is_pinned
 
+        task_id = data.get('taskId')
+        flask_session[f'logs_cache_{task_id}'] = None
+        
         session.commit()
         return jsonify({"message": "Log updated"}), 200
     
@@ -504,6 +541,8 @@ def update_time():
                 time.duration = duration
 
             session.commit()
+        
+        flask_session[f'time_cache_{project_id}'] = None
         return jsonify({"message": "Time block updated",
                         "time_id": time.id}), 200
 

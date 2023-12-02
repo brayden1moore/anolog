@@ -243,6 +243,7 @@
             transition: opacity 0.2s ease;
         }
         li {
+            margin-right: 20px;
             margin-bottom: 5px;
         }
         #new-project-input, #new-task-input, .rename-input{
@@ -527,6 +528,7 @@
             color: var(--primary-color);
             border-radius: 10px;
             transition: 0.2s ease;
+            cursor: pointer;
         }
         .export-button:hover{
             opacity:0.5;
@@ -539,10 +541,12 @@
             outline: none;
             border: none;
             color:#161616;
-            transition: 0.2s ease;
+            transition: 0.2s ease-in-out;
+            cursor: pointer;
         }
         .export-option:hover {
-            background-color: var(--primary-color);
+            background-color: #161616;
+            color: var(--primary-color);
         }
         .logout-button {
             box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);
@@ -555,6 +559,7 @@
             color: var(--primary-color);
             border-radius: 10px;
             transition: 0.2s ease;
+            cursor: pointer;
         }
         .logout-button:hover{
             opacity:0.5;
@@ -574,6 +579,7 @@
             color: var(--primary-color);
             border-radius: 10px;
             transition: 0.2s ease;
+            cursor: pointer;
         }
         .color-button:hover{
             opacity:0.5;
@@ -592,6 +598,7 @@
             color: var(--primary-color);
             border-radius: 10px;
             transition: 0.2s ease;
+            cursor: pointer;
         }
 
         .darkmode-button:hover{
@@ -639,6 +646,7 @@
             width: 40px;
             margin: auto;
             height: 40px;
+            cursor: pointer;
         }
         .confetti {
             position: fixed;
@@ -724,11 +732,12 @@
             justify-content: center;
             align-items: center;
             border-radius: 5px;
-            margin-right: 3px;
+            margin-right: 2px;
             background-color:none;
             opacity: 1;
             height: 100%;
-            transition: 0.2s ease;
+            transition: 0.2s opacity ease-in-out;
+            transition: 0.2s width ease-out;
             background-color: var(--primary-color);
         }
         .time-block:hover {
@@ -861,9 +870,11 @@
             }
             #project-list-container {
                 width: 50%;
+                margin-right: 20px;
             }
             #task-list-container {
                 width: 50%;
+                margin-right: 20px;
             }
             .list-collapsed {
                 width: 100% !important;
@@ -1021,87 +1032,89 @@
         const ulElement = document.getElementById('project-list-ul');
         const newProjectLi = document.getElementById('new-project-li');
         const projectNameLabel = document.getElementById('project-name');
-        //projectNameLabel.style.opacity = "0";
+        
+        function displayProjectData(data) {
+            ulElement.innerHTML = "";
+            let first = true;
+            data.forEach((project, index) => {
+                if (project.is_visible !== false){
+                    if (first===true && globalProjectId===undefined){
+                        globalProjectId = project.id;
+                        populateTasks(globalProjectId);
+                        getTime(globalProjectId);
+                        first = false;
+                    }
+                    const newListItem = document.createElement('li');
+                    const newLink = document.createElement('p');
+                    newLink.className = 'task-or-project';
 
-        fetch(`/projects`)
+                    newLink.textContent = project.name;
+                    newLink.setAttribute('data-projectId', project.id);
+                    newListItem.appendChild(newLink);
+                    newLink.style.opacity = '0.5';
+
+                    if (project.id === globalProjectId){
+                        newLink.style.opacity = '1';
+                        newLink.style.fontWeight = 'bold';
+                        projectNameLabel.textContent = project.name;
+                        projectNameLabel.style.opacity = "1";
+                    }
+                    
+                    if (project.is_completed) {
+                        newLink.style.textDecoration = 'line-through';
+                        newListItem.setAttribute('data-completed', true);
+                        newListItem.style.height = '0px';
+                        newListItem.style.overflow = 'hidden';
+                        newListItem.style.margin = 'auto';
+                    }
+                    else {
+                        newListItem.setAttribute('data-completed', false);
+                    }
+
+                    // Adjust colors for darkmode
+                    if (darkmode) {
+                        ulElement.style.color = "{{primary_color}}";
+                        newLink.style.color = "{{primary_color}}";
+                    }
+                    else {
+                        ulElement.style.color = "#161616";
+                        newLink.style.color = "#161616";
+                    }
+
+                    // Add click event listener to this list item
+                    addProjectClickListener(newLink, project.id, project.name);
+                    
+                    // Add hover listener
+                    addHoverListener(newLink, 'project', data.id);
+                    
+                    ulElement.appendChild(newListItem);
+                }
+            });
+        }
+
+        let cachedProjects = localStorage.getItem(`projects_cache_${globalUserId}`);
+        if (cachedProjects) {
+            displayProjectData(JSON.parse(cachedProjects));
+            console.log('projects read from client-side cache')
+        }
+        else {
+            fetch(`/projects`)
             .then(response => response.json())
             .then(data => {
-                ulElement.innerHTML = "";
-                // Iterate through the data and create li elements
-                let first = true;
-                data.forEach((project, index) => {
-                    if (project.is_visible !== false){
-                        if (first===true && globalProjectId===undefined){
-                            globalProjectId = project.id;
-                            populateTasks(globalProjectId);
-                            getTime(globalProjectId);
-                            first = false;
-                        }
-                        const newListItem = document.createElement('li');
-                        const newLink = document.createElement('p');
-                        newLink.className = 'task-or-project';
-
-                        newLink.textContent = project.name;
-                        newLink.setAttribute('data-projectId', project.id);
-                        newListItem.appendChild(newLink);
-                        newLink.style.opacity = '0.5';
-
-                        if (project.id === globalProjectId){
-                            newLink.style.opacity = '1';
-                            newLink.style.fontWeight = 'bold';
-                            projectNameLabel.textContent = project.name;
-                            projectNameLabel.style.opacity = "1";
-                        }
-                        
-                        if (project.is_completed) {
-                            newLink.style.textDecoration = 'line-through';
-                            newListItem.setAttribute('data-completed', true);
-                            newListItem.style.height = '0px';
-                            newListItem.style.overflow = 'hidden';
-                            newListItem.style.margin = 'auto';
-                        }
-                        else {
-                            newListItem.setAttribute('data-completed', false);
-                        }
-
-                        // Adjust colors for darkmode
-                        if (darkmode) {
-                            ulElement.style.color = "{{primary_color}}";
-                            newLink.style.color = "{{primary_color}}";
-                        }
-                        else {
-                            ulElement.style.color = "#161616";
-                            newLink.style.color = "#161616";
-                        }
-
-                        // Add click event listener to this list item
-                        addProjectClickListener(newLink, project.id, project.name);
-                        
-                        // Add hover listener
-                        addHoverListener(newLink, 'project', data.id);
-                        
-                        ulElement.appendChild(newListItem);
-                    }
-                });
-
+                displayProjectData(data);
+                localStorage.setItem(`projects_cache_${globalUserId}`, JSON.stringify(data));
             });
+        }
     }
 
     // GET from /tasks endpoint and populate list
     function populateTasks(projectId) {
-        // Send projectId to /tasks endpoint
-        fetch(`/tasks?project_id=${projectId}`)
-        .then(response => response.json())
-        .then(taskData => {
-            // Get the tasks ul element
+
+        function displayTaskData(data) {
             const taskUlElement = document.getElementById('task-list-ul');
-
-            // Clear existing tasks
             taskUlElement.innerHTML = '';
-
-            // Iterate through the taskData and create li elements
             let first = true;
-            taskData.forEach(task => {
+            data.forEach(task => {
                 if (task.is_visible !== false) {
      
                     const newTaskListItem = document.createElement('li');
@@ -1125,10 +1138,9 @@
                     }
 
                     // Make bold if it is the selected task
-                    if (task.id === globalTaskId) {
+                    if (first) {
                         newTaskLink.style.opacity = '1';
                         newTaskLink.style.fontWeight = 'bold';
-
                     }
                     else {
                         newTaskLink.style.opacity = '0.5';
@@ -1148,6 +1160,7 @@
                     newTaskLink.setAttribute('data-taskId', task.id);
                     newTaskListItem.appendChild(newTaskLink);
                     taskUlElement.appendChild(newTaskListItem);
+                    calculateListHeight();
 
                     // Add click listener
                     addTaskClickListener(newTaskLink, task.id, task.name);
@@ -1170,10 +1183,25 @@
                         logDiv.style.opacity = '1';
                     }
                 }
-                calculateListHeight();
-            });
 
-        });
+            });
+        }
+
+        // Check cache first
+        let cachedTasks = localStorage.getItem(`logs_cache_${projectId}`);
+        if (cachedTasks) {
+            console.log('tasks read from client-side cache');
+            displayTaskData(JSON.parse(cachedTasks));
+        }
+        else {
+            // Send projectId to /tasks endpoint
+            fetch(`/tasks?project_id=${projectId}`)
+            .then(response => response.json())
+            .then(data => {
+                displayTaskData(data);
+                localStorage.setItem(`tasks_cache_${projectId}`, JSON.stringify(data));
+            });           
+        }
     }
 
     // GET from /tasks /hours and /logs endpoints and populate content
@@ -1189,16 +1217,15 @@
         const taskCheckbox = document.getElementById('task-checkbox');
 
         let thisTask = document.querySelector(`p[data-taskid="${taskId}"]`);
-        thisTask.style.fontWeight = 'bold';
-        thisTask.style.opacity = '1';
         taskName.textContent = thisTask.textContent;
         globalSeconds = thisTask.dataset.totalSeconds;
         taskIsCompleted = thisTask.dataset.isCompleted;
         updateClock();
+
         if (taskIsCompleted === "true") {
             taskName.style.textDecoration = 'line-through';
             taskCheckbox.checked = true;
-            }
+        }
         else {
             taskName.style.textDecoration = '';
             taskCheckbox.checked = false;
@@ -1206,75 +1233,120 @@
 
         let logIds = [];
         let logPinnedStatuses = [];
-        fetch(`/logs?task_id=${taskId}`)
+
+        function displayLogData(data) {
+            // Append responses to entry log
+            data.forEach((log, index) => {
+                showIt = (log.description.includes("Timer stop (") || log.description.includes("Timer start (") || log.description.includes("Timer edited to (")) ? false : true;
+                if (showIt) {
+                    const dateObj = new Date(log.created_at);
+                    const localDateStr = dateObj.toLocaleString();
+
+                    let pin = '';
+                    let opacity = '1';
+                    let backgroundColor = '#161616';
+                    let color = 'var(--primary-color)';
+                    if (log.is_pinned) {
+                        backgroundColor = 'var(--primary-color)';
+                        color = '#161616';
+                        opacity = '1';
+                        pin = '<i class="fa-solid fa-thumbtack" id="pin" style="font-size: 8pt"></i>';
+                    }
+
+                    const escapedLogText = log.description.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    const logEntry = `
+                        <div class="log-item" data-logId="${log.id}" data-isPinned=${log.is_pinned} style="opacity:${opacity}; background-color:${backgroundColor}; color: ${color}">
+                            ${pin}
+                            <span class="log-created-at">${localDateStr}</span><br>
+                            <span class="log-description" style="white-space: pre-line;">${escapedLogText}</span>
+                        </div>`;
+                    
+                    if (log.is_pinned) {
+                        pinnedLogsContainer.insertAdjacentHTML('beforeend', logEntry);
+                        logItemsContainer.insertAdjacentHTML('beforeend', logEntry);
+                    }
+                    else{
+                        logItemsContainer.insertAdjacentHTML('beforeend', logEntry);
+                    }
+                    logIds.push(log.id);
+                    logPinnedStatuses.push(log.is_pinned);
+                }
+            });
+
+            // Add click listeners after
+            const logItems = document.querySelectorAll('.log-item');
+            logItems.forEach((logItem, index) => {
+                addLogClickListener(logItem, logIds[index]);
+            });
+            const unpinnedItems = logItemsContainer.querySelectorAll('.log-item');
+            unpinnedItems.forEach((unpinnedItem,index) => {
+                if (unpinnedItem.getAttribute('data-isPinned') === 'true') {
+                    pin = unpinnedItem.querySelector('#pin')
+                    unpinnedItem.removeChild(pin);
+                    unpinnedItem.style.height = '0px';
+                    unpinnedItem.style.padding = '0px';
+                    unpinnedItem.style.opacity = '1';
+                    unpinnedItem.style.color = "var(--primary-color)";
+                    unpinnedItem.style.backgroundColor = "#161616";
+                    unpinnedItem.setAttribute('data-isPinned', 'false');
+                }
+            });
+            
+        }
+
+        // Check cache first
+        let cachedLogs = localStorage.getItem(`logs_cache_${taskId}`);
+        if (cachedLogs) {
+            console.log('logs read from client-side cache');
+            displayLogData(JSON.parse(cachedLogs));
+        }
+        else {
+            fetch(`/logs?task_id=${taskId}`)
             .then(response => response.json())
             .then(data => {
-                // Append responses to entry log
-                data.forEach((log, index) => {
-                    showIt = (log.description.includes("Timer stop (") || log.description.includes("Timer start (") || log.description.includes("Timer edited to (")) ? false : true;
-                    if (showIt) {
-                        const dateObj = new Date(log.created_at);
-                        const localDateStr = dateObj.toLocaleString();
-
-                        let pin = '';
-                        let opacity = '1';
-                        let backgroundColor = '#161616';
-                        let color = 'var(--primary-color)';
-                        if (log.is_pinned) {
-                            backgroundColor = 'var(--primary-color)';
-                            color = '#161616';
-                            opacity = '1';
-                            pin = '<i class="fa-solid fa-thumbtack" id="pin" style="font-size: 8pt"></i>';
-                        }
-
-                        const escapedLogText = log.description.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                        const logEntry = `
-                            <div class="log-item" data-logId="${log.id}" data-isPinned=${log.is_pinned} style="opacity:${opacity}; background-color:${backgroundColor}; color: ${color}">
-                                ${pin}
-                                <span class="log-created-at">${localDateStr}</span><br>
-                                <span class="log-description" style="white-space: pre-line;">${escapedLogText}</span>
-                            </div>`;
-                        
-                        if (log.is_pinned) {
-                            pinnedLogsContainer.insertAdjacentHTML('beforeend', logEntry);
-                            logItemsContainer.insertAdjacentHTML('beforeend', logEntry);
-                        }
-                        else{
-                            logItemsContainer.insertAdjacentHTML('beforeend', logEntry);
-                        }
-                        logIds.push(log.id);
-                        logPinnedStatuses.push(log.is_pinned);
-                    }
-                });
-
-                // Add click listeners after
-                const logItems = document.querySelectorAll('.log-item');
-                logItems.forEach((logItem, index) => {
-                    addLogClickListener(logItem, logIds[index]);
-                });
-                const unpinnedItems = logItemsContainer.querySelectorAll('.log-item');
-                unpinnedItems.forEach((unpinnedItem,index) => {
-                    if (unpinnedItem.getAttribute('data-isPinned') === 'true') {
-                        pin = unpinnedItem.querySelector('#pin')
-                        unpinnedItem.removeChild(pin);
-                        unpinnedItem.style.height = '0px';
-                        unpinnedItem.style.padding = '0px';
-                        unpinnedItem.style.opacity = '1';
-                        unpinnedItem.style.color = "var(--primary-color)";
-                        unpinnedItem.style.backgroundColor = "#161616";
-                        unpinnedItem.setAttribute('data-isPinned', 'false');
-                    }
-                });
-                 
- 
+                displayLogData(data);
+                localStorage.setItem(`logs_cache_${taskId}`, JSON.stringify(data));
             })
-            
+        }     
     }
 
     // GET to /time endpoint
     function getTime(projectId) {
         timeDiv.innerHTML = '';
-        fetch(`/time?project_id=${projectId}`) 
+
+        function displayTimeData(data) {
+            const totalDuration = data.reduce((sum, time) => sum + time.duration, 0);
+            data.forEach((time, index) => {
+
+                const newBlock = document.createElement('div');
+                const widthPercent = totalDuration > 0 ? (time.duration * 100 / totalDuration) : 0;
+                newBlock.className = 'time-block';
+                newBlock.dataset.id = time.id;
+                newBlock.dataset.taskId = time.task_id;
+                newBlock.dataset.startTime = convertUTCToLocalForInput(time.start); 
+                newBlock.dataset.endTime = convertUTCToLocalForInput(time.end);   
+                newBlock.dataset.duration = time.duration;
+                newBlock.dataset.taskName = time.task_name;
+                newBlock.style.width = `0px`;
+                newBlock.addEventListener('click', () => openTimeDescription(newBlock));
+                newBlock.addEventListener('click', () => hideCommitTimeButton());
+                timeDiv.appendChild(newBlock);
+                setTimeout(() => {
+                    newBlock.style.width = `${widthPercent}%`;
+                }, 200);
+            });
+
+            resizeTimeBlocks();
+        }
+
+        let cachedTime = localStorage.getItem(`time_cache_${projectId}`);
+
+        if (cachedTime) {
+            console.log('time read from client-side cache');
+            displayTimeData(JSON.parse(cachedTime));
+        }
+        else {
+            fetch(`/time?project_id=${projectId}`, {credentials: "include"}) 
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
@@ -1282,32 +1354,18 @@
                 return response.json();
             })
             .then(data => {
+                try {
+                    localStorage.setItem(`time_cache_${projectId}`, JSON.stringify(data));
+                } catch (e) {
+                    console.error('Error saving data to LocalStorage:', e);
+                }
                 
-                const totalDuration = data.reduce((sum, time) => sum + time.duration, 0);
-
-                data.forEach((time, index) => {
-
-                    const newBlock = document.createElement('div');
-                    const widthPercent = totalDuration > 0 ? (time.duration * 100 / totalDuration) : 0;
-                    newBlock.className = 'time-block';
-                    //newBlock.textContent = (time.duration / 60 / 60).toFixed(2);
-                    newBlock.dataset.id = time.id;
-                    newBlock.dataset.taskId = time.task_id;
-                    newBlock.dataset.startTime = convertUTCToLocalForInput(time.start); 
-                    newBlock.dataset.endTime = convertUTCToLocalForInput(time.end);   
-                    newBlock.dataset.duration = time.duration;
-                    newBlock.dataset.taskName = time.task_name;
-                    newBlock.style.width = `${widthPercent}%`;
-                    newBlock.addEventListener('click', () => openTimeDescription(newBlock));
-                    newBlock.addEventListener('click', () => hideCommitTimeButton());
-                    timeDiv.appendChild(newBlock);
-                });
-
-                resizeTimeBlocks();
+                displayTimeData(data);
             })
             .catch(error => {
                 console.error('There has been a problem with your fetch operation:', error);
             });
+        }
     }
 
     // Function to convert a UTC date string to a local date string for the datetime-local input
@@ -1475,6 +1533,7 @@
                     newLink.setAttribute('data-projectid',data.id)
                     addProjectClickListener(newLink, data.id, newProjectName);
                     addHoverListener(newLink, 'project', data.id);
+                    localStorage.removeItem(`projects_cache_${globalUserId}`);
                 }
             });
         }
@@ -1528,6 +1587,7 @@
                     newLink.setAttribute('data-taskId', data.id);
                     addTaskClickListener(newLink, data.id, data.name);
                     addHoverListener(newLink, 'task', data.id);
+                    localStorage.removeItem(`tasks_cache_${projectId}`);
                 }
             });
         }
@@ -1609,6 +1669,7 @@
                 if (data.message === "Log created") {
                     const logItem = logItemsContainer.querySelector(`[data-logId="tmp${tempId}"]`);
                     logItem.setAttribute('data-logid',data.id);
+                    localStorage.removeItem(`logs_cache_${taskId}`);
                 }
             });
 
@@ -1638,7 +1699,7 @@
             const logDiv = document.getElementById('log-div');
             if (globalProjectId !== projectId) {
                 logContent.style.visibility = 'hidden';
-                logDiv.style.opacity = "0.5";
+                logDiv.style.opacity = "1";
             }
 
             // Update global
@@ -2047,6 +2108,7 @@
                             console.log("Time block updated")
                             newBlock.dataset.id = data.id;
                         }
+                        localStorage.removeItem(`time_cache_${globalProjectId}`);
                     });
                     calculateTaskTotalTime(globalTaskId, changed=true);
                 }
@@ -2196,6 +2258,9 @@
             .catch(error => {
             console.error(error);
         });
+
+        localStorage.removeItem(`tasks_cache_${globalProjectId}`);
+
     }
 
     // Complete project
@@ -2225,6 +2290,7 @@
             .then(response => response.json())
             .then(data => {
                 //populateProjects();
+                localStorage.removeItem(`projects_cache_${globalUserId}`);
             })
             .catch(error => {
             console.error(error); // Handle errors
@@ -2233,6 +2299,7 @@
 
     // Rename project
     function renameProject(projectId, newName){
+
         fetch(`/projects`, {
             method: 'PUT',
             headers: {
@@ -2245,10 +2312,11 @@
             })
             .then(response => response.json())
             .then(data => {
-            populateProjects();
+                populateProjects();
+                localStorage.removeItem(`projects_cache_${globalUserId}`);
             })
             .catch(error => {
-            console.error(error); // Handle errors
+                console.error(error); 
         });
     }
 
@@ -2266,7 +2334,8 @@
             })
             .then(response => response.json())
             .then(data => {
-            populateProjects();
+                populateProjects();
+                localStorage.removeItem(`projects_cache_${globalUserId}`);
             })
             .catch(error => {
             console.error(error); // Handle errors
@@ -2291,6 +2360,7 @@
             .then(data => {
                 const taskLabel = document.getElementById('task-name');
                 taskLabel.textContent = newName;
+                localStorage.removeItem(`tasks_cache_${globalProjectId}`);
             })
             .catch(error => {
             console.error(error); // Handle errors
@@ -2318,6 +2388,7 @@
                     globalTaskId=undefined;
                     populateTasks(globalProjectId);
                 }
+                localStorage.removeItem(`tasks_cache_${globalProjectId}`);
             })
             .catch(error => {
             console.error(error); // Handle errors
@@ -2326,6 +2397,7 @@
 
     // Pin log
     function pinLog(logItem) {
+        localStorage.removeItem(`logs_cache_${globalTaskId}`);
 
         const logItemsContainer = document.getElementById('log-items-container');
         const pinnedLogsContainer = document.getElementById('pinned-logs-container');
@@ -2385,6 +2457,7 @@
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
+                    taskId: globalTaskId,
                     logId: logId,
                     isPinned: isPinned !== 'true'
                 })
@@ -2515,6 +2588,7 @@
         calculateListHeight();
         adjustLogItemsContainerHeight();
         resizeTimeout = setTimeout(resizeTimeBlocks, 100);
+        setClassForScreenSize();
     });
     
     // Pick color
@@ -2820,18 +2894,16 @@
     // Keep list container correct size
     const listDiv = document.querySelector('.list-div');
     function calculateListHeight() {
-        setTimeout(function() {
-            let listHeight = listDiv.offsetHeight;
-            var totalHeight = listHeight + 80;
-            
-            listContainer.style.height = totalHeight + 'px';
-            if (window.innerWidth >= 769) {
-                listContainer.style.width = 270 + 'px';
-            }
-            else {
-                listContainer.style.width = 'auto';
-            }
-        }, 110);
+        let listHeight = listDiv.offsetHeight;
+        var totalHeight = listHeight + 80;
+        
+        listContainer.style.height = totalHeight + 'px';
+        if (window.innerWidth >= 769) {
+            listContainer.style.width = 270 + 'px';
+        }
+        else {
+            listContainer.style.width = 'auto';
+        }
     }
     listContainer.addEventListener('click', function() {
         calculateListHeight();
@@ -2895,6 +2967,7 @@
                 console.log("Time block updated")
                 activeBlock.dataset.id = data.time_id;
                 calculateTaskTotalTime(activeBlock.dataset.taskId, changed=true);
+                localStorage.removeItem(`time_cache_${globalProjectId}`);
             }
         });
     }
@@ -2998,6 +3071,7 @@
                 activeBlock = null;
                 calculateTaskTotalTime(taskId, changed=true);                
             }
+            localStorage.removeItem(`time_cache_${projectId}`);
         });
     }
     const deleteActiveTimeBlockButton = document.getElementById('delete-time-block-button');
