@@ -270,6 +270,7 @@ def list_logs():
 def list_time():
     session = Session()
     try:
+        flask_session[f'time_cache_{project_id}'] = None
         project_id = request.args.get('project_id')
         time_json = flask_session.get(f'time_cache_{project_id}')
 
@@ -292,8 +293,6 @@ def list_time():
                 } 
                 for time_id, task_id, task_name, start, end, duration in query_results
             ]
-
-            #flask_session[f'time_cache_{project_id}'] = time_json
         else:
             print('time read from session cache')
 
