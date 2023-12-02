@@ -235,7 +235,7 @@ def list_tasks():
         if tasks_json is None:
             tasks = session.query(Task).filter(Task.project_id==project_id, Task.is_visible==True).order_by(Task.is_completed.asc(), Task.updated_at.desc()).all()
             tasks_json = [{'id':task.id,'name':task.name,'total_seconds':task.total_seconds, 'is_completed':task.is_completed, 'is_visible':task.is_visible} for task in tasks]
-            flask_session[f'tasks_cache_{project_id}'] = tasks_json            
+            #flask_session[f'tasks_cache_{project_id}'] = tasks_json            
         else:
             print('tasks read from session cache')
         
