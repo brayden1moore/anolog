@@ -2304,6 +2304,7 @@
 
     // Rename project
     function renameProject(projectId, newName){
+        localStorage.removeItem(`projects_cache_${globalUserId}`);
 
         fetch(`/projects`, {
             method: 'PUT',
@@ -2318,7 +2319,6 @@
             .then(response => response.json())
             .then(data => {
                 populateProjects();
-                localStorage.removeItem(`projects_cache_${globalUserId}`);
             })
             .catch(error => {
                 console.error(error); 
@@ -2327,6 +2327,7 @@
 
     // Delete project
     function deleteProject(projectId){
+        localStorage.removeItem(`projects_cache_${globalUserId}`);
         fetch(`/projects`, {
             method: 'PUT',
             headers: {
@@ -2340,7 +2341,6 @@
             .then(response => response.json())
             .then(data => {
                 populateProjects();
-                localStorage.removeItem(`projects_cache_${globalUserId}`);
             })
             .catch(error => {
             console.error(error); // Handle errors
@@ -2349,7 +2349,7 @@
 
     // Rename task
     function renameTask(taskId, newName){
-
+        localStorage.removeItem(`tasks_cache_${globalProjectId}`);
         fetch(`/tasks`, {
             method: 'PUT',
             headers: {
@@ -2365,7 +2365,6 @@
             .then(data => {
                 const taskLabel = document.getElementById('task-name');
                 taskLabel.textContent = newName;
-                localStorage.removeItem(`tasks_cache_${globalProjectId}`);
             })
             .catch(error => {
             console.error(error); // Handle errors
@@ -2374,6 +2373,7 @@
 
     // Delete task
     function deleteTask(taskId){
+        localStorage.removeItem(`tasks_cache_${globalProjectId}`);
         fetch(`/tasks`, {
             method: 'PUT',
             headers: {
@@ -2393,7 +2393,6 @@
                     globalTaskId=undefined;
                     populateTasks(globalProjectId);
                 }
-                localStorage.removeItem(`tasks_cache_${globalProjectId}`);
             })
             .catch(error => {
             console.error(error); // Handle errors
