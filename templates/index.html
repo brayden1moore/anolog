@@ -2234,7 +2234,7 @@
     // Complete task
     function completeTask(taskCheckbox, taskLabel, isCompleted) {
         const selectedTask = document.querySelector(`p[data-taskId="${globalTaskId}"]`);
-        const listItem = selectedTask.closest('task-or-project-li');
+        const listItem = selectedTask.closest('li');
 
         if (isCompleted) {
             selectedTask.style.textDecoration = 'line-through';
@@ -2271,7 +2271,7 @@
     // Complete project
     function completeProject(projectId, isCompleted) {
         const selectedProject = document.querySelector(`p[data-projectId="${globalProjectId}"]`);
-        const listItem = selectedProject.closest('task-or-project-li');
+        const listItem = selectedProject.closest('li');
         
         if (isCompleted) {
             selectedProject.style.textDecoration = 'line-through';
