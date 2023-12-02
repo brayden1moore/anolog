@@ -243,8 +243,10 @@
             transition: opacity 0.2s ease;
         }
         li {
-            margin-right: 20px;
             margin-bottom: 5px;
+        }
+        .task-or-project-li {
+            margin-right: 20px;
         }
         #new-project-input, #new-task-input, .rename-input{
             font: inherit;
@@ -1045,6 +1047,7 @@
                         first = false;
                     }
                     const newListItem = document.createElement('li');
+                    newListItem.classList.add('task-or-project-li');
                     const newLink = document.createElement('p');
                     newLink.className = 'task-or-project';
 
@@ -1118,6 +1121,7 @@
                 if (task.is_visible !== false) {
      
                     const newTaskListItem = document.createElement('li');
+                    newListItem.classList.add('task-or-project-li');
                     const newTaskLink = document.createElement('p');
                     newTaskLink.className = 'task-or-project';
                     newTaskLink.textContent = task.name;
@@ -1499,6 +1503,7 @@
 
             // Create and insert the new list item before the input item
             const newListItem = document.createElement('li');
+            newListItem.classList.add('task-or-project-li');
             const newLink = document.createElement('p');
             newLink.className = 'task-or-project';
             newLink.textContent = newProjectName;
@@ -1548,8 +1553,8 @@
         const logDiv = document.getElementById('log-div');
 
         if (newTaskName) {
-
             const newListItem = document.createElement('li');
+            newListItem.classList.add('task-or-project-li');
             const newLink = document.createElement('p');
             newLink.className = 'task-or-project';
             newLink.textContent = newTaskName;
@@ -2229,7 +2234,7 @@
     // Complete task
     function completeTask(taskCheckbox, taskLabel, isCompleted) {
         const selectedTask = document.querySelector(`p[data-taskId="${globalTaskId}"]`);
-        const listItem = selectedTask.closest('li');
+        const listItem = selectedTask.closest('task-or-project-li');
 
         if (isCompleted) {
             selectedTask.style.textDecoration = 'line-through';
@@ -2266,7 +2271,7 @@
     // Complete project
     function completeProject(projectId, isCompleted) {
         const selectedProject = document.querySelector(`p[data-projectId="${globalProjectId}"]`);
-        const listItem = selectedProject.closest('li');
+        const listItem = selectedProject.closest('task-or-project-li');
         
         if (isCompleted) {
             selectedProject.style.textDecoration = 'line-through';
@@ -2831,6 +2836,7 @@
         const targetUl = type === 'project' ? projectUlElement : taskUlElement;
 
         const newLi = document.createElement('li');
+        newLi.classList.add('task-or-project-li');
         newLi.id = `new-${type}-li`;
 
         const newInput = document.createElement('input');
