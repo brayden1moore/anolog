@@ -480,11 +480,12 @@ def update_log():
         log = session.query(Log).filter(Log.id == log_id).first()
 
         is_pinned = data.get('isPinned')
+        new_description = data.get('newDescription')
 
         if is_pinned is not None:
             log.is_pinned = is_pinned
-
-        task_id = data.get('taskId')
+        if new_description is not None:
+            log.description = new_description
         
         session.commit()
         return jsonify({"message": "Log updated"}), 200

@@ -738,15 +738,14 @@
             background-color:none;
             opacity: 1;
             height: 100%;
-            transition: 0.2s opacity ease-in-out;
-            transition: 0.2s width ease-out;
+            transition: 0.2s ease;
             background-color: var(--primary-color);
         }
         .time-block:hover {
             opacity: 0.7 !important;
         }
         #time-description-container {
-            padding-right: 3px;
+            padding-right: 2px;
             height: 0px;
             overflow: hidden;
             transition: 0.2s ease;
@@ -824,6 +823,68 @@
             opacity: 0.6;
         }
 
+        .log-options-div {
+            width: 0px;
+            transition: 0.2s ease;
+            display: flex;
+        }
+
+        .log-option-button {
+            color: var(--primary-color);
+            opacity: 0.6;
+            transition: 0.2s ease;
+            width: auto;
+            margin-right: 2px;
+        }
+
+        .log-option-button.dark {
+            color: #161616 !important;
+        }
+        
+        .log-item:hover .log-option-button {
+            width: 20px !important; 
+            overflow: visible;
+        }
+
+        .log-item:hover .log-option-button.pin {
+            width: 16px !important;
+        }
+
+        .log-option-button.pin.pinned {
+            width: 16px !important;
+            opacity: 1;
+        }
+
+        .log-item:hover .log-options-div {
+            width: 40px;
+        }
+
+        .log-option-button:hover {
+            opacity: 1;
+        }
+
+        .log-edit-area {
+            resize: vertical;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 12pt;
+            margin-top: 10px;
+            margin-bottom: 0px;
+            color: var(--primary-color);
+            width: -webkit-fill-available;
+            height: auto;
+            background: none;
+            border: 2px dashed var(--primary-color);
+            outline: none;
+            border-radius: 6px;
+            opacity: 1;
+            transition: opacity 0.2s ease;
+            padding: 10px;
+        }
+        .log-edit-area.dark {
+            color: #161616;
+            border: 2px dashed #161616;
+        }
+
         @keyframes fadeIn {
             0%, 100% {
                 opacity: 1;
@@ -862,7 +923,6 @@
             #time-content {
                 width: auto;
             }
-
             .content-div {
                 display: block;
             }
@@ -1016,17 +1076,16 @@
             </div>
         </div>
     </div>
-    <span id="user-id-container">{{user_id}}</span>
 
 <script>
     // Set global variables
-    var globalUserId = document.getElementById('user-id-container').textContent;
+    var globalUserId = {{user_id}};
     var globalProjectId;
-    var globalProjectName;
     var globalTaskId;
     var globalLogId;
     var globalSeconds;
     var darkmode = {{ darkmode|lower }};
+
     let intervalId = null;
     let firstLoad = true;
     let showCompletedTasks = false;
@@ -1211,6 +1270,58 @@
         }
     }
 
+    function makeLog(id, isPinned, date, description) {
+        let dateObj;
+        if (date !== null) {
+            dateObj = new Date(date);
+        }
+        else {
+            dateObj = new Date();
+        }
+        const localDateStr = dateObj.toLocaleString();
+        const escapedLogText = description.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        
+        let dark = '';
+        let backgroundColor = '#161616';
+        let color = 'var(--primary-color)';
+
+        if (isPinned) { 
+            dark = 'dark';
+            color = '#161616';
+            backgroundColor = 'var(--primary-color)';
+        }
+
+        const logEntry = `
+            <div class="log-item" data-logId="${id}" data-isPinned=${isPinned} style="background-color:${backgroundColor}; color: ${color}">
+                <div style="display: flex; margin-bottom: 5px; align-items: center;">
+                    <div class="log-options-div">
+                        <i id="pin-option-button" class="log-option-button ${dark} pin fa-solid fa-thumbtack" style="width: 0px; font-size: 10pt; overflow: hidden;"></i>
+                        <i id="edit-option-button" class="log-option-button ${dark} fa fa-pencil-alt" style="width: 0px; font-size: 10pt; overflow: hidden;"></i>
+                    </div>
+                    <span class="log-created-at">${localDateStr}</span>
+                </div>
+                <span class="log-description" style="white-space: pre-line;">${escapedLogText}</span>
+            </div>`;
+
+        const element = document.createElement('div');
+        element.innerHTML = logEntry;
+        logItem = element.firstElementChild;
+        addLogClickListener(logItem);
+
+        const pinOption = logItem.querySelector('#pin-option-button');
+        const editOption = logItem.querySelector('#edit-option-button');
+        addLogPinClickListener(pinOption, logItem);
+        addLogEditClickListener(editOption, logItem);
+        return logItem;
+    }
+
+    function addLogPinClickListener(logOptionButton, logItem) {
+        logOptionButton.addEventListener('click', () => pinLog(logItem));
+    }
+    function addLogEditClickListener(logOptionButton, logItem) {
+        logOptionButton.addEventListener('click', () => editLog(logItem));
+    }
+
     // GET from /tasks /hours and /logs endpoints and populate content
     function populateLogs(taskId) {
 
@@ -1238,64 +1349,25 @@
             taskCheckbox.checked = false;
         }
 
-        let logIds = [];
-        let logPinnedStatuses = [];
-
         function displayLogData(data) {
             // Append responses to entry log
             data.forEach((log, index) => {
                 showIt = (log.description.includes("Timer stop (") || log.description.includes("Timer start (") || log.description.includes("Timer edited to (")) ? false : true;
                 if (showIt) {
-                    const dateObj = new Date(log.created_at);
-                    const localDateStr = dateObj.toLocaleString();
 
-                    let pin = '';
-                    let opacity = '1';
-                    let backgroundColor = '#161616';
-                    let color = 'var(--primary-color)';
-                    if (log.is_pinned) {
-                        backgroundColor = 'var(--primary-color)';
-                        color = '#161616';
-                        opacity = '1';
-                        pin = '<i class="fa-solid fa-thumbtack" id="pin" style="font-size: 8pt"></i>';
-                    }
-
-                    const escapedLogText = log.description.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                    const logEntry = `
-                        <div class="log-item" data-logId="${log.id}" data-isPinned=${log.is_pinned} style="opacity:${opacity}; background-color:${backgroundColor}; color: ${color}">
-                            ${pin}
-                            <span class="log-created-at">${localDateStr}</span><br>
-                            <span class="log-description" style="white-space: pre-line;">${escapedLogText}</span>
-                        </div>`;
+                    let logEntry = makeLog(log.id, false, log.created_at, log.description);
+                    let pinnedLogEntry = makeLog(log.id, true, log.created_at, log.description);
                     
                     if (log.is_pinned) {
-                        pinnedLogsContainer.insertAdjacentHTML('beforeend', logEntry);
-                        logItemsContainer.insertAdjacentHTML('beforeend', logEntry);
+                        pinnedLogsContainer.appendChild(pinnedLogEntry);
+                        logEntry.style.height = '0px';
+                        logEntry.style.padding = '0px';
+                        logItemsContainer.appendChild(logEntry);
                     }
                     else{
-                        logItemsContainer.insertAdjacentHTML('beforeend', logEntry);
+                        logItemsContainer.appendChild(logEntry);
                     }
-                    logIds.push(log.id);
-                    logPinnedStatuses.push(log.is_pinned);
-                }
-            });
-
-            // Add click listeners after
-            const logItems = document.querySelectorAll('.log-item');
-            logItems.forEach((logItem, index) => {
-                addLogClickListener(logItem, logIds[index]);
-            });
-            const unpinnedItems = logItemsContainer.querySelectorAll('.log-item');
-            unpinnedItems.forEach((unpinnedItem,index) => {
-                if (unpinnedItem.getAttribute('data-isPinned') === 'true') {
-                    pin = unpinnedItem.querySelector('#pin')
-                    unpinnedItem.removeChild(pin);
-                    unpinnedItem.style.height = '0px';
-                    unpinnedItem.style.padding = '0px';
-                    unpinnedItem.style.opacity = '1';
-                    unpinnedItem.style.color = "var(--primary-color)";
-                    unpinnedItem.style.backgroundColor = "#161616";
-                    unpinnedItem.setAttribute('data-isPinned', 'false');
+                    adjustLogItemsContainerHeight();
                 }
             });
             
@@ -1537,7 +1609,7 @@
             }).then(response => response.json())
             .then(data => {
                 if (data.message === "Project created") {
-                    console.log('Project Created');
+                    console.log('project Created');
                     newLink.setAttribute('data-projectid',data.id)
                     addProjectClickListener(newLink, data.id, newProjectName);
                     addHoverListener(newLink, 'project', data.id);
@@ -1591,7 +1663,7 @@
             .then(data => {
                 if (data.message === "Task created") {
                     // Create and insert the new list item before the input item
-                    console.log('Task Created');
+                    console.log('task Created');
                     newLink.setAttribute('data-taskId', data.id);
                     addTaskClickListener(newLink, data.id, data.name);
                     addHoverListener(newLink, 'task', data.id);
@@ -1604,11 +1676,12 @@
     // POST to /logs endpoint and append list. PUT to /tasks
     function addLog(taskId, logType) {
         const tempId = Math.floor(Math.random() * 90000) + 10000;
-        const initialTaskId = taskId;  // Store the taskId at the time of logging
+        const initialTaskId = taskId;
         let isTimer = true;
         const logInput = document.getElementById('log-input');
         const clock = document.getElementById('clock');
         let logText;
+        let logEntry;
         
         if (logType === "Start") {
             logText = `Timer start (${clock.textContent})`;
@@ -1622,19 +1695,11 @@
         else {
             logText = logInput.value;
             isTimer = false;
+
             // Build log entry
-            const dateObj = new Date();
-            const formattedDate = dateObj.toLocaleString('en-US');
-            const escapedLogText = logText.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            const logEntry = `
-                                <div class="log-item" data-logId="tmp${tempId}" data-isPinned=false style="opacity:1;">
-                                    <span class="log-created-at">${formattedDate}</span><br>
-                                    <span class="log-description" style="white-space: pre-line;">${escapedLogText}</span>
-                                </div>`;
-            const logItemsContainer = document.getElementById('log-items-container');
-            logItemsContainer.insertAdjacentHTML('afterBegin', logEntry);
-            const logItem = logItemsContainer.querySelector(`[data-logId="tmp${tempId}"]`);
-            addLogClickListener(logItem);
+            logEntry = makeLog(tempId, false, null, logText);
+            logItemsContainer.insertBefore(logEntry, logItemsContainer.childNodes[1]);
+            addLogClickListener(logEntry);
         }
 
         // construct PUT payload
@@ -1653,7 +1718,7 @@
         }).then(response => response.json())
         .then(data => {
             if (data.message === "Task updated") {
-                console.log("Task updated")
+                console.log("task updated")
             }
         });
 
@@ -1675,8 +1740,7 @@
             }).then(response => response.json())
             .then(data => {
                 if (data.message === "Log created") {
-                    const logItem = logItemsContainer.querySelector(`[data-logId="tmp${tempId}"]`);
-                    logItem.setAttribute('data-logid',data.id);
+                    logEntry.setAttribute('data-logid',data.id);
                     localStorage.removeItem(`logs_cache_${taskId}`);
                 }
             });
@@ -1764,7 +1828,7 @@
     // Add click listener to log 
     function addLogClickListener(logItem) {
         logItem.addEventListener('dblclick', function(e) {
-            pinLog(logItem);
+            console.log('');
         })
     }
 
@@ -2113,7 +2177,7 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.message === "Time block created") {
-                            console.log("Time block updated")
+                            console.log("time block updated")
                             newBlock.dataset.id = data.id;
                         }
                         localStorage.removeItem(`time_cache_${globalProjectId}`);
@@ -2244,12 +2308,19 @@
             taskLabel.style.textDecoration = 'line-through';
             taskCheckbox.checked = true;
             listItem.setAttribute('data-completed',true);
+            listItem.style.height = '0px'
+            listItem.style.height = '0px';
+            listItem.style.overflow = 'hidden';
+            listItem.style.margin = 'auto';
         }
         else {
             selectedTask.style.textDecoration = '';
             taskLabel.style.textDecoration = '';
             taskCheckbox.checked = false;
             listItem.setAttribute('data-completed',false);
+            listItem.style.height = 'auto';
+            listItem.style.overflow = 'visible';
+            listItem.style.marginBottom = '5px';
         }
 
         fetch(`/tasks`, {
@@ -2418,65 +2489,159 @@
                 hiddenLogItem = logItemsContainer.querySelector(`[data-logId="${logId}"]`);
                 hiddenLogItem.style.height = 'auto';
                 hiddenLogItem.style.padding = '15px';
-                hiddenLogItem.setAttribute('data-isPinned', 'false');
+
+                // Make sure the text content is updated
+                const hiddenDescription = hiddenLogItem.querySelector('.log-description');
+                const pinnedDescription = logItem.querySelector('.log-description');
+                hiddenDescription.textContent = pinnedDescription.textContent;
                 pinnedLogsContainer.removeChild(logItem);
-                logItem.setAttribute('data-isPinned', 'false');
             } else {
                 // Pin if not pinned
-                let clonedLogItem = logItem.cloneNode(true);  
+                let clonedLogItem = logItem.cloneNode(true);
+                
+                // Make buttons dark
+                const logOptionButtons = clonedLogItem.querySelectorAll('.log-option-button');
+                logOptionButtons.forEach(button => {
+                    button.classList.add('dark')
+                });
+
+                // Hide item in regular log
                 logItem.style.height = '0px';
                 logItem.style.padding = '0px';
                 logItem.style.overflow = 'hidden';
-                pin = '<i class="fa-solid fa-thumbtack" style="font-size: 8pt"></i>';
-                clonedLogItem.insertAdjacentHTML('afterBegin',pin);
+
+                // Create item in pinned log
                 clonedLogItem.style.opacity = '1'; 
                 clonedLogItem.style.background = 'var(--primary-color)';
                 clonedLogItem.style.color = '#161616';
                 pinnedLogsContainer.appendChild(clonedLogItem);
                 clonedLogItem.setAttribute('data-isPinned', 'true');
                 addLogClickListener(clonedLogItem);
+
+                const pinOption = clonedLogItem.querySelector('#pin-option-button');
+                const editOption = clonedLogItem.querySelector('#edit-option-button');
+                addLogPinClickListener(pinOption, clonedLogItem);
+                addLogEditClickListener(editOption, clonedLogItem)
             }
         
         adjustLogItemsContainerHeight();
         }
 
-        // construct task PUT payload
-        const putPayload = {
-            taskId: globalTaskId,
-            totalSeconds: globalSeconds
-        };
-
-        // Send PUT request to Flask API
-        fetch('/tasks', {
+        // Update log
+        fetch(`logs`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(putPayload)
-        }).then(response => response.json())
+            body: JSON.stringify({
+                taskId: globalTaskId,
+                logId: logId,
+                isPinned: isPinned !== 'true'
+            })
+        })
+        .then(response => response.json())
         .then(data => {
-            if (data.message === "Task updated") {
-                console.log("Task updated");
-                // Update logs
+            if (data.message === "Log updated") {
+                console.log('log updated');
+            }
+        });
+    }
+
+    function editLog(logItem) {
+        const logDescription = logItem.querySelector('.log-description');
+        const editOption = logItem.querySelector('#edit-option-button');
+        const inputElement = document.createElement('textarea');
+        
+        inputElement.classList.add('log-edit-area');
+        if (logItem.getAttribute('data-isPinned') === 'true') {
+            inputElement.classList.add('dark');
+        }
+
+        const description = logDescription.textContent;
+        inputElement.value = description;
+        editOption.style.display = 'none';
+
+        // Replace the description with the input element
+        logDescription.parentNode.replaceChild(inputElement, logDescription);
+
+        // Focus the input and select its content
+        inputElement.focus();
+        inputElement.select();
+
+        // Function to revert changes
+        function revertEdit() {
+            if (inputElement.parentNode) {
+                inputElement.parentNode.replaceChild(logDescription, inputElement);
+                inputElement.removeEventListener('keydown', escHandler); 
+                editOption.style.display = 'inline-block';
+            }
+        }
+
+        // Function to handle escape key
+        function escHandler(event) {
+            if (event.key === 'Escape') {
+                revertEdit();
+            }
+        }
+
+        // Add event listener for the escape key
+        inputElement.addEventListener('keydown', escHandler);
+
+        // Function to commit changes
+        function commitLogEdit() {
+            const newDescription = inputElement.value;
+            logDescription.textContent = newDescription;
+
+            if (inputElement.parentNode) {
+                inputElement.parentNode.replaceChild(logDescription, inputElement);
+                inputElement.removeEventListener('keydown', enterHandler); 
+                editOption.style.display = 'inline-block';
+
+                // Update log
                 fetch(`logs`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    taskId: globalTaskId,
-                    logId: logId,
-                    isPinned: isPinned !== 'true'
-                })
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        taskId: globalTaskId,
+                        logId: logItem.getAttribute('data-logId'),
+                        newDescription: newDescription
+                    })
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.message === "Log updated") {
+                        console.log('log updated');
+                        localStorage.removeItem(`logs_cache_${globalTaskId}`);
                     }
-                })
+                });
             }
-        });
+        }
+
+        // Function to handle enter key
+        function enterHandler(event) {
+            if (event.key === 'Enter') {
+                if (event.shiftKey) {
+                    event.preventDefault(); 
+
+                    const cursorPosition = inputElement.selectionStart;
+                    const textBeforeCursor = inputElement.value.substring(0, cursorPosition);
+                    const textAfterCursor = inputElement.value.substring(cursorPosition);
+
+                    inputElement.value = textBeforeCursor + '\n' + textAfterCursor;
+                    inputElement.selectionStart = cursorPosition + 1;
+                    inputElement.selectionEnd = cursorPosition + 1;
+                }
+                else {
+                    commitLogEdit();
+                }
+            }
+        }
+
+        inputElement.addEventListener('keydown', enterHandler);
     }
+
 
     // Add click listeners to export buttons
     const projectExport = document.getElementById('project-csv');
@@ -2949,7 +3114,6 @@
         activeBlock.style.backgroundColor = 'var(--primary-color)';
         resizeTimeBlocks();
         
-        console.log(startTime);
         // construct task PUT payload
         const putPayload = {
             projectId: globalProjectId,
@@ -2959,7 +3123,6 @@
             end: endTime,
             duration: duration
         };
-        console.log(putPayload);
 
         // Send PUT request to Flask API
         fetch('/time', {
@@ -2972,7 +3135,7 @@
         .then(response => response.json())
         .then(data => {
             if (data.message === "Time block updated") {
-                console.log("Time block updated")
+                console.log("time block updated")
                 activeBlock.dataset.id = data.time_id;
                 calculateTaskTotalTime(activeBlock.dataset.taskId, changed=true);
                 localStorage.removeItem(`time_cache_${globalProjectId}`);
@@ -3023,7 +3186,6 @@
 
         globalSeconds = totalSeconds;
         updateClock();
-        console.log(totalSeconds);
 
         const taskItem = document.querySelector(`[data-taskid="${taskId}"]`);
         taskItem.dataset.totalSeconds = globalSeconds;
@@ -3064,7 +3226,7 @@
         .then(response => response.json())
         .then(data => {
             if (data.message === "Time block updated") {
-                console.log("Time block updated")
+                console.log("time block updated")
                 taskId = activeBlock.dataset.taskId;
                 
                 const timeBlocks = document.querySelectorAll('.time-block');
