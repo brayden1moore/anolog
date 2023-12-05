@@ -1091,6 +1091,11 @@
     let showCompletedTasks = false;
     let showCompletedProjects = false;
 
+    // Clear local storage on first load
+    window.onload = function() {
+        localStorage.clear();
+    };
+
     // GET from /projects endpoint and populate list
     function populateProjects() {
         const ulElement = document.getElementById('project-list-ul');
