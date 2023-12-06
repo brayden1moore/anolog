@@ -2328,6 +2328,8 @@
             listItem.style.marginBottom = '5px';
         }
 
+        calculateListHeight();
+
         fetch(`/tasks`, {
             method: 'PUT',
             headers: {
@@ -2355,11 +2357,20 @@
         if (isCompleted) {
             selectedProject.style.textDecoration = 'line-through';
             listItem.setAttribute('data-completed',true);
+            listItem.style.height = '0px'
+            listItem.style.height = '0px';
+            listItem.style.overflow = 'hidden';
+            listItem.style.margin = 'auto';
         }
         else {
             selectedProject.style.textDecoration = '';
             listItem.setAttribute('data-completed',false);
+            listItem.style.height = 'auto';
+            listItem.style.overflow = 'visible';
+            listItem.style.marginBottom = '5px';
         }
+
+        calculateListHeight();
 
         fetch(`/projects`, {
             method: 'PUT',
