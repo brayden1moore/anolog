@@ -2201,7 +2201,7 @@
         newBlock.dataset.duration = 3600;
         timerStartDateTime = new Date();
         timerEndDateTime = new Date();
-        timerEndDateTime.setSeconds(timerEndDateTime.getSeconds() + parseInt(newBlock.dataset.duration));
+        timerStartDateTime.setSeconds(timerEndDateTime.getSeconds() - parseInt(newBlock.dataset.duration));
         newBlock.dataset.startTime = convertUTCToLocalForInput(timerStartDateTime.toISOString().slice(0,16));
         newBlock.dataset.endTime = convertUTCToLocalForInput(timerEndDateTime.toISOString().slice(0,16));
         newBlock.dataset.duration = 3600;
@@ -2866,7 +2866,9 @@
                 header.style.color =  "#161616";
             }
             for (let button of addButtons) {
-                button.style.color =  "#161616";
+                if (button.id !== "add-a-time-block") {
+                    button.style.color =  "#161616";
+                }
             }
             for (let button of toggleButtons) {
                 button.style.color =  "#161616";
