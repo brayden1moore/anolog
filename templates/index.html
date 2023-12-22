@@ -280,7 +280,7 @@
             background-color: #161616;
             border:  #161616 solid 2px;
             border-radius: 10px;
-            height: 600px;
+            min-height: 600px;
             box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);
             transition: opacity 0.5s ease;
         }
@@ -312,7 +312,7 @@
         }
         #log-content{
             visibility: hidden;
-            height: 95%;
+            min-height: 95%;
             color:  var(--primary-color);
         }
         #log-input {
@@ -398,7 +398,7 @@
         #log-items-container {
             padding-right: 10px;
             padding-left: 10px;
-            height: 70%;
+            height: auto;
             opacity: 1;
             overflow-y: scroll;
         }
@@ -1372,7 +1372,7 @@
                     else{
                         logItemsContainer.appendChild(logEntry);
                     }
-                    adjustLogItemsContainerHeight();
+                    //adjustLogItemsContainerHeight();
                 }
             });
             
@@ -2539,8 +2539,6 @@
                 addLogPinClickListener(pinOption, clonedLogItem);
                 addLogEditClickListener(editOption, clonedLogItem)
             }
-        
-        adjustLogItemsContainerHeight();
         }
 
         // Update log
@@ -2767,14 +2765,11 @@
         }
     }
 
-    //setClassForScreenSize();
     window.addEventListener('resize', calculateListHeight);
-    window.addEventListener('resize', adjustLogItemsContainerHeight);
     let resizeTimeout;
     window.addEventListener('resize', () => {
         clearTimeout(resizeTimeout);
         calculateListHeight();
-        adjustLogItemsContainerHeight();
         resizeTimeout = setTimeout(resizeTimeBlocks, 100);
         setClassForScreenSize();
     });
@@ -3062,24 +3057,6 @@
                 addNewItem('project');
             }
         });
-    });
-
-    // Adjust log container height
-    const logItemsContainer = document.getElementById('log-items-container');
-    const logInput = document.getElementById('log-input');
-    function adjustLogItemsContainerHeight() {
-
-        const logInputHeight = logInput.offsetHeight;
-        const pinnedLogsContainer = document.getElementById('pinned-logs-container');
-        const pinnedHeight = pinnedLogsContainer.offsetHeight;
-        const logContentHeight = document.getElementById('log-content').offsetHeight;
-        const timeHeight = document.getElementById('time').offsetHeight;
-
-        itemsHeight = logContentHeight - timeHeight - logInputHeight - pinnedHeight - 30;
-        logItemsContainer.style.height = `${itemsHeight}px`;
-    }
-    logInput.addEventListener('mouseup', function(event) {
-        adjustLogItemsContainerHeight();
     });
 
     // Keep list container correct size
