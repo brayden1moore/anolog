@@ -1680,6 +1680,7 @@
 
     // POST to /logs endpoint and append list. PUT to /tasks
     function addLog(taskId, logType) {
+        const logItemsContainer = document.getElementById('log-items-container');
         const tempId = Math.floor(Math.random() * 90000) + 10000;
         const initialTaskId = taskId;
         let isTimer = true;
