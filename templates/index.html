@@ -2242,6 +2242,12 @@
             }
         });
 
+        // Function to update the height of inputElement
+        function updateInputHeight() {
+            logInput.style.height = 'auto';
+            logInput.style.height = logInput.scrollHeight + 'px';
+        }
+        logInput.addEventListener('input', updateInputHeight);
 
         // Mark task as completed or not yet completed when taskbox is checked
         const taskCheckbox = document.getElementById('task-checkbox');
@@ -2560,6 +2566,13 @@
                 revertEdit();
             }
         }
+
+        // Function to update the height of inputElement
+        function updateInputHeight() {
+            inputElement.style.height = 'auto';
+            inputElement.style.height = inputElement.scrollHeight + 'px';
+        }
+        inputElement.addEventListener('input', updateInputHeight);
 
         // Add event listener for the escape key
         inputElement.addEventListener('keydown', escHandler);
