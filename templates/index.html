@@ -2232,6 +2232,8 @@
                     logInput.value = textBeforeCursor + '\n' + textAfterCursor;
                     logInput.selectionStart = cursorPosition + 1;
                     logInput.selectionEnd = cursorPosition + 1;
+                    logInput.style.height = (logInput.offsetHeight + logInput.style.lineHeight) + 'px';
+
                 } else {
                     e.preventDefault();
                     addLog(globalTaskId, logType='Comment');
@@ -2607,6 +2609,8 @@
                     inputElement.value = textBeforeCursor + '\n' + textAfterCursor;
                     inputElement.selectionStart = cursorPosition + 1;
                     inputElement.selectionEnd = cursorPosition + 1;
+                    inputElement.style.height = (inputElement.offsetHeight + inputElement.style.lineHeight) + 'px';
+
                 }
                 else {
                     commitLogEdit();
