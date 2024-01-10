@@ -200,12 +200,9 @@
             font-size: 12pt;
             display: inline;  
             cursor: pointer;
-            color: rgb(0, 0, 0);
+            color: var(--primary-color);
             border-bottom: 1px solid transparent;
             transition: 0.1s ease;
-        }
-        .task-or-project.darkmode {
-            color: var(--primary-color);
         }
         .task-or-project:hover {
             border-bottom: 1px solid var(--primary-color);
@@ -2797,16 +2794,9 @@
 
     // Toggle darkmode
     function toggleDarkmode(initialToggle) {
-        const list = document.querySelector('.list-container');
-        const listItems = document.querySelectorAll('.task-or-project');
         const logo = document.querySelector('.logo');
-        const headers = document.querySelectorAll('h2');
         const title = document.querySelector('h1');
         const darkmodeIcon = document.querySelector('#darkmode-icon');
-        const projectList = document.getElementById('project-list-ul');
-        const taskList = document.getElementById('task-list-ul');
-        const addButtons = document.querySelectorAll('.add-button');
-        const toggleButtons = document.querySelectorAll('.toggle-completed');
 
         if (initialToggle) {
             darkmode = !darkmode;
@@ -2825,22 +2815,6 @@
             // Make darkmode
             darkmode = true;
             document.body.style.backgroundColor = "#252525";
-        
-            for (let item of listItems) {
-                item.style.color =  "var(--primary-color)";
-            }
-            for (let header of headers) {
-                header.style.color =  "var(--primary-color)";
-            }
-            for (let button of addButtons) {
-                button.style.color =  "var(--primary-color)";
-            }
-            for (let button of toggleButtons) {
-                button.style.color =  "var(--primary-color)";
-            }
-
-            projectList.style.color = "var(--primary-color)";
-            taskList.style.color = "var(--primary-color)";
             darkmodeIcon.className = "fa-solid fa-moon";
             darkmodeIcon.style.fontSize = "14pt";
             title.style.color =  "var(--primary-color)";
