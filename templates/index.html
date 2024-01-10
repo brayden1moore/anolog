@@ -2730,8 +2730,8 @@
     window.addEventListener('resize', () => {
         clearTimeout(blockResizeTimeout);
         clearTimeout(listResizeTimeout);
-        blockResizeTimeout = setTimeout(resizeTimeBlocks, 100);
-        listResizeTimeout = setTimeout(calculateListHeight, 100);
+        blockResizeTimeout = setTimeout(resizeTimeBlocks, 50);
+        listResizeTimeout = setTimeout(calculateListHeight, 50);
         setClassForScreenSize();
     });
     
