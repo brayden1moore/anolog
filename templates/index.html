@@ -36,7 +36,7 @@
         }
         header {
             margin-bottom: 25px;
-            color: rgb(0, 0, 0);
+            color: var(--primary-color);
             text-align: left;
             align-items: center;
             display: flex;
@@ -105,7 +105,7 @@
             flex-shrink: 0;
             overflow:hidden;
             box-sizing: border-box;
-            background-color: #DDDDDD;
+            background-color: #161616;
             border-radius: 10px;
             margin-bottom: 0px;
             margin-right: 25px;
@@ -226,6 +226,7 @@
             font-size: large;
             margin-left: 0;
             padding-left: 20px;
+            color: var(--primary-color);
         }
         #task-list-ul {
             margin-top: 5px;
@@ -237,6 +238,7 @@
             margin-left: 0;
             padding-left: 20px;
             list-style-type:circle;
+            color: var(--primary-color);
         }
         #new-project-li, #new-task-li {
             opacity: 0.3;
@@ -253,13 +255,9 @@
             width: 125px;
             border: none;
             background: none;
-            border-bottom: 1px solid #161616;
-            outline: none;
-            color: #161616;
-        }
-        #new-project-input.darkmode, #new-task-input.darkmode, .rename-input.darkmode{
-            color: var(--primary-color);
             border-bottom: 1px solid var(--primary-color);
+            outline: none;
+            color: var(--primary-color);
         }
         #new-project-li:hover,
         #new-project-li:focus-within,
@@ -674,6 +672,7 @@
             opacity: 0.2;  
             width: 16px;
             overflow: hidden;
+            color: var(--primary-color);
         }
         .list-container:hover .toggle-completed {
             opacity: 0.5; 
@@ -682,7 +681,7 @@
             opacity: 1 !important; 
         }
         .add-button {
-            color: #161616;
+            color: var(--primary-color);
             font-size: 12pt;
             cursor: pointer;
             transition: 0.2s ease;
@@ -698,7 +697,7 @@
         }
 
         #add-a-time-block {
-            color: #161616;
+            color: var(--primary-color);
             font-size: 12pt;
             cursor: pointer;
             transition: 0.2s ease;
@@ -1141,16 +1140,6 @@
                         newListItem.setAttribute('data-completed', false);
                     }
 
-                    // Adjust colors for darkmode
-                    if (darkmode) {
-                        ulElement.style.color = "{{primary_color}}";
-                        newLink.style.color = "{{primary_color}}";
-                    }
-                    else {
-                        ulElement.style.color = "#161616";
-                        newLink.style.color = "#161616";
-                    }
-
                     // Add click event listener to this list item
                     addProjectClickListener(newLink, project.id, project.name);
                     
@@ -1216,16 +1205,6 @@
                     else {
                         newTaskLink.style.opacity = '0.5';
                         newTaskLink.style.fontWeight = 'normal';
-                    }
-
-                    // Adjust colors for darkmode
-                    if (darkmode) {
-                        taskUlElement.style.color = "{{primary_color}}";
-                        newTaskLink.style.color = "{{primary_color}}";
-                        }
-                    else {
-                        taskUlElement.style.color = "#161616";
-                        newTaskLink.style.color = "#161616";
                     }
 
                     newTaskLink.setAttribute('data-taskId', task.id);
@@ -1589,11 +1568,6 @@
             newLink.textContent = newProjectName;
             newListItem.setAttribute('data-completed', false);
 
-            // Adjust colors for darkmode
-            if (darkmode) {
-                newLink.classList.add('darkmode');
-            }
-
             newListItem.appendChild(newLink);
             projectUlElement.insertBefore(newListItem, newProjectLi);
             newProjectInput.value = '';
@@ -1645,11 +1619,6 @@
             newTaskInput.value = '';
             newLink.setAttribute('data-total-Seconds', 0);
             newLink.setAttribute('data-is-Completed','false');
-
-            // Adjust colors for darkmode
-            if (darkmode) {
-                newLink.classList.add('darkmode');
-            }
 
             // Construct payload
             const payload = {
@@ -1877,13 +1846,6 @@
                 // Create an input element
                 const inputElement = document.createElement('input');
                 inputElement.type = 'text';
-                if (darkmode) {
-                    inputElement.className = 'rename-input darkmode';
-                }
-                else {
-                    inputElement.className = 'rename-input';
-                }
-                
                 inputElement.value = newLink.textContent;
 
                 // Replace the link with the input element
@@ -2854,27 +2816,8 @@
             // Make lightmode
             darkmode = false;
             document.body.style.backgroundColor = "var(--primary-color)";
-            
-            for (let item of listItems) {
-                item.style.color =  "#161616";
-            }
-            for (let header of headers) {
-                header.style.color =  "#161616";
-            }
-            for (let button of addButtons) {
-                if (button.id !== "add-a-time-block") {
-                    button.style.color =  "#161616";
-                }
-            }
-            for (let button of toggleButtons) {
-                button.style.color =  "#161616";
-            }
-
-            projectList.style.color = "#161616";
-            taskList.style.color = "#161616";
             darkmodeIcon.className = "fa-regular fa-moon";
             darkmodeIcon.style.fontSize = "14pt";
-            list.style.backgroundColor = '#DDDDDD';
             title.style.color = "#161616";
             logo.style.background = "conic-gradient(transparent 0% 25%, #161616 25% 100%)";
         }
@@ -2900,7 +2843,6 @@
             taskList.style.color = "var(--primary-color)";
             darkmodeIcon.className = "fa-solid fa-moon";
             darkmodeIcon.style.fontSize = "14pt";
-            list.style.backgroundColor = "transparent";
             title.style.color =  "var(--primary-color)";
             logo.style.background = "conic-gradient(transparent 0% 25%, var(--primary-color) 25% 100%)";
         }
@@ -3023,9 +2965,6 @@
         const newInput = document.createElement('input');
         newInput.type = 'text';
         newInput.id = `new-${type}-input`;
-        if (darkmode) {
-            newInput.classList.add('darkmode');
-        }
 
         newInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
