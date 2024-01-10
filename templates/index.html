@@ -318,7 +318,8 @@
             margin-bottom: 0px;
             color: var(--primary-color);
             width: -webkit-fill-available;
-            height: 75px;
+            height: auto;
+            min-height: 75px;
             background: none;
             border: 2px solid var(--primary-color);
             outline: none;
@@ -2534,7 +2535,7 @@
 
         const description = logDescription.textContent;
         inputElement.value = description;
-        inputElement.style.height = logDescription.offsetHeight + 'px';
+        inputElement.style.minHeight = logDescription.offsetHeight + 'px';
         editOption.style.display = 'none';
 
         // Replace the description with the input element
