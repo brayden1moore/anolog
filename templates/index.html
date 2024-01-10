@@ -2225,6 +2225,7 @@
             if (e.key === 'Enter') {
                 if (e.shiftKey) {
                     e.preventDefault(); 
+                    updateInputHeight();
 
                     const cursorPosition = logInput.selectionStart;
                     const textBeforeCursor = logInput.value.substring(0, cursorPosition);
@@ -2617,6 +2618,7 @@
             if (event.key === 'Enter') {
                 if (event.shiftKey) {
                     event.preventDefault(); 
+                    updateInputHeight();
 
                     const cursorPosition = inputElement.selectionStart;
                     const textBeforeCursor = inputElement.value.substring(0, cursorPosition);
