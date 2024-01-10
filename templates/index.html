@@ -2235,9 +2235,12 @@
                     logInput.selectionEnd = cursorPosition + 1;
 
                 } else {
-                    e.preventDefault();
-                    addLog(globalTaskId, logType='Comment');
-                    logInput.value = '';
+                    const trimmedValue = logInput.value.trim();
+                    if (trimmedValue) { 
+                        e.preventDefault();
+                        addLog(globalTaskId, logType='Comment');
+                        logInput.value = '';
+                    }
                 }
             }
         });
