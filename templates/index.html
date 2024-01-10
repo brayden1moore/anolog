@@ -2533,6 +2533,7 @@
 
         const description = logDescription.textContent;
         inputElement.value = description;
+        inputElement.style.height = logDescription.offsetHeight + 'px';
         editOption.style.display = 'none';
 
         // Replace the description with the input element
@@ -2541,7 +2542,6 @@
         // Focus the input and select its content
         inputElement.focus();
         inputElement.select();
-        inputElement.style.height = logDescription.offsetHeight + 'px';
 
         // Function to revert changes
         function revertEdit() {
