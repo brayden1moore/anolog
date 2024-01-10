@@ -2725,12 +2725,13 @@
         }
     }
 
-    window.addEventListener('resize', calculateListHeight);
-    let resizeTimeout;
+    let blockResizeTimeout;
+    let listResizeTimeout;
     window.addEventListener('resize', () => {
-        clearTimeout(resizeTimeout);
-        calculateListHeight();
-        resizeTimeout = setTimeout(resizeTimeBlocks, 100);
+        clearTimeout(blockResizeTimeout);
+        clearTimeout(listResizeTimeout);
+        blockResizeTimeout = setTimeout(resizeTimeBlocks, 100);
+        listResizeTimeout = setTimeout(calculateListHeight, 100);
         setClassForScreenSize();
     });
     
