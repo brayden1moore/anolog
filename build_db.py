@@ -7,7 +7,7 @@ import os
 print(os.getcwd())
 
 try:
-    with open(r"C:\Users\Brayden\OneDrive - stern.nyu.edu\Brayden Moore LLC\Python\Projects\Anolog - Online\Anolog\app\config.json", 'r') as f:
+    with open(r"config.json", 'r') as f:
         config = json.load(f)
 except:
     config = {'GOOGLE_PASS':os.environ['GOOGLE_PASS'],

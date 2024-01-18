@@ -572,6 +572,13 @@ def export_csv():
     model = None
     the_time = datetime.now().strftime('%Y%m%d%H%M')
 
+    def format_duration(duration):
+        """Convert duration in decimal hours to hh:mm format."""
+        duration = duration/60/60
+        hours = int(duration)
+        minutes = int((duration - hours) * 60)
+        return f"{hours:02d}:{minutes:02d}"
+
     try:
         if user_id:
             data = session.query(Project).filter(Project.user_id==user_id, Project.is_visible==True).order_by(Project.created_at.asc()).all()
@@ -586,13 +593,32 @@ def export_csv():
             model = Log
             filename = f"anolog_logs_{the_time}"
         elif time:
+            # Aggregate the total hours per day
             data = (
-                session.query(Time)
+                session.query(
+                    func.date_trunc('day', Time.start).label('day'),
+                    func.sum(Time.duration),
+                    func.min(Time.start).label('earliest_start'),
+                    func.max(Time.end).label('latest_end')
+                )
                 .filter(Time.project_id == time, Time.is_visible == True)
-                .order_by(Time.start)
-            ).all()     
-            model = Time
+                .group_by(func.date_trunc('day', Time.start))
+                .order_by('day')
+            ).all()
+            model = None 
             filename = f"anolog_time_{the_time}"
+
+            if data:
+                csv_writer.writerow(['Date', 'Total Hours', 'Formatted Hours', 'Start Time', 'End Time'])  
+                for day, total_duration, earliest_start, latest_end in data:
+                    csv_writer.writerow([
+                        day.strftime('%Y-%m-%d'), 
+                        total_duration/60/60, 
+                        format_duration(total_duration),
+                        earliest_start.strftime('%Y-%m-%d %H:%M:%S') if earliest_start else '', 
+                        latest_end.strftime('%Y-%m-%d %H:%M:%S') if latest_end else ''
+                    ])
+
 
         if model:
             csv_writer.writerow([column.name for column in model.__table__.columns])
