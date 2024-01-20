@@ -1868,11 +1868,13 @@
                         
                         if (elementType==='project') {
                             // Run renameProject function
-                            renameProject(globalProjectId, inputElement.value);
+                            projectId = newLink.getAttribute('data-projectId');
+                            renameProject(projectId, inputElement.value);
                         }
                         else {
                             // Run renameTask function
-                            renameTask(globalTaskId, inputElement.value);
+                            taskId = newLink.getAttribute('data-taskId');
+                            renameTask(taskId, inputElement.value);
                         }
 
                         // Replace the input back with the link
