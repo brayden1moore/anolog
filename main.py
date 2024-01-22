@@ -596,13 +596,13 @@ def export_csv():
             # Aggregate the total hours per day
             data = (
                 session.query(
-                    func.date_trunc('day', Time.start).label('day'),
+                    func.date_trunc('day', func.timezone('US/Eastern', Time.start)).label('day'),
                     func.sum(Time.duration),
-                    func.min(Time.start).label('earliest_start'),
-                    func.max(Time.end).label('latest_end')
+                    func.min(func.timezone('US/Eastern', Time.start)).label('earliest_start'),
+                    func.max(func.timezone('US/Eastern', Time.end)).label('latest_end')
                 )
                 .filter(Time.project_id == time, Time.is_visible == True)
-                .group_by(func.date_trunc('day', Time.start))
+                .group_by(func.date_trunc('day', func.timezone('US/Eastern', Time.start)))
                 .order_by('day')
             ).all()
             model = None 
