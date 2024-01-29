@@ -1784,15 +1784,6 @@ darkmodeButton.addEventListener('click', function() {
 })
 toggleDarkmode(initialToggle=true);
 
-// Dynamically change icon
-function updateFavicon(color) {
-    let faviconCanvas = createIconCanvas(color, 32, 0);
-    updateLinkInHead('icon', faviconCanvas.toDataURL('image/x-icon'));
-
-    let appleIconCanvas = createIconCanvas(color, 180, 40); 
-    updateLinkInHead('apple-touch-icon', appleIconCanvas.toDataURL());
-}
-
 function createIconCanvas(color, size, padding) {
     let canvas = document.createElement('canvas');
     canvas.width = size;
