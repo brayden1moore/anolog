@@ -1817,7 +1817,6 @@ function updateLinkInHead(relValue, href) {
     }
     link.href = href;
 }
-updateFavicon('{{ primary_color }}');
 
 // Toggle show completed
 function toggleShowCompleted(type) {
