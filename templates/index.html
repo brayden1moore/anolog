@@ -131,9 +131,7 @@
 <script>
     var globalUserId = {{user_id}};
     var darkmode = {{ darkmode|lower }};
-</script>
-<script src="static/client.js">
-    // Dynamically change icon
+        
     function updateFavicon(color) {
         let faviconCanvas = createIconCanvas(color, 32, 0);
         updateLinkInHead('icon', faviconCanvas.toDataURL('image/x-icon'));
@@ -143,5 +141,6 @@
     }
     updateFavicon('{{ primary_color }}');
 </script>
+<script src="static/client.js"></script>
 </body>
 </html>
