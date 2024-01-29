@@ -1784,31 +1784,6 @@ darkmodeButton.addEventListener('click', function() {
 })
 toggleDarkmode(initialToggle=true);
 
-function createIconCanvas(color, size, padding) {
-    let canvas = document.createElement('canvas');
-    canvas.width = size;
-    canvas.height = size;
-    let ctx = canvas.getContext('2d');
-
-    let radius = (size / 2) - padding;
-    ctx.beginPath();
-    ctx.arc(size / 2, size / 2, radius, -0.5 * Math.PI, -2 * Math.PI, true);
-    ctx.lineTo(size / 2, size / 2);
-    ctx.fillStyle = color;
-    ctx.fill();
-    return canvas;
-}
-
-function updateLinkInHead(relValue, href) {
-    let link = document.querySelector(`link[rel~='${relValue}']`);
-    if (!link) {
-        link = document.createElement('link');
-        link.rel = relValue;
-        document.getElementsByTagName('head')[0].appendChild(link);
-    }
-    link.href = href;
-}
-
 // Toggle show completed
 function toggleShowCompleted(type) {
     let completed = document.querySelectorAll(`#${type}-list-ul li[data-completed=true]`);

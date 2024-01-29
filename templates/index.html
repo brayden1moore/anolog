@@ -147,6 +147,16 @@
         return canvas;
     }
 
+    function updateLinkInHead(relValue, href) {
+        let link = document.querySelector(`link[rel~='${relValue}']`);
+        if (!link) {
+            link = document.createElement('link');
+            link.rel = relValue;
+            document.getElementsByTagName('head')[0].appendChild(link);
+        }
+        link.href = href;
+    }
+
     function updateFavicon(color) {
         let faviconCanvas = createIconCanvas(color, 32, 0);
         updateLinkInHead('icon', faviconCanvas.toDataURL('image/x-icon'));
