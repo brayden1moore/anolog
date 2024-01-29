@@ -1,0 +1,946 @@
+:root {
+    --primary-color: {{primary_color}};
+}
+.logo {
+    position: relative;
+    top: 2px;
+    width: 24px;
+    height: 24px;
+    background: conic-gradient(transparent 0% 25%, #161616 25% 100%);
+    border-radius: 50%;
+    margin-right: 8px;
+}
+body {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif, sans-serif;
+    width: 75vw;
+    height: 90vh;
+    margin: 50px;
+    margin-left: auto;
+    margin-right: auto;
+    background-color:var(--primary-color);
+    transition: 0.2s ease;
+}
+h1 {
+    margin: 0;
+    display: flex;
+    width: 200px;
+    align-items: center;
+}
+header {
+    margin-bottom: 25px;
+    color: var(--primary-color);
+    text-align: left;
+    align-items: center;
+    display: flex;
+}
+#tool-div {
+    position: relative;
+    display: flex;
+    width: 100%;
+    margin-left: 25px;
+    justify-content: right;
+}
+.header-icon {
+    vertical-align: middle;
+    width: 30px;
+    height: 30px;
+    margin-right: 10px;
+    padding-bottom: 5px;
+}
+.signin-input {
+    font: inherit;
+    width: 125px;
+    border: none;
+    background: none;
+    border-bottom: 1px solid #161616;
+    outline: none;
+    color: #161616;
+    opacity: 0.5;
+    transition: 0.2s ease;
+}
+.signin-input:hover {
+    opacity: 1;
+}
+/* Webkit browsers like Chrome, Safari */
+::-webkit-scrollbar {
+    cursor: pointer;
+    width: 10px;
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+    background:  var(--primary-color);
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background:  var(--primary-color);
+}
+.fa-solid, .fas {
+    font-size: 16px;
+    font-weight: 900;
+}
+.fa-regular, .far {
+    font-size: 14pt;
+    font-weight: 400;
+}
+/* Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #161616 var(--primary-color);
+}
+.content-div{
+    margin-top: 25px;
+    display: flex;
+}
+.list-container {
+    flex-shrink: 0;
+    overflow:hidden;
+    box-sizing: border-box;
+    background-color: #161616;
+    border-radius: 10px;
+    margin-bottom: 0px;
+    margin-right: 25px;
+    height: 40px;
+    width: 40px;
+    transition: 0.2s ease;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);
+}
+.list-container:focus-within {
+    overflow:visible; 
+    color: #161616;           
+    width: 270px;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);
+}
+.list-collapsed #project-list-ul, .list-collapsed #task-list-ul {
+    transition: 0.2s ease;
+    opacity: 0;
+}
+.list-collapsed:hover #project-list-ul, .list-collapsed:hover #task-list-ul, .list-container:focus-within #project-list-ul, .list-container:focus-within #task-list-ul {
+    transition: 0.2s ease;
+    opacity: 1;
+}
+.list-collapsed { 
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);
+    border: 0;
+    padding: 0;
+    color: transparent;   
+    overflow: hidden;     
+    height: 40px !important;
+    width: 40px !important;
+}
+#project-list-container {
+    width: 90%;
+}
+#task-list-container {
+    width: 90%;
+}
+
+.list-div {
+    display: block;
+    margin-top: 20px;
+    margin-left: 30px;
+    width: 240px;
+    height: auto;
+}
+.divider {
+    margin-top: 10px;
+    margin-bottom: 25px;
+    border-radius: 5px;
+    border-top: 3px solid var(--primary-color);
+    height: 1px;
+    width: 100%;
+}
+.log-divider {
+    margin-top: 15px;
+    margin-bottom: 15px;
+    border-top: 1px solid  var(--primary-color);
+    height: 1px;
+    width: 100%;
+}
+#menu-button {
+    color:var(--primary-color);
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+.toggle {
+    border-radius: 10px 10px 0px 0px;
+    background-color: #161616;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: auto;
+    margin-bottom: 20px;
+    height: 40px;
+    transition: 0.2s ease;
+    cursor: pointer;
+}
+.toggle:hover #menu-button {
+    opacity: 0.5;
+    justify-content: left;
+}
+a {
+    color: rgb(0, 0, 0);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-bottom 0.2s ease;
+}
+a:hover {
+    border-bottom: 1px solid #161616;
+}
+.task-or-project {
+    font-size: 12pt;
+    display: inline;  
+    cursor: pointer;
+    color: var(--primary-color);
+    border-bottom: 1px solid transparent;
+    transition: 0.1s ease;
+}
+.task-or-project:hover {
+    border-bottom: 1px solid var(--primary-color);
+}
+h2 {
+    font-size:12pt;
+    color: var(--primary-color);
+    margin-top: 5px;
+    margin-bottom: 0px;
+}
+#project-list-ul {
+    margin-top: 5px;
+    margin-bottom: 20px;
+    width: 90%;
+    height: auto;
+    max-height: 140px;
+    overflow-y: scroll;
+    font-size: large;
+    margin-left: 0;
+    padding-left: 20px;
+    color: var(--primary-color);
+}
+#task-list-ul {
+    margin-top: 5px;
+    margin-bottom: 10px;
+    width: 90%;
+    height: auto;
+    max-height: 250px;
+    overflow-y: scroll;
+    margin-left: 0;
+    padding-left: 20px;
+    list-style-type:circle;
+    color: var(--primary-color);
+}
+#new-project-li, #new-task-li {
+    opacity: 0.3;
+    transition: opacity 0.2s ease;
+}
+li {
+    margin-bottom: 5px;
+}
+.task-or-project-li {
+    margin-right: 20px;
+}
+#new-project-input, #new-task-input, .rename-input{
+    font: inherit;
+    width: 125px;
+    border: none;
+    background: none;
+    border-bottom: 1px solid var(--primary-color);
+    outline: none;
+    color: var(--primary-color);
+}
+#new-project-li:hover,
+#new-project-li:focus-within,
+#new-task-li:hover,
+#new-task-li:focus-within {
+    opacity: 1;
+}
+#log-div {
+    display: grid;
+    width: 100%;
+    height: 100%;
+    margin-bottom: 25px;
+    transition: 0.2s ease;
+}
+.log-space {
+    padding: 30px;
+    margin-top: 25px;
+    background-color: #161616;
+    border:  #161616 solid 2px;
+    border-radius: 10px;
+    min-height: 600px;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);
+    transition: opacity 0.5s ease;
+}
+#project-name {
+    font-size: 16pt;
+    margin-bottom: 5px;
+    margin-top: 0px;
+}
+#project-space {
+    display: flex;
+    padding: 30px;
+    overflow-y: scroll;
+    background-color: #161616;
+    border:  #161616 solid 2px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);
+}
+#project-content {
+    width: 38%;
+    margin-right: 2%;
+    color:   var(--primary-color);
+}
+#time-content {
+    width: 60%;
+}
+#time-content-from-to-date {
+    color: var(--primary-color);
+    opacity: 0.5;
+}
+#log-content{
+    visibility: hidden;
+    min-height: 95%;
+    color:  var(--primary-color);
+}
+#log-input {
+    resize: vertical;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 12pt;
+    margin-top: 25px;
+    margin-bottom: 0px;
+    color: var(--primary-color);
+    width: -webkit-fill-available;
+    height: auto;
+    min-height: 75px;
+    background: none;
+    border: 2px solid var(--primary-color);
+    outline: none;
+    border-radius: 6px;
+    opacity: 1;
+    transition: opacity 0.2s ease;
+    padding: 10px;
+}
+#log-input::placeholder {
+    color: var(--primary-color);
+    opacity: 1;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif, sans-serif;
+    font-size: 12pt;
+}
+#log-input:focus,
+#log-input:hover {
+    opacity: 1;
+}
+.button-common {
+    cursor: pointer;
+    display: grid;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    width: 25px;
+    height: 25px;
+    margin: auto;
+    padding: 0px;
+    margin-right: 3px;
+    margin-left: 0px;
+    background: none;
+    color:  var(--primary-color);
+    border: none;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.button-common:hover {
+    opacity: 0.5;
+}
+.button-rotated {
+    transform: rotate(0deg);
+}
+.button-spinning {
+    transform: rotate(360deg);
+}
+#clock-div {
+    margin-top: 20px;
+    display: flex;
+}
+
+#task-name {
+    margin: 0;
+    margin-right: 10px;
+    margin-top: auto;
+    margin-bottom: auto;
+    transition: opacity 0.2s ease;
+}
+#task-checkbox {
+    margin-left: 0;
+    margin-right: auto;
+    margin-top: 6px;
+    margin-bottom: auto;
+}
+#task-name:hover{
+    opacity: 0.5;
+}
+#clock {
+    cursor: pointer;
+    margin-left: 6px;
+    margin-top: auto;
+    margin-bottom: auto;
+}
+#log-items-container {
+    padding-right: 10px;
+    padding-left: 10px;
+    height: auto;
+    opacity: 1;
+    overflow-y: scroll;
+}
+#pinned-logs-container {
+    margin-top: 20px;
+    opacity: 1;
+    box-shadow: 0 16px 13px -6px rgba(0, 0, 0, 0.5)
+}
+::-webkit-scrollbar {
+    cursor: pointer;
+    width: 5px;
+}
+::-webkit-scrollbar-thumb {
+    cursor: pointer;
+    background: var(--primary-color) ; 
+    border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-color); 
+}
+.log-item {
+    border-radius: 8px;
+    padding: 15px;
+    overflow: hidden;
+    transition: opacity 0.2s ease;
+    font-size: 12pt;
+    margin-bottom: 5px;
+    cursor: pointer;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
+}
+.log-created-at {
+    opacity: 0.5;
+}
+#task-checkbox {
+    display: none;
+}
+#task-checkbox + label {
+    font-size: 14pt;
+    display: flex;
+    margin-right: auto;
+    position: relative;
+    padding-left: 35px;
+    cursor: pointer;
+    font-weight: bold;
+}
+#toggle-icon {
+    font-size: 16pt;
+}
+#task-checkbox + label:before {
+    margin-left: 4px;
+    margin-right: auto;
+    margin-top: auto;
+    margin-bottom: auto;
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-45%);
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--primary-color);
+    background-color: transparent;
+    border-radius: 3px;
+}
+#task-checkbox:checked + label:before {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+#task-checkbox + label:after {
+    content: "";
+    position: absolute;
+    top: 4px;
+    left: 5px;
+    width: 4px;
+    height: 8px;
+    border: solid #161616;
+    border-width: 0 4px 4px 0;
+    transform: rotate(45deg) scale(0);
+}
+.strikethrough {
+    text-decoration: line-through;
+}
+.custom-hover-menu {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: small;
+    position: absolute;
+    color: #161616;
+    width: 65px;
+    height: 25px;
+    list-style-type: none;
+    border-radius: 5px;
+    padding: 0;
+    margin: 0;
+    margin-left: 8px;
+    z-index: 10;
+    transition: opacity 0.2s ease;
+    background-color: var(--primary-color);
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);
+
+}
+.custom-hover-menu li {
+    margin-top: 3px;
+    padding: 4px;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+.custom-hover-menu li:hover {
+    opacity: 0.5;
+}
+.fade-out {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+#export-div, #logout-div {
+    display:inline;
+    width: 350px;
+    margin-left: 50px;
+}
+.export-button {
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);
+    background-color: #161616;
+    height: 40px;
+    width: 40px;
+    margin-bottom: 0px;
+    outline: none;
+    border: none;
+    color: var(--primary-color);
+    border-radius: 10px;
+    transition: 0.2s ease;
+    cursor: pointer;
+}
+.export-button:hover{
+    opacity:0.5;
+}
+.export-option {
+    background-color: #DDDDDD;
+    height: 40px;
+    width: 80px;
+    margin-bottom: 0px;
+    outline: none;
+    border: none;
+    color:#161616;
+    transition: 0.2s ease-in-out;
+    cursor: pointer;
+}
+.export-option:hover {
+    background-color: #161616;
+    color: var(--primary-color);
+}
+.logout-button {
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);
+    background-color: #161616;
+    height: 40px;
+    width: 40px;
+    margin-left: 5px;
+    outline: none;
+    border: none;
+    color: var(--primary-color);
+    border-radius: 10px;
+    transition: 0.2s ease;
+    cursor: pointer;
+}
+.logout-button:hover{
+    opacity:0.5;
+}
+
+.color-button {
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);
+    background-color: #161616;
+    height: 40px;
+    width: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 5px;
+    outline: none;
+    border: none;
+    color: var(--primary-color);
+    border-radius: 10px;
+    transition: 0.2s ease;
+    cursor: pointer;
+}
+.color-button:hover{
+    opacity:0.5;
+}
+
+.darkmode-button {
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);
+    background-color: #161616;
+    height: 40px;
+    width: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    outline: none;
+    border: none;
+    color: var(--primary-color);
+    border-radius: 10px;
+    transition: 0.2s ease;
+    cursor: pointer;
+}
+
+.darkmode-button:hover{
+    opacity:0.5;
+}
+
+#side-div {
+    width: 350px;
+    margin-left: 50px;
+    display: none;
+}
+#pin {
+    margin-right:5px;
+}
+#user-id-container{
+    visibility: hidden;
+}
+.dropdown-menu {
+    height: 0px;
+    width: 40px;
+    display: grid;
+    overflow: hidden;
+    position: absolute;
+    top: 100%;
+    right: 45px; 
+    z-index: 1; 
+    transition: 0.2s ease;
+}
+#export-button:hover + .dropdown-menu,
+.dropdown-menu:hover {
+    height: 160px;
+    width: 80px;
+    transition: 0.2s ease;
+}
+#export-button:hover  {
+    width: 80px;
+}
+#time-csv {
+    border-radius:  0 0 10px 10px;
+}
+#picker-label {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    margin: auto;
+    height: 40px;
+    cursor: pointer;
+}
+.confetti {
+    position: fixed;
+    width: 5px;
+    height: 10px;
+    background-color: var(--primary-color);
+    opacity: 0.7;
+    animation: confetti-animation 1s ease-out;
+    animation-duration: var(--speed, 0.2s);
+
+    --initial-x: 0px;
+    --initial-y: 0px;
+    --rotation: 0deg;
+}
+
+.toggle-completed {
+    margin-left: 2px;
+    width: 15px;
+    color: #161616;
+    font-size: 10pt;
+    cursor: pointer;
+    transition: 0.2s ease;
+    opacity: 0;  
+    width: 16px;
+    overflow: hidden;
+    color: var(--primary-color);
+}
+.list-container:hover .toggle-completed {
+    opacity: 0.5; 
+}
+.toggle-completed:hover {
+    opacity: 1 !important; 
+}
+.add-button {
+    color: var(--primary-color);
+    font-size: 12pt;
+    cursor: pointer;
+    transition: 0.2s ease;
+    opacity: 0; 
+    width: 16px;
+    overflow: hidden;
+}
+.list-container:hover .add-button {
+    opacity: 0.5; 
+}
+.add-button:hover {
+    opacity: 1 !important; 
+}
+
+#add-a-time-block {
+    color: var(--primary-color);
+    font-size: 12pt;
+    cursor: pointer;
+    transition: 0.2s ease;
+    opacity: 0.2; 
+    overflow: hidden;
+    width: 16px;
+}
+#add-a-time-block:hover {
+    opacity: 1 !important; 
+}
+#project-space:hover #add-a-time-block {
+    opacity: 0.5; 
+}
+
+#time-div {
+    width: 100%;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    align-items: center;
+    display: flex;
+    height: 48px;
+    background: #161616;
+    transition: 0.2s ease;
+}
+.time-block {
+    cursor: pointer;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: clip;
+    max-width: 100%;
+    display: flex;
+    color: #161616;
+    justify-content: center;
+    align-items: center;
+    border-radius: 5px;
+    margin-right: 2px;
+    background-color:none;
+    opacity: 1;
+    height: 100%;
+    transition: 0.2s ease;
+    background-color: var(--primary-color);
+}
+.time-block:hover {
+    opacity: 0.7 !important;
+}
+#time-description-container {
+    padding-right: 2px;
+    height: 0px;
+    overflow: hidden;
+    transition: 0.2s ease;
+}
+#time-description {
+    padding-left: 25px;
+    padding-right: 25px;
+    padding-bottom: 20px;
+    color: #161616;
+    overflow: hidden;
+    height: auto;
+    background-color: var(--primary-color);
+    border-radius: 0px 0px 7px 7px;
+}
+input[type="datetime-local"] {
+    cursor: pointer;
+    margin-bottom: 5px;
+    font-family: Arial, Helvetica, sans-serif;
+    appearance: none;
+    -webkit-appearance: none;
+    border: none;
+    border-bottom: #161616 1px solid;
+    padding: 5px;
+    font-size: 14px;
+    color: #161616;
+    background-color: var(--primary-color);
+    box-sizing: border-box;
+    transition: 0.2s ease;
+    outline: none;
+    accent-color: var(--primary-color);
+}
+#time-description-hours {
+    margin: 0;
+}
+
+#commit-time-block-button {
+    cursor: pointer;
+    color: #161616;
+    display: none;
+    margin-left: 10px;
+    opacity: 1;
+    transition: 0.2s ease;
+}
+#commit-time-block-button:hover {
+    opacity: 0.6;
+}
+
+#x-axis-container {
+    position: relative;
+    width: 100%;
+    height: 20px;
+}
+.x-axis {
+    width: 100%;
+    border: none;
+    border-top: 2px solid var(--primary-color);
+    position: absolute;
+    bottom: 0;
+    opacity: 0.5;
+}
+.marker {
+    color: var(--primary-color);
+    position: absolute;
+    bottom: -20px; 
+    opacity: 0.5;
+}
+
+#delete-time-block-button {
+    cursor: pointer;
+    margin-left: 5px;
+    font-size: 10pt;
+    transition: 0.2s;
+}
+#delete-time-block-button:hover {
+    opacity: 0.6;
+}
+
+.log-options-div {
+    width: 0px;
+    transition: 0.2s ease;
+    display: flex;
+}
+
+.log-option-button {
+    color: var(--primary-color);
+    opacity: 0.6;
+    transition: 0.2s ease;
+    width: auto;
+    margin-right: 2px;
+}
+
+.log-option-button.dark {
+    color: #161616 !important;
+}
+
+.log-item:hover .log-option-button {
+    width: 20px !important; 
+    overflow: visible;
+}
+
+.log-item:hover .log-option-button.pin {
+    width: 16px !important;
+}
+
+.log-option-button.pin.pinned {
+    width: 16px !important;
+    opacity: 1;
+}
+
+.log-item:hover .log-options-div {
+    width: 40px;
+}
+
+.log-option-button:hover {
+    opacity: 1;
+}
+
+.log-edit-area {
+    resize: vertical;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 12pt;
+    margin-top: 10px;
+    margin-bottom: 0px;
+    color: var(--primary-color);
+    width: -webkit-fill-available;
+    height: auto;
+    background: none;
+    border: 2px dashed var(--primary-color);
+    outline: none;
+    border-radius: 6px;
+    opacity: 1;
+    transition: opacity 0.2s ease;
+    padding: 10px;
+}
+.log-edit-area.dark {
+    color: #161616;
+    border: 2px dashed #161616;
+}
+
+@keyframes fadeIn {
+    0%, 100% {
+        opacity: 1;
+    }
+    33% {
+        opacity: 0.7;
+    }
+}
+.fade-in-animation {
+    animation: fadeIn 1s ease infinite;
+}
+
+@keyframes confetti-animation {
+    0% {
+        transform: translate(var(--initial-x), var(--initial-y)) rotate(var(--rotation));
+        opacity: 1;
+    }
+    100% {
+        transform: translate(calc(var(--initial-x) * 5), calc(var(--initial-y) * 4)) rotate(var(--rotation));
+        opacity: 0;
+    }
+}
+
+/* Mobile */
+@media only screen and (orientation: portrait) {
+    body {
+        width: 85vw;
+    }
+    #project-space {
+        display: block;
+    }
+    #project-content {
+        width: auto;
+        margin-bottom: 15px;
+    }
+    #time-content {
+        width: auto;
+    }
+    .content-div {
+        display: block;
+    }
+    .list-div {
+        width: 90%;
+        display: flex;
+    }
+    #project-list-container {
+        width: 50%;
+        margin-right: 20px;
+    }
+    #task-list-container {
+        width: 50%;
+        margin-right: 20px;
+    }
+    .list-collapsed {
+        width: 100% !important;
+        margin-bottom: 25px;
+    }
+    .list-container {
+        width: 100% !important;
+        margin-bottom: 25px;
+    }
+    .list-collapsed:hover {
+        overflow: hidden;
+        height: 40px;
+        width: 40px;
+    }   
+    #log-div {
+        display: contents;
+    }
+}
