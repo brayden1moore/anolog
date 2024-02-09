@@ -18,20 +18,26 @@
 
             <button title="Export" class="export-button" id="export-button"><i class="fa-solid fa-file-arrow-down"></i></button>
             <div class="dropdown-menu" id="dropdown-menu">
+                <button class="export-option" id="users-csv">Users</button>
                 <button class="export-option" id="project-csv">Projects</button>
                 <button class="export-option" id="task-csv">Tasks</button>
                 <button class="export-option" id="log-csv">Logs</button>
                 <button class="export-option" id="time-csv">Time</button>
             </div>
-
             <button title="Logout" class="logout-button" id="logout-button"><i class="fa-solid fa-right-from-bracket"></i></button>
-
         </div>
     </header>
+
+    <div class="day-div">
+        <div id="day-table">
+        </div>
+    </div>
+    <div id="day-info">
+    </div>
     
     <div class="content-div">
         <div id='list-container' class="list-container">
-            <div class="toggle">
+            <div class="toggle" style="display:none">
                 <i id="menu-button" class="fa-solid fa-square-minus"></i>
             </div>
             <div class="list-div">
@@ -95,7 +101,7 @@
                             <button id="toggle-button" class="button-common">
                             <i id="toggle-icon" class="fa-solid fa-hourglass-end"></i>
                           </button>
-                          <p id="clock">00.00.00</p>
+                          <p id="clock">00:00:00</p>
                         </div>
 
                     </div>
@@ -131,7 +137,17 @@
 <script>
     var globalUserId = {{user_id}};
     var darkmode = {{ darkmode|lower }};
-    
+
+    // Admin options
+    if (globalUserId !== 0) {
+        const usersExport = document.getElementById("users-csv");
+        const dropdownMenus = document.querySelectorAll('#export-button:hover + .dropdown-menu, .dropdown-menu:hover');
+
+        dropdownMenus.forEach(menu => {
+            menu.style.height = '160px';
+        });
+    }
+
     function createIconCanvas(color, size, padding) {
         let canvas = document.createElement('canvas');
         canvas.width = size;

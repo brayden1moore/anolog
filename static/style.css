@@ -89,11 +89,41 @@ header {
     scrollbar-width: thin;
     scrollbar-color: #161616 var(--primary-color);
 }
+
+.day-div {
+    transition: 0.1s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center ;
+    padding-left: 10px;
+    padding-right: 10px;
+    height: 40px;
+    background-color: #161616;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);
+}
+#day-table {
+    border: 0px;
+}
+.day-square {
+    transition: 0.2s ease;
+}
+#day-info {
+    border-radius: 0px 0px 10px 10px;
+    padding-left: 12px;
+    transition: 0.1s ease;
+    font-size: 12;
+    color: var(--primary-color);
+    height: 0;
+    background-color: #161616;
+}
+
 .content-div{
     margin-top: 25px;
     display: flex;
 }
 .list-container {
+    padding-top: 10px;
     flex-shrink: 0;
     overflow:hidden;
     box-sizing: border-box;
@@ -524,13 +554,13 @@ li {
     opacity:0.5;
 }
 .export-option {
-    background-color: #DDDDDD;
+    background-color: var(--primary-color);
     height: 40px;
     width: 80px;
     margin-bottom: 0px;
     outline: none;
     border: none;
-    color:#161616;
+    color: #161616;
     transition: 0.2s ease-in-out;
     cursor: pointer;
 }
@@ -619,7 +649,7 @@ li {
 }
 #export-button:hover + .dropdown-menu,
 .dropdown-menu:hover {
-    height: 160px;
+    height: 200px;
     width: 80px;
     transition: 0.2s ease;
 }
@@ -723,7 +753,7 @@ li {
     justify-content: center;
     align-items: center;
     border-radius: 5px;
-    margin-right: 2px;
+    margin: 2px;
     background-color:none;
     opacity: 1;
     height: 100%;
@@ -735,6 +765,7 @@ li {
 }
 #time-description-container {
     padding-right: 2px;
+    padding-left: 2px;
     height: 0px;
     overflow: hidden;
     transition: 0.2s ease;

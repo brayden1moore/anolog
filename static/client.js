@@ -16,7 +16,6 @@ window.onload = function() {
 // GET from /projects endpoint and populate list
 function populateProjects() {
     const ulElement = document.getElementById('project-list-ul');
-    const newProjectLi = document.getElementById('new-project-li');
     const projectNameLabel = document.getElementById('project-name');
     
     function displayProjectData(data) {
@@ -290,6 +289,118 @@ function populateLogs(taskId) {
         })
     }     
 }
+
+// Fill day div
+function populateDays() {
+    const dayInfo = document.getElementById('day-info');
+    const dayDiv = document.querySelector('.day-div');
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth();
+    const monthAbbreviations = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const monthAbbrev = monthAbbreviations[month];
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const divWidth = dayDiv.offsetWidth;
+
+    // Get day data
+    let cachedDays = localStorage.getItem(`days_cache`);
+    if (cachedDays) {
+        console.log('days read from client-side cache');
+        displayDayData(JSON.parse(cachedDays));
+    }
+    else {
+        fetch(`/days`)
+        .then(response => response.json())
+        .then(data => {
+            displayDayData(data);
+            localStorage.setItem(`days_cache`, JSON.stringify(data));
+        })
+    }    
+
+    function displayDayData(data){
+        // Clear existing content
+        dayDiv.innerHTML = '';
+        let maxDuration = 0;
+        for (const dayNumber in data) {
+            const dayData = data[dayNumber];
+            if (dayData.duration > maxDuration) {
+                maxDuration = dayData.duration;
+            }
+        }
+
+        for (let day = 1; day <= daysInMonth; day++) {
+            const daySquare = document.createElement('div');
+            daySquare.classList.add('day-square');
+            daySquare.style.opacity = '0.1';
+            daySquare.style.width = `${(divWidth/daysInMonth)-2}%`;
+            daySquare.style.height = '20px';
+            daySquare.style.borderRadius = '4px';
+            daySquare.style.backgroundColor = 'var(--primary-color)';
+            daySquare.style.display = 'inline-block';
+            daySquare.style.margin = '2px';
+            daySquare.style.textAlign = 'center';
+            
+            if (data[day]){
+                daySquare.title = `${monthAbbrev} ${day} - ${data[day]['hours']}`;
+                daySquare.style.opacity = data[day]['duration'] / maxDuration;
+            }
+            else {
+                daySquare.title = `${monthAbbrev} ${day} - 0:00`;
+            }
+
+            function updateDayInfo(daySquare) {
+                return function() {
+                    dayInfo.style.transition = "0.2s ease";
+                    dayDiv.style.transition = "0.1s ease";
+                    dayDiv.style.borderRadius = "10px 10px 0px 0px";
+                    dayInfo.style.height = "30px";
+                    dayInfo.textContent = daySquare.title; 
+                };
+            }
+
+            document.addEventListener('touchstart', function(event) {
+                if (!dayDiv.contains(event.target)) {
+                    clearDayInfo();
+                }
+            });
+
+            document.addEventListener('mouseover', function(event) {
+                if (!dayDiv.contains(event.target)) {
+                    clearDayInfo();
+                }
+            });
+
+            function clearDayInfo() {
+                dayInfo.style.transition = "0.1s";
+                dayDiv.style.transition = "0.3s ease";
+                dayInfo.style.height = "0px";
+                dayInfo.textContent = ''; 
+                dayDiv.style.borderRadius = "10px 10px 10px 10px";
+            }
+            
+            // Loop through each daySquare or ensure this logic is applied within your existing loop
+            daySquare.addEventListener('mouseover', updateDayInfo(daySquare));
+            daySquare.addEventListener('touchstart', updateDayInfo(daySquare));
+
+            dayDiv.appendChild(daySquare);
+        }
+    }
+    resizeDays();
+  }
+  
+  populateDays();
+
+  function resizeDays(){
+        const daySquares = document.querySelectorAll('.day-square');
+        const dayDiv = document.querySelector('.day-div');
+
+        daysInMonth = daySquares.length;
+        divWidth = dayDiv.offsetWidth;
+        daySquares.forEach((square, index) => {
+            square.style.width = `${(divWidth/daysInMonth)-2}%`;
+        })
+    }
+   
 
 // GET to /time endpoint
 function getTime(projectId) {
@@ -738,9 +849,8 @@ function addHoverListener(newLink, elementType, elementId) {
     let hoverMenu;
     let timeoutId;
 
-    newLink.addEventListener('contextmenu', function(e) {
-        event.preventDefault();
-
+    function displayCustomHoverMenu(e) {
+        e.preventDefault();
         // Remove existing hover menus
         const existingMenu = document.querySelector('.custom-hover-menu');
         if (existingMenu) {
@@ -916,7 +1026,16 @@ function addHoverListener(newLink, elementType, elementId) {
             hoverMenu.classList.remove('fade-out');
         });
 
+    };
+
+    newLink.addEventListener('contextmenu', displayCustomHoverMenu);
+    newLink.addEventListener('touchend', function(e) {
+        // To prevent triggering on a scroll or swipe, check for the number of touches
+        if (e.touches.length === 1) { // Single touch
+            displayCustomHoverMenu(e);
+        }
     });
+        
 
     newLink.addEventListener('mouseleave', function(e) {
         // If the menu exists and isn't hovered, set a timeout to remove it
@@ -951,7 +1070,7 @@ function updateClock(countUp) {
     const hrs = String(Math.floor(globalSeconds / 3600)).padStart(2, '0');
     const mins = String(Math.floor((globalSeconds % 3600) / 60)).padStart(2, '0');
     const secs = String(globalSeconds % 60).padStart(2, '0');
-    clock.textContent = `${hrs}.${mins}.${secs}`;
+    clock.textContent = `${hrs}:${mins}:${secs}`;
 }
 
 // Handle clock edit
@@ -1560,8 +1679,11 @@ function editLog(logItem) {
     inputElement.addEventListener('keydown', enterHandler);
 }
 
-
 // Add click listeners to export buttons
+const userExport = document.getElementById('users-csv');
+userExport.addEventListener('click', function() {
+    exportCsv('auth',globalUserId);
+})
 const projectExport = document.getElementById('project-csv');
 projectExport.addEventListener('click', function() {
     exportCsv('user_id',globalUserId);
@@ -1659,23 +1781,22 @@ const listContainer = document.querySelector('.list-container');
 const menuButton = document.getElementById('menu-button');
 function setClassForScreenSize() {
     if (window.innerWidth >= 769) {
-        listContainer.classList.remove('list-collapsed');
-        menuButton.className = "fa-solid fa-square-minus";
         resizeTimeBlocks();
     } else {
-        listContainer.classList.add('list-collapsed');
-        menuButton.className = "fa-solid fa-bars";
         resizeTimeBlocks();
     }
 }
 
 let blockResizeTimeout;
 let listResizeTimeout;
+let dayResizeTimeout;
 window.addEventListener('resize', () => {
+
     clearTimeout(blockResizeTimeout);
     clearTimeout(listResizeTimeout);
     blockResizeTimeout = setTimeout(resizeTimeBlocks, 100);
     listResizeTimeout = setTimeout(calculateListHeight, 100);
+    dayResizeTimeout = setTimeout(resizeDays, 200);
     setClassForScreenSize();
 });
 
@@ -1887,7 +2008,7 @@ document.querySelectorAll('.add-button').forEach(button => {
 const listDiv = document.querySelector('.list-div');
 function calculateListHeight() {
     let listHeight = listDiv.offsetHeight;
-    var totalHeight = listHeight + 80;
+    var totalHeight = listHeight + 50;
     
     listContainer.style.height = totalHeight + 'px';
     if (window.innerWidth >= 769) {

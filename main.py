@@ -290,6 +290,53 @@ def list_time():
     finally:    
         Session.remove()
 
+# List hours by day
+@app.route('/days', methods=['GET'])
+@login_required
+def get_days():
+    current_month = datetime.now().month
+    current_year = datetime.now().year
+
+    try:
+        session = Session()
+        data = (
+            session.query(
+                func.date_trunc('day', func.timezone('US/Eastern', Time.start)).label('day'),
+                func.sum(Time.duration),
+                func.min(func.timezone('US/Eastern', Time.start)).label('earliest_start'),
+                func.max(func.timezone('US/Eastern', Time.end)).label('latest_end')
+            )
+            .filter(
+                Time.user_id == current_user.id, 
+                Time.is_visible == True,
+                func.extract('month', func.timezone('US/Eastern', Time.start)) == current_month,
+                func.extract('year', func.timezone('US/Eastern', Time.start)) == current_year
+            )
+            .group_by(func.date_trunc('day', func.timezone('US/Eastern', Time.start)))
+            .order_by('day')
+        ).all()
+
+        day_json = {}
+        for day, total_duration, _, _ in data:
+            day_dict = {}
+            day_number = day.day
+            day_dict['date'] = day
+            day_dict['hours'] = format_duration(total_duration)
+            day_dict['duration'] = total_duration
+            day_json[day_number] = day_dict
+
+        return day_json
+    
+    finally:
+        Session.remove()
+
+def format_duration(duration):
+    """Convert duration in decimal hours to hh:mm format."""
+    duration = duration/60/60
+    hours = int(duration)
+    minutes = int((duration - hours) * 60)
+    return f"{hours:02d}:{minutes:02d}"
+
 # Get up-to-date project hours
 @app.route('/hours', methods=['GET'])
 @login_required
@@ -566,24 +613,22 @@ def export_csv():
     project_id = request.args.get('project_id')
     task_id = request.args.get('task_id')
     time = request.args.get('time')
+    auth = request.args.get('auth')
 
     output = StringIO()
     csv_writer = csv.writer(output)
     model = None
     the_time = datetime.now().strftime('%Y%m%d%H%M')
 
-    def format_duration(duration):
-        """Convert duration in decimal hours to hh:mm format."""
-        duration = duration/60/60
-        hours = int(duration)
-        minutes = int((duration - hours) * 60)
-        return f"{hours:02d}:{minutes:02d}"
-
     try:
         if user_id:
             data = session.query(Project).filter(Project.user_id==user_id, Project.is_visible==True).order_by(Project.created_at.asc()).all()
             model = Project
             filename = f"anolog_projects_{the_time}"
+        elif auth=='0':
+            data = session.query(User).order_by(User.created_at.asc()).all()
+            model = User
+            filename = f"anolog_users_{the_time}"   
         elif project_id:   
             data = session.query(Task).filter(Task.project_id==project_id, Task.is_visible==True).order_by(Task.created_at.asc()).all()
             model = Task
@@ -620,7 +665,7 @@ def export_csv():
                     ])
 
 
-        if model:
+        if model and filename:
             csv_writer.writerow([column.name for column in model.__table__.columns])
             for row in data:
                 csv_writer.writerow([getattr(row, column.name) for column in model.__table__.columns])
