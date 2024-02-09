@@ -350,6 +350,7 @@ function populateDays() {
 
             function updateDayInfo(daySquare) {
                 return function() {
+                    dayInfo.style.paddingTop = "8px";
                     dayInfo.style.transition = "0.2s ease";
                     dayDiv.style.transition = "0.1s ease";
                     dayDiv.style.borderRadius = "10px 10px 0px 0px";
@@ -374,6 +375,7 @@ function populateDays() {
                 dayInfo.style.transition = "0.1s";
                 dayDiv.style.transition = "0.3s ease";
                 dayInfo.style.height = "0px";
+                dayInfo.style.paddingTop = "0px";
                 dayInfo.textContent = ''; 
                 dayDiv.style.borderRadius = "10px 10px 10px 10px";
             }
