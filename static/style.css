@@ -37,7 +37,6 @@ header {
     position: relative;
     display: flex;
     width: 100%;
-    margin-left: 25px;
     justify-content: right;
 }
 .header-icon {
