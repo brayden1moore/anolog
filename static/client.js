@@ -1029,11 +1029,16 @@ function addHoverListener(newLink, elementType, elementId) {
     };
 
     newLink.addEventListener('contextmenu', displayCustomHoverMenu);
+    
+    let lastTapTime = 0; 
     newLink.addEventListener('touchend', function(e) {
-        if (hoverMenu) {
-            hoverMenu.remove();
+        const currentTime = new Date().getTime(); 
+        const tapInterval = currentTime - lastTapTime;
+        if (tapInterval < 300 && tapInterval > 0) { 
+            displayCustomHoverMenu(e); 
+            e.preventDefault(); 
         }
-        displayCustomHoverMenu(e);
+        lastTapTime = currentTime; 
     });
 
     newLink.addEventListener('mouseleave', function(e) {
