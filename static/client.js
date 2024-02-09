@@ -1030,15 +1030,10 @@ function addHoverListener(newLink, elementType, elementId) {
 
     newLink.addEventListener('contextmenu', displayCustomHoverMenu);
     newLink.addEventListener('touchend', function(e) {
-        // To prevent triggering on a scroll or swipe, check for the number of touches
-        if (e.touches.length === 1) { // Single touch
-            displayCustomHoverMenu(e);
-        }
+        displayCustomHoverMenu(e);
     });
-        
 
     newLink.addEventListener('mouseleave', function(e) {
-        // If the menu exists and isn't hovered, set a timeout to remove it
         if (hoverMenu && !hoverMenu.matches(':hover')) {
             hoverMenu.classList.add('fade-out');
             timeoutId = setTimeout(() => {
@@ -1680,10 +1675,10 @@ function editLog(logItem) {
 }
 
 // Add click listeners to export buttons
-const userExport = document.getElementById('users-csv');
-userExport.addEventListener('click', function() {
-    exportCsv('auth',globalUserId);
-})
+//const userExport = document.getElementById('users-csv');
+//userExport.addEventListener('click', function() {
+//    exportCsv('auth',globalUserId);
+//})
 const projectExport = document.getElementById('project-csv');
 projectExport.addEventListener('click', function() {
     exportCsv('user_id',globalUserId);

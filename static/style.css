@@ -649,7 +649,7 @@ li {
 }
 #export-button:hover + .dropdown-menu,
 .dropdown-menu:hover {
-    height: 200px;
+    height: 160px;
     width: 80px;
     transition: 0.2s ease;
 }
