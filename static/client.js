@@ -1030,15 +1030,7 @@ function addHoverListener(newLink, elementType, elementId) {
 
     newLink.addEventListener('contextmenu', displayCustomHoverMenu);
     newLink.addEventListener('touchend', function(e) {
-        if (hoverMenu && !hoverMenu.matches(':hover')) {
-            hoverMenu.classList.add('fade-out');
-            timeoutId = setTimeout(() => {
-                hoverMenu.remove();
-            }, 300);
-        }
-        else {
-            displayCustomHoverMenu(e);
-        }
+        displayCustomHoverMenu(e);
     });
 
     newLink.addEventListener('mouseleave', function(e) {

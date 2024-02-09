@@ -124,6 +124,7 @@ header {
 }
 .list-container {
     padding-top: 10px;
+    padding-right: 30px;
     flex-shrink: 0;
     overflow:hidden;
     box-sizing: border-box;
@@ -950,13 +951,15 @@ input[type="datetime-local"] {
         width: 90%;
         display: flex;
     }
+    #project-list-ul {
+        max-height: 250px;
+    }
     #project-list-container {
         width: 50%;
         margin-right: 20px;
     }
     #task-list-container {
         width: 50%;
-        margin-right: 20px;
     }
     .list-collapsed {
         width: 100% !important;
