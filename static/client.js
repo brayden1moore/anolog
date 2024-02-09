@@ -1031,9 +1031,7 @@ function addHoverListener(newLink, elementType, elementId) {
     newLink.addEventListener('contextmenu', displayCustomHoverMenu);
     newLink.addEventListener('touchend', function(e) {
         if (hoverMenu) {
-            timeoutId = setTimeout(() => {
-                hoverMenu.remove();
-            }, 300);
+            hoverMenu.remove();
         }
         displayCustomHoverMenu(e);
     });
