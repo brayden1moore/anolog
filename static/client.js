@@ -2084,6 +2084,7 @@ function commitTimeBlock() {
             activeBlock.dataset.id = data.time_id;
             calculateTaskTotalTime(activeBlock.dataset.taskId, changed=true);
             localStorage.removeItem(`time_cache_${globalProjectId}`);
+            populateDays();
         }
     });
 }
