@@ -637,6 +637,7 @@ li {
     visibility: hidden;
 }
 .dropdown-menu {
+    border-radius: 0px 0px 10px 10px;
     height: 0px;
     width: 40px;
     display: grid;
