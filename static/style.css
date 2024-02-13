@@ -749,6 +749,7 @@ li {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: clip;
+    min-width: 1%;
     max-width: 100%;
     display: flex;
     color: #161616;
