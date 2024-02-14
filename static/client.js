@@ -2190,7 +2190,7 @@ function deleteActiveTimeBlock() {
             activeBlock = null;
             calculateTaskTotalTime(taskId, changed=true);                
         }
-        localStorage.removeItem(`time_cache_${projectId}`);
+        localStorage.removeItem(`time_cache_${globalProjectId}`);
     });
 }
 const deleteActiveTimeBlockButton = document.getElementById('delete-time-block-button');
