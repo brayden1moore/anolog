@@ -1057,11 +1057,6 @@ function addHoverListener(newLink, elementType, elementId) {
 let currentRotation = 0;
 let clockStartTime = null;
 function updateClock(countUp) {
-    const button = document.querySelector('.button-common');
-    const projectSpace = document.getElementById('project-space');
-    if (countUp === true) {
-        currentRotation = 180;
-    }
 
     if (countUp === true && clockStartTime === null) {
         clockStartTime = new Date().getTime() - (globalSeconds * 1000);
@@ -1076,6 +1071,14 @@ function updateClock(countUp) {
     const mins = String(Math.floor((globalSeconds % 3600) / 60)).padStart(2, '0');
     const secs = String(globalSeconds % 60).padStart(2, '0');
     clock.textContent = `${hrs}:${mins}:${secs}`;
+
+    if (countUp === true) {
+        currentRotation = 180;
+        const block_hrs = String(Math.floor(timerDuration / 3600)).padStart(2, '0');
+        const block_mins = String(Math.floor((timerDuration % 3600) / 60)).padStart(2, '0');
+        const block_secs = String(timerDuration % 60).padStart(2, '0');
+        clock.textContent = `${hrs}:${mins}:${secs} (${block_hrs}:${block_mins}:${block_secs})`;
+    }
 }
 
 // Handle clock edit
@@ -1125,20 +1128,20 @@ function convertToSeconds(time) {
 
 
 // Play pause toggle
+let timerDuration = 0;
 let toggleClock = (function() {
     const button = document.querySelector('.button-common');
     const toggleIcon = document.getElementById('toggle-icon');
     const clockDiv = document.getElementById('clock-div');
 
     let timerStartDateTime = null;
-    let timerDuration = 0;
     let intervalId = null;
 
     return function() {
         if (toggleIcon.classList.contains('fa-hourglass-end')) {
                 clockDiv.classList.add('fade-in-animation');
-                updateClock(true);
                 timerDuration = 0;
+                updateClock(true);
                 timerStartDateTime = new Date();
                 button.style.transform = `rotate(180deg)`;
                 toggleIcon.classList.remove('fa-hourglass-end');
