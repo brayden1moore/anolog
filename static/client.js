@@ -1074,6 +1074,8 @@ function updateClock(countUp) {
 
     if (countUp === true) {
         currentRotation = 180;
+        const timerStartTime = timerStartDateTime.getTime();
+
         const block_hrs = String(Math.floor(timerDuration / 3600)).padStart(2, '0');
         const block_mins = String(Math.floor((timerDuration % 3600) / 60)).padStart(2, '0');
         const block_secs = String(timerDuration % 60).padStart(2, '0');
@@ -1129,20 +1131,20 @@ function convertToSeconds(time) {
 
 // Play pause toggle
 let timerDuration = 0;
+let timerStartDateTime;
 let toggleClock = (function() {
     const button = document.querySelector('.button-common');
     const toggleIcon = document.getElementById('toggle-icon');
     const clockDiv = document.getElementById('clock-div');
 
-    let timerStartDateTime = null;
     let intervalId = null;
 
     return function() {
         if (toggleIcon.classList.contains('fa-hourglass-end')) {
                 clockDiv.classList.add('fade-in-animation');
                 timerDuration = 0;
-                updateClock(true);
                 timerStartDateTime = new Date();
+                updateClock(true);
                 button.style.transform = `rotate(180deg)`;
                 toggleIcon.classList.remove('fa-hourglass-end');
                 toggleIcon.classList.add('fa-hourglass-half');
