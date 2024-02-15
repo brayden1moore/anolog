@@ -1055,16 +1055,23 @@ function addHoverListener(newLink, elementType, elementId) {
 
 // Update clock
 let currentRotation = 0;
+let blockSeconds;
 let clockStartTime = null;
+let blockStartTime = null;
 function updateClock(countUp) {
 
     if (countUp === true && clockStartTime === null) {
         clockStartTime = new Date().getTime() - (globalSeconds * 1000);
+        blockStartTime = new Date().getTime();
     }
 
     if (clockStartTime !== null) {
         const currentTime = new Date().getTime();
         globalSeconds = Math.floor((currentTime - clockStartTime) / 1000);
+        
+        if (blockStartTime !== null) {
+            blockSeconds = Math.floor((currentTime - blockStartTime) / 1000);
+        }
     }
 
     const hrs = String(Math.floor(globalSeconds / 3600)).padStart(2, '0');
@@ -1074,12 +1081,13 @@ function updateClock(countUp) {
 
     if (countUp === true) {
         currentRotation = 180;
-        const timerStartTime = timerStartDateTime.getTime();
 
-        const block_hrs = String(Math.floor(timerDuration / 3600)).padStart(2, '0');
-        const block_mins = String(Math.floor((timerDuration % 3600) / 60)).padStart(2, '0');
-        const block_secs = String(timerDuration % 60).padStart(2, '0');
+        const block_hrs = String(Math.floor(blockSeconds / 3600)).padStart(2, '0');
+        const block_mins = String(Math.floor((blockSeconds % 3600) / 60)).padStart(2, '0');
+        const block_secs = String(blockSeconds % 60).padStart(2, '0');
         clock.textContent = `${hrs}:${mins}:${secs} (${block_hrs}:${block_mins}:${block_secs})`;
+    } else {
+        clock.textContent = `${hrs}:${mins}:${secs}`;
     }
 }
 
@@ -1989,7 +1997,6 @@ function addNewItem(type) {
                 addTask(globalProjectId);
             }
             newInput.focus();
-            targetUl.removeChild(newLi);
         }
         calculateListHeight();
     });
