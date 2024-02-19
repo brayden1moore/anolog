@@ -69,7 +69,7 @@ def login():
         try:
             if request.form.get('phone'):
                 ip = get_client_ip(request)
-                html = render_template('bot.html', ip=ip)
+                html = render_template('bot.html', ip=ip, email=request.form['email'])
                 send_email(app.config['MAIL_USERNAME'], f'Anolog - Bot Blocked', html)
                 abort(400) 
 
