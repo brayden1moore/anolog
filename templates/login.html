@@ -83,7 +83,7 @@
         button {
             background-color: #161616;
             color:  #DDDDDD;
-            margin-top: 30px;
+            margin-top: 15px;
             padding: 10px;
             width: 80%;
             font-size: 18px;
@@ -121,6 +121,12 @@
             overflow: hidden;
             border-radius: 30px;
             height: 80%;
+        }
+        .hidden {
+            height: 0;
+            overflow: hidden;
+            border: none;
+            background: transparent;
         }
         @media (orientation: portrait) {
             body {
@@ -164,12 +170,14 @@
             <form method="post" action="/login">
                 <input id='email' class='signin-input' type="email" name="email" placeholder="Email" required>
                 <input class='signin-input' type="password" name="password" placeholder="Password" required>
+
+                <input name="phone" type="text" value="" tabindex="-1" autocomplete="off" class="hidden">
+
                 <button type="submit">Login or Sign Up</button><br>
                 <p>{{message}}</p>
                 <a href="javascript:void(0);" id="forgot-password">Forgot</a>
             </form>
         </div>
-
     </div>
 
 

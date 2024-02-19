@@ -1,6 +1,7 @@
 from urllib import response
+from flask_mail import Mail, Message
 from flask import session as flask_session
-from flask import Flask, request, jsonify, render_template, Response, redirect, url_for
+from flask import Flask, request, jsonify, render_template, Response, redirect, url_for, abort
 from build_db import User, Project, Task, Log, Time, engine
 from sqlalchemy.orm import relationship, sessionmaker, scoped_session
 from sqlalchemy import desc, func
@@ -27,6 +28,13 @@ Session = scoped_session(sessionmaker(bind=engine))
 app = Flask(__name__)
 app.config['SECRET_KEY'] = config['FLASK_KEY']
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(weeks=4)
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 465
+app.config['MAIL_USERNAME'] = 'brayden@braydenmoore.com' 
+app.config['MAIL_PASSWORD'] = config['GOOGLE_PASS']
+app.config['MAIL_USE_TLS'] = False
+app.config['MAIL_USE_SSL'] = True
+app.config['SECURITY_PASSWORD_SALT'] = config['SALT_PASS']
 
 ## Login
 
@@ -51,6 +59,12 @@ def login():
     if request.method == 'POST':
         session = Session()
         try:
+            if request.form.get('phone'):
+                ip = request.remote_addr
+                html = render_template('bot.html', ip=ip)
+                send_email(app.config['MAIL_USERNAME'], f'Anolog - Bot Blocked', html)
+                abort(400) 
+
             email = request.form['email']
             if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
                 message = "Try a different email"
@@ -101,16 +115,6 @@ def logout():
 
 
 ## Mail
-
-from flask_mail import Mail, Message
-
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 465
-app.config['MAIL_USERNAME'] = 'brayden@braydenmoore.com' 
-app.config['MAIL_PASSWORD'] = config['GOOGLE_PASS']
-app.config['MAIL_USE_TLS'] = False
-app.config['MAIL_USE_SSL'] = True
-app.config['SECURITY_PASSWORD_SALT'] = config['SALT_PASS']
 
 mail = Mail(app)
 
