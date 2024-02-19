@@ -36,6 +36,14 @@ app.config['MAIL_USE_TLS'] = False
 app.config['MAIL_USE_SSL'] = True
 app.config['SECURITY_PASSWORD_SALT'] = config['SALT_PASS']
 
+def get_client_ip(request):
+    x_forwarded_for = request.headers.get('X-Forwarded-For')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.headers.get('X-Real-IP') or request.remote_addr
+    return ip
+
 ## Login
 
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
@@ -60,7 +68,7 @@ def login():
         session = Session()
         try:
             if request.form.get('phone'):
-                ip = request.remote_addr
+                ip = get_client_ip(request)
                 html = render_template('bot.html', ip=ip)
                 send_email(app.config['MAIL_USERNAME'], f'Anolog - Bot Blocked', html)
                 abort(400) 
