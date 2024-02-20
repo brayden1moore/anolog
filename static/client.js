@@ -342,7 +342,7 @@ function populateDays() {
             
             if (data[day]){
                 daySquare.title = `${monthAbbrev} ${day} - ${data[day]['hours']}`;
-                daySquare.style.opacity = data[day]['duration'] / maxDuration;
+                daySquare.style.opacity = (data[day]['duration'] / maxDuration) + 0.1;
             }
             else {
                 daySquare.title = `${monthAbbrev} ${day} - 0:00`;
