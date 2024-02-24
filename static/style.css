@@ -735,7 +735,7 @@ li {
 }
 
 #time-div {
-    width: 100%;
+    width: 1000px;
     padding-top: 3px;
     padding-bottom: 3px;
     align-items: center;
@@ -745,12 +745,12 @@ li {
     transition: 0.2s ease;
 }
 .time-block {
+    overflow-x: scroll;
     cursor: pointer;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: clip;
     min-width: 1%;
-    max-width: 100%;
     display: flex;
     color: #161616;
     justify-content: center;
