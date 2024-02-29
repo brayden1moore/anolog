@@ -735,7 +735,7 @@ li {
 }
 
 #time-div {
-    width: 1000px;
+    width: 100%;
     padding-top: 3px;
     padding-bottom: 3px;
     align-items: center;
