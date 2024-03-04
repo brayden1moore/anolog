@@ -129,10 +129,10 @@ header {
     box-sizing: border-box;
     background-color: #161616;
     border-radius: 10px;
-    margin-bottom: 0px;
+    margin-bottom: 25px;
     margin-right: 25px;
-    height: 40px;
-    width: 40px;
+    height: auto;
+    width: auto;
     transition: 0.2s ease;
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);
 }
@@ -240,7 +240,7 @@ h2 {
     margin-bottom: 20px;
     width: 90%;
     height: auto;
-    max-height: 140px;
+    max-height: 200px;
     overflow-y: scroll;
     font-size: large;
     margin-left: 0;
@@ -252,7 +252,7 @@ h2 {
     margin-bottom: 10px;
     width: 90%;
     height: auto;
-    max-height: 250px;
+    max-height: 500px;
     overflow-y: scroll;
     margin-left: 0;
     padding-left: 20px;

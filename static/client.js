@@ -127,7 +127,7 @@ function populateTasks(projectId) {
                 newTaskLink.setAttribute('data-taskId', task.id);
                 newTaskListItem.appendChild(newTaskLink);
                 taskUlElement.appendChild(newTaskListItem);
-                calculateListHeight();
+                //calculateListHeight();
 
                 // Add click listener
                 addTaskClickListener(newTaskLink, task.id, task.name);
@@ -1359,7 +1359,7 @@ function completeTask(taskCheckbox, taskLabel, isCompleted) {
         listItem.style.marginBottom = '5px';
     }
 
-    calculateListHeight();
+    //calculateListHeight();
 
     fetch(`/tasks`, {
         method: 'PUT',
@@ -1401,7 +1401,7 @@ function completeProject(projectId, isCompleted) {
         listItem.style.marginBottom = '5px';
     }
 
-    calculateListHeight();
+    //calculateListHeight();
 
     fetch(`/projects`, {
         method: 'PUT',
@@ -1813,7 +1813,7 @@ window.addEventListener('resize', () => {
     clearTimeout(blockResizeTimeout);
     clearTimeout(listResizeTimeout);
     blockResizeTimeout = setTimeout(resizeTimeBlocks, 100);
-    listResizeTimeout = setTimeout(calculateListHeight, 100);
+    //listResizeTimeout = setTimeout(calculateListHeight, 100);
     dayResizeTimeout = setTimeout(resizeDays, 200);
     setClassForScreenSize();
 });
@@ -1976,7 +1976,7 @@ showCompletedProjectToggle.addEventListener('click', function() {
 
 // Add a task or project
 function addNewItem(type) {
-    calculateListHeight();
+    //calculateListHeight();
     const projectUlElement = document.getElementById('project-list-ul');
     const taskUlElement = document.getElementById('task-list-ul');
     const targetUl = type === 'project' ? projectUlElement : taskUlElement;
@@ -1998,7 +1998,7 @@ function addNewItem(type) {
             }
             newInput.focus();
         }
-        calculateListHeight();
+        //calculateListHeight();
     });
 
     // Remove the input when it loses focus
@@ -2029,16 +2029,16 @@ function calculateListHeight() {
     
     listContainer.style.height = totalHeight + 'px';
     if (window.innerWidth >= 769) {
-        listContainer.style.width = 270 + 'px';
+        //listContainer.style.width = 270 + 'px';
     }
     else {
-        listContainer.style.width = 'auto';
+        //listContainer.style.width = 'auto';
     }
 }
 listContainer.addEventListener('click', function() {
-    calculateListHeight();
+    //calculateListHeight();
 });
-calculateListHeight();
+//calculateListHeight();
 
 // Update duration text
 const startTimeInput = document.getElementById('start-time-input');
