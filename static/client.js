@@ -198,7 +198,7 @@ function makeLog(id, isPinned, date, description) {
 
     const logEntry = `
         <div class="log-item" data-logId="${id}" data-isPinned=${isPinned} style="background-color:${backgroundColor}; color: ${color}">
-            <div style="display: flex; margin-bottom: 5px; align-items: center;">
+            <div style="display: flex; margin-bottom: 0px; align-items: center;">
                 <div class="log-options-div">
                     <i id="pin-option-button" class="log-option-button ${dark} pin fa-solid fa-thumbtack" style="width: 0px; font-size: 10pt; overflow: hidden;"></i>
                     <i id="edit-option-button" class="log-option-button ${dark} fa fa-pencil-alt" style="width: 0px; font-size: 10pt; overflow: hidden;"></i>
