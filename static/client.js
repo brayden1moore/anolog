@@ -100,7 +100,7 @@ function populateTasks(projectId) {
                 const newTaskListItem = document.createElement('li');
                 newTaskListItem.classList.add('task-or-project-li');
                 newTaskListItem.style.height = '0px';
-                
+
                 const newTaskLink = document.createElement('p');
                 newTaskLink.className = 'task-or-project';
                 newTaskLink.textContent = task.name;
@@ -203,9 +203,8 @@ function makeLog(id, isPinned, date, description) {
                     <i id="pin-option-button" class="log-option-button ${dark} pin fa-solid fa-thumbtack" style="width: 0px; font-size: 10pt; overflow: hidden;"></i>
                     <i id="edit-option-button" class="log-option-button ${dark} fa fa-pencil-alt" style="width: 0px; font-size: 10pt; overflow: hidden;"></i>
                 </div>
-                <span class="log-created-at">${taskName}</span>
+                <span class="log-description" style="white-space: pre-line;">${escapedLogText}</span>
             </div>
-            <span class="log-description" style="white-space: pre-line;">${escapedLogText}</span>
         </div>`;
 
     const element = document.createElement('div');
