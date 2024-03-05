@@ -46,24 +46,25 @@ function populateProjects() {
                     projectNameLabel.style.opacity = "1";
                 }
                 
-                if (project.is_completed) {
-                    newLink.style.textDecoration = 'line-through';
-                    newListItem.setAttribute('data-completed', true);
-                    newListItem.style.height = '0px';
-                    newListItem.style.overflow = 'hidden';
-                    newListItem.style.margin = 'auto';
-                }
                 else {
                     newListItem.setAttribute('data-completed', false);
                 }
 
-                // Add click event listener to this list item
+                newListItem.style.height = '0px';
                 addProjectClickListener(newLink, project.id, project.name);
-                
-                // Add hover listener
                 addHoverListener(newLink, 'project', data.id);
-                
                 ulElement.appendChild(newListItem);
+
+                if (project.is_completed) {
+                    newLink.style.textDecoration = 'line-through';
+                    newListItem.setAttribute('data-completed', true);
+                    newListItem.style.overflow = 'hidden';
+                    newListItem.style.margin = 'auto';
+                }
+                else {
+                    newListItem.style.height = 'auto';
+                }
+
             }
         });
     }
@@ -102,14 +103,15 @@ function populateTasks(projectId) {
                 newTaskLink.dataset.isCompleted = task.is_completed;
 
                 // Mark completed if is_complete
+                newTaskListItem.style.height = '0px';
                 if (task.is_completed === true) {
                     newTaskLink.style.textDecoration = 'line-through';
                     newTaskListItem.setAttribute('data-completed', true);
-                    newTaskListItem.style.height = '0px';
                     newTaskListItem.style.overflow = 'hidden';
                     newTaskListItem.style.margin = 'auto';
                 }
                 else {
+                    newTaskListItem.style.height = 'auto';
                     newTaskLink.style.textDecoration = '';
                     newTaskListItem.setAttribute('data-completed', false);
                 }
@@ -127,12 +129,7 @@ function populateTasks(projectId) {
                 newTaskLink.setAttribute('data-taskId', task.id);
                 newTaskListItem.appendChild(newTaskLink);
                 taskUlElement.appendChild(newTaskListItem);
-                //calculateListHeight();
-
-                // Add click listener
                 addTaskClickListener(newTaskLink, task.id, task.name);
-
-                // Add hover listener
                 addHoverListener(newTaskLink, 'task', task.id);
 
                 // Populate logs if it's the first one
@@ -182,9 +179,9 @@ function makeLog(id, isPinned, date, description) {
     const localDateStr = dateObj.toLocaleString();
     const escapedLogText = description.replace(/</g, "&lt;").replace(/>/g, "&gt;");
     
-    let dark = '';
-    let backgroundColor = '#161616';
-    let color = 'var(--primary-color)';
+    let dark = 'dark';
+    let color = '#161616';
+    let backgroundColor = 'var(--primary-color)';
 
     if (isPinned) { 
         dark = 'dark';
@@ -704,7 +701,7 @@ function addLog(taskId, logType) {
 
         // Build log entry
         logEntry = makeLog(tempId, false, null, logText);
-        logItemsContainer.insertBefore(logEntry, logItemsContainer.childNodes[1]);
+        logItemsContainer.insertBefore(logEntry, logItemsContainer.childNodes[0]);
         addLogClickListener(logEntry);
     }
 
@@ -875,6 +872,7 @@ function addHoverListener(newLink, elementType, elementId) {
 
             // Create an input element
             const inputElement = document.createElement('input');
+            inputElement.classList.add('rename-input');
             inputElement.type = 'text';
             inputElement.value = newLink.textContent;
 
@@ -1284,7 +1282,6 @@ document.addEventListener("DOMContentLoaded", function() {
         if (e.key === 'Enter') {
             if (e.shiftKey) {
                 e.preventDefault(); 
-                updateInputHeight();
 
                 const cursorPosition = logInput.selectionStart;
                 const textBeforeCursor = logInput.value.substring(0, cursorPosition);
@@ -1293,6 +1290,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 logInput.value = textBeforeCursor + '\n' + textAfterCursor;
                 logInput.selectionStart = cursorPosition + 1;
                 logInput.selectionEnd = cursorPosition + 1;
+                updateInputHeight();
 
             } else {
                 const trimmedValue = logInput.value.trim();
@@ -1307,10 +1305,11 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // Function to update the height of inputElement
     function updateInputHeight() {
-        logInput.style.height = 'auto';
+        logInput.style.height = '0px';
         logInput.style.height = logInput.scrollHeight + 'px';
     }
     logInput.addEventListener('input', updateInputHeight);
+    updateInputHeight();
 
     // Mark task as completed or not yet completed when taskbox is checked
     const taskCheckbox = document.getElementById('task-checkbox');
@@ -1598,9 +1597,10 @@ function editLog(logItem) {
     const inputElement = document.createElement('textarea');
     
     inputElement.classList.add('log-edit-area');
-    if (logItem.getAttribute('data-isPinned') === 'true') {
-        inputElement.classList.add('dark');
-    }
+    inputElement.classList.add('dark');
+
+    //if (logItem.getAttribute('data-isPinned') === 'true') {
+    //}
 
     const description = logDescription.textContent;
     inputElement.value = description;
@@ -1632,7 +1632,7 @@ function editLog(logItem) {
 
     // Function to update the height of inputElement
     function updateInputHeight() {
-        inputElement.style.height = 'auto';
+        inputElement.style.height = '0px';
         inputElement.style.height = inputElement.scrollHeight + 'px';
     }
     inputElement.addEventListener('input', updateInputHeight);

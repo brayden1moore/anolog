@@ -131,7 +131,7 @@ header {
     border-radius: 10px;
     margin-bottom: 25px;
     margin-right: 25px;
-    height: auto;
+    height: fit-content;
     width: auto;
     transition: 0.2s ease;
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);
@@ -160,17 +160,18 @@ header {
     width: 40px !important;
 }
 #project-list-container {
-    width: 90%;
+    width: 100%;
 }
 #task-list-container {
-    width: 90%;
+    width: 100%;
 }
 
 .list-div {
     display: block;
     margin-top: 20px;
     margin-left: 30px;
-    width: 240px;
+    margin-bottom: 25px;
+    width: 210px;
     height: auto;
 }
 .divider {
@@ -271,8 +272,10 @@ li {
 }
 #new-project-input, #new-task-input, .rename-input{
     font: inherit;
-    width: 125px;
+    margin-right: 20px;
+    width: 100%;
     border: none;
+    height: auto;
     background: none;
     border-bottom: 1px solid var(--primary-color);
     outline: none;
@@ -336,19 +339,21 @@ li {
     resize: vertical;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     font-size: 12pt;
+    margin: 2px;
     margin-top: 25px;
     margin-bottom: 0px;
     color: var(--primary-color);
     width: -webkit-fill-available;
     height: auto;
-    min-height: 75px;
+    min-height: 25px;
     background: none;
-    border: 2px solid var(--primary-color);
+    border: none;
+    border-bottom: 2px solid var(--primary-color);
     outline: none;
-    border-radius: 6px;
+    border-radius: 0px;
     opacity: 1;
     transition: opacity 0.2s ease;
-    padding: 10px;
+    padding: 0px;
 }
 #log-input::placeholder {
     color: var(--primary-color);
@@ -414,8 +419,8 @@ li {
     margin-bottom: auto;
 }
 #log-items-container {
-    padding-right: 10px;
-    padding-left: 10px;
+    padding-right: 3px;
+    padding-left: 3px;
     height: auto;
     opacity: 1;
     overflow-y: scroll;
@@ -685,10 +690,12 @@ li {
 }
 
 .toggle-completed {
+    top: 1px;
+    position: relative;
     margin-left: 2px;
     width: 15px;
     color: #161616;
-    font-size: 10pt;
+    font-size: 9pt;
     cursor: pointer;
     transition: 0.2s ease;
     opacity: 0;  
@@ -703,6 +710,8 @@ li {
     opacity: 1 !important; 
 }
 .add-button {
+    top: 2px;
+    position: relative;
     color: var(--primary-color);
     font-size: 12pt;
     cursor: pointer;
