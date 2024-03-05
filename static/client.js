@@ -1605,10 +1605,10 @@ function editLog(logItem) {
     const inputElement = document.createElement('textarea');
     
     inputElement.classList.add('log-edit-area');
-    inputElement.classList.add('dark');
 
-    //if (logItem.getAttribute('data-isPinned') === 'true') {
-    //}
+    if (logItem.getAttribute('data-isPinned') === 'true') {
+        inputElement.classList.add('dark');
+    }
 
     const description = logDescription.textContent;
     inputElement.value = description;
