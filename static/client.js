@@ -50,10 +50,10 @@ function populateProjects() {
                     newListItem.setAttribute('data-completed', false);
                 }
 
-                newListItem.style.height = '0px';
                 addProjectClickListener(newLink, project.id, project.name);
                 addHoverListener(newLink, 'project', data.id);
                 ulElement.appendChild(newListItem);
+                newListItem.style.height = '0px';
 
                 if (project.is_completed) {
                     newLink.style.textDecoration = 'line-through';
@@ -62,8 +62,11 @@ function populateProjects() {
                     newListItem.style.margin = 'auto';
                 }
                 else {
+                    newLink.style.width = '170px';
                     newListItem.style.height = 'auto';
                 }
+
+
 
             }
         });
@@ -96,14 +99,23 @@ function populateTasks(projectId) {
  
                 const newTaskListItem = document.createElement('li');
                 newTaskListItem.classList.add('task-or-project-li');
+                newTaskListItem.style.height = '0px';
+                
                 const newTaskLink = document.createElement('p');
                 newTaskLink.className = 'task-or-project';
                 newTaskLink.textContent = task.name;
                 newTaskLink.dataset.totalSeconds = task.total_seconds;
                 newTaskLink.dataset.isCompleted = task.is_completed;
 
+                newTaskLink.setAttribute('data-taskId', task.id);
+                newTaskListItem.appendChild(newTaskLink);
+                taskUlElement.appendChild(newTaskListItem);
+                addTaskClickListener(newTaskLink, task.id, task.name);
+                addHoverListener(newTaskLink, 'task', task.id);
+
                 // Mark completed if is_complete
-                newTaskListItem.style.height = '0px';
+                var fullHeight = newTaskListItem.scrollHeight;
+                
                 if (task.is_completed === true) {
                     newTaskLink.style.textDecoration = 'line-through';
                     newTaskListItem.setAttribute('data-completed', true);
@@ -111,7 +123,7 @@ function populateTasks(projectId) {
                     newTaskListItem.style.margin = 'auto';
                 }
                 else {
-                    newTaskListItem.style.height = 'auto';
+                    newTaskListItem.style.height = fullHeight + 'px';
                     newTaskLink.style.textDecoration = '';
                     newTaskListItem.setAttribute('data-completed', false);
                 }
@@ -125,12 +137,6 @@ function populateTasks(projectId) {
                     newTaskLink.style.opacity = '0.5';
                     newTaskLink.style.fontWeight = 'normal';
                 }
-
-                newTaskLink.setAttribute('data-taskId', task.id);
-                newTaskListItem.appendChild(newTaskLink);
-                taskUlElement.appendChild(newTaskListItem);
-                addTaskClickListener(newTaskLink, task.id, task.name);
-                addHoverListener(newTaskLink, 'task', task.id);
 
                 // Populate logs if it's the first one
                 if (first===true){
@@ -178,8 +184,9 @@ function makeLog(id, isPinned, date, description) {
     }
     const localDateStr = dateObj.toLocaleString();
     const escapedLogText = description.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    
-    let dark = 'dark';
+    const taskName = document.getElementById('task-name').textContent;
+
+    let dark = '';
     let backgroundColor = '#161616';
     let color = 'var(--primary-color)';
 
@@ -196,7 +203,7 @@ function makeLog(id, isPinned, date, description) {
                     <i id="pin-option-button" class="log-option-button ${dark} pin fa-solid fa-thumbtack" style="width: 0px; font-size: 10pt; overflow: hidden;"></i>
                     <i id="edit-option-button" class="log-option-button ${dark} fa fa-pencil-alt" style="width: 0px; font-size: 10pt; overflow: hidden;"></i>
                 </div>
-                <span class="log-created-at">${localDateStr}</span>
+                <span class="log-created-at">${taskName}</span>
             </div>
             <span class="log-description" style="white-space: pre-line;">${escapedLogText}</span>
         </div>`;
@@ -592,6 +599,7 @@ function addProject() {
         const newListItem = document.createElement('li');
         newListItem.classList.add('task-or-project-li');
         const newLink = document.createElement('p');
+        newLink.style.opacity = '0.5';
         newLink.className = 'task-or-project';
         newLink.textContent = newProjectName;
         newListItem.setAttribute('data-completed', false);
@@ -640,6 +648,7 @@ function addTask(projectId) {
         const newLink = document.createElement('p');
         newLink.className = 'task-or-project';
         newLink.textContent = newTaskName;
+        newLink.style.opacity = '0.5';
         newListItem.setAttribute('data-completed', false);
 
         newListItem.appendChild(newLink);
@@ -773,7 +782,7 @@ function addProjectClickListener(newLink, projectId, projectName) {
         const logContent = document.getElementById('log-content');
         const logDiv = document.getElementById('log-div');
         if (globalProjectId !== projectId) {
-            logContent.style.visibility = 'hidden';
+            //logContent.style.visibility = 'hidden';
             logDiv.style.opacity = "1";
         }
 

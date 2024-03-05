@@ -123,7 +123,7 @@ header {
 }
 .list-container {
     padding-top: 10px;
-    padding-right: 30px;
+    padding-right: 20px;
     flex-shrink: 0;
     overflow:hidden;
     box-sizing: border-box;
@@ -170,8 +170,8 @@ header {
     display: block;
     margin-top: 20px;
     margin-left: 30px;
-    margin-bottom: 25px;
-    width: 210px;
+    margin-bottom: 20px;
+    width: 220px;
     height: auto;
 }
 .divider {
@@ -225,7 +225,8 @@ a:hover {
     cursor: pointer;
     color: var(--primary-color);
     border-bottom: 1px solid transparent;
-    transition: 0.1s ease;
+    transition: opacity 0.1s ease;
+    overflow: hidden;
 }
 .task-or-project:hover {
     border-bottom: 1px solid var(--primary-color);
@@ -268,10 +269,11 @@ li {
     margin-bottom: 5px;
 }
 .task-or-project-li {
+    transition: height 0.2s ease;
     margin-right: 20px;
 }
 #new-project-input, #new-task-input, .rename-input{
-    font: inherit;
+    font-size: 12pt;
     margin-right: 20px;
     width: 100%;
     border: none;
@@ -305,7 +307,7 @@ li {
     transition: opacity 0.5s ease;
 }
 #project-name {
-    font-size: 16pt;
+    font-size: 14pt;
     margin-bottom: 5px;
     margin-top: 0px;
 }
@@ -336,7 +338,7 @@ li {
     color:  var(--primary-color);
 }
 #log-input {
-    resize: vertical;
+    resize: none;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     font-size: 12pt;
     margin: 2px;
