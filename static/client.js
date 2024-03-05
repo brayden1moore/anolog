@@ -180,8 +180,8 @@ function makeLog(id, isPinned, date, description) {
     const escapedLogText = description.replace(/</g, "&lt;").replace(/>/g, "&gt;");
     
     let dark = 'dark';
-    let color = '#161616';
-    let backgroundColor = 'var(--primary-color)';
+    let backgroundColor = '#161616';
+    let color = 'var(--primary-color)';
 
     if (isPinned) { 
         dark = 'dark';
