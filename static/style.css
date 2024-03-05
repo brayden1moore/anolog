@@ -421,8 +421,8 @@ li {
     margin-bottom: auto;
 }
 #log-items-container {
-    padding-right: 3px;
-    padding-left: 3px;
+    padding-right: 0px;
+    padding-left: 0px;
     height: auto;
     opacity: 1;
     overflow-y: scroll;
@@ -890,7 +890,7 @@ input[type="datetime-local"] {
 }
 
 .log-item:hover .log-options-div {
-    width: 40px;
+    width: 60px;
 }
 
 .log-option-button:hover {
@@ -898,25 +898,26 @@ input[type="datetime-local"] {
 }
 
 .log-edit-area {
-    resize: vertical;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    z-index: 100;
+    resize: none;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif, sans-serif;
     font-size: 12pt;
-    margin-top: 10px;
+    margin-top: 0px;
     margin-bottom: 0px;
     color: var(--primary-color);
     width: -webkit-fill-available;
     height: auto;
     background: none;
-    border: 2px dashed var(--primary-color);
+    border: none;
     outline: none;
-    border-radius: 6px;
+    border-radius: 0;
     opacity: 1;
     transition: opacity 0.2s ease;
-    padding: 10px;
+    padding: 0px;
 }
 .log-edit-area.dark {
-    color: #161616;
-    border: 2px dashed #161616;
+    color: var(--primary-color);
+    border: none;
 }
 
 @keyframes fadeIn {

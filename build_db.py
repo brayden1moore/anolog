@@ -55,6 +55,7 @@ class Log(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     description = Column(String)
     is_pinned = Column(Boolean, default=False)
+    is_visible = Column(Boolean, default=True)
 
 class Time(Base):
     __tablename__ = 'time'

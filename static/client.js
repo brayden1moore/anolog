@@ -186,9 +186,9 @@ function makeLog(id, isPinned, date, description) {
     const escapedLogText = description.replace(/</g, "&lt;").replace(/>/g, "&gt;");
     const taskName = document.getElementById('task-name').textContent;
 
-    let dark = '';
-    let backgroundColor = '#161616';
-    let color = 'var(--primary-color)';
+    let dark = 'dark';
+    let color = '#161616';
+    let backgroundColor = 'var(--primary-color)';
 
     if (isPinned) { 
         dark = 'dark';
@@ -202,6 +202,8 @@ function makeLog(id, isPinned, date, description) {
                 <div class="log-options-div">
                     <i id="pin-option-button" class="log-option-button ${dark} pin fa-solid fa-thumbtack" style="width: 0px; font-size: 10pt; overflow: hidden;"></i>
                     <i id="edit-option-button" class="log-option-button ${dark} fa fa-pencil-alt" style="width: 0px; font-size: 10pt; overflow: hidden;"></i>
+                    <i id="delete-option-button" class="log-option-button ${dark} fa fa-trash" style="width: 0px; font-size: 10pt; overflow: hidden;"></i>
+
                 </div>
                 <span class="log-description" style="white-space: pre-line;">${escapedLogText}</span>
             </div>
@@ -214,8 +216,17 @@ function makeLog(id, isPinned, date, description) {
 
     const pinOption = logItem.querySelector('#pin-option-button');
     const editOption = logItem.querySelector('#edit-option-button');
+    const deleteOption = logItem.querySelector('#delete-option-button');
+
+    if (isPinned) {
+        const logOptions = logItem.querySelector('.log-options-div');
+        logOptions.style.minWidth = '20px';
+        pinOption.style.minWidth = '15px';
+    }
+
     addLogPinClickListener(pinOption, logItem);
     addLogEditClickListener(editOption, logItem);
+    addLogDeleteClickListener(deleteOption, logItem);
     return logItem;
 }
 
@@ -224,6 +235,9 @@ function addLogPinClickListener(logOptionButton, logItem) {
 }
 function addLogEditClickListener(logOptionButton, logItem) {
     logOptionButton.addEventListener('click', () => editLog(logItem));
+}
+function addLogDeleteClickListener(logOptionButton, logItem) {
+    logOptionButton.addEventListener('click', () => deleteLog(logItem));
 }
 
 // GET from /tasks /hours and /logs endpoints and populate content
@@ -262,14 +276,21 @@ function populateLogs(taskId) {
                 let logEntry = makeLog(log.id, false, log.created_at, log.description);
                 let pinnedLogEntry = makeLog(log.id, true, log.created_at, log.description);
                 
+                logEntry.style.opacity = '0';
+                pinnedLogEntry.style.opacity = '0';
+
                 if (log.is_pinned) {
                     pinnedLogsContainer.appendChild(pinnedLogEntry);
+                    pinnedLogEntry.style.opacity = '1';
+                    logEntry.style.opacity = '1';
                     logEntry.style.height = '0px';
                     logEntry.style.padding = '0px';
                     logItemsContainer.appendChild(logEntry);
+                    logEntry.style.display = 'none';
                 }
                 else{
                     logItemsContainer.appendChild(logEntry);
+                    setTimeout(() => logEntry.style.opacity = '1', 10);
                 }
                 //adjustLogItemsContainerHeight();
             }
@@ -1316,7 +1337,7 @@ document.addEventListener("DOMContentLoaded", function() {
         logInput.style.height = '0px';
         logInput.style.height = logInput.scrollHeight + 'px';
     }
-    logInput.addEventListener('input', updateInputHeight);
+    logInput.addEventListener('input', () => setTimeout(updateInputHeight, 5));
     updateInputHeight();
 
     // Mark task as completed or not yet completed when taskbox is checked
@@ -1527,6 +1548,42 @@ function deleteTask(taskId){
     });
 }
 
+// Delete log
+function deleteLog(logItem) {
+    localStorage.removeItem(`logs_cache_${globalTaskId}`);
+    const logItemsContainer = document.getElementById('log-items-container');
+    const pinnedLogsContainer = document.getElementById('pinned-logs-container');
+
+    const logId = logItem.getAttribute('data-logId');
+    const isPinned = logItem.getAttribute('data-isPinned');
+
+    logItem.style.opacity = '0';
+
+    if (isPinned === 'true') {
+        setTimeout(() => pinnedLogsContainer.removeChild(logItem), 250);
+    } else {
+        setTimeout(() => logItemsContainer.removeChild(logItem), 250);
+    }    
+
+    fetch(`logs`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            taskId: globalTaskId,
+            logId: logId,
+            delete: true
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.message === "Log deleted") {
+            console.log('log deleted');
+        }
+    });
+}
+
 // Pin log
 function pinLog(logItem) {
     localStorage.removeItem(`logs_cache_${globalTaskId}`);
@@ -1539,10 +1596,12 @@ function pinLog(logItem) {
 
     if (logItem) {
         if (isPinned === 'true') {
+
             // Unpin if pinned
             hiddenLogItem = logItemsContainer.querySelector(`[data-logId="${logId}"]`);
             hiddenLogItem.style.height = 'auto';
             hiddenLogItem.style.padding = '15px';
+            hiddenLogItem.style.display = 'flex';
 
             // Make sure the text content is updated
             const hiddenDescription = hiddenLogItem.querySelector('.log-description');
@@ -1563,6 +1622,7 @@ function pinLog(logItem) {
             logItem.style.height = '0px';
             logItem.style.padding = '0px';
             logItem.style.overflow = 'hidden';
+            logItem.style.display = 'none';
 
             // Create item in pinned log
             clonedLogItem.style.opacity = '1'; 
@@ -1574,8 +1634,16 @@ function pinLog(logItem) {
 
             const pinOption = clonedLogItem.querySelector('#pin-option-button');
             const editOption = clonedLogItem.querySelector('#edit-option-button');
+            const deleteOption = clonedLogItem.querySelector('#delete-option-button');
+
+            const logOptions = clonedLogItem.querySelector('.log-options-div');
+            logOptions.style.minWidth = '20px';
+            pinOption.style.minWidth = '15px';
+
             addLogPinClickListener(pinOption, clonedLogItem);
-            addLogEditClickListener(editOption, clonedLogItem)
+            addLogEditClickListener(editOption, clonedLogItem);
+            addLogDeleteClickListener(deleteOption, clonedLogItem);
+
         }
     }
 
@@ -1601,19 +1669,22 @@ function pinLog(logItem) {
 
 function editLog(logItem) {
     const logDescription = logItem.querySelector('.log-description');
-    const editOption = logItem.querySelector('#edit-option-button');
+    const logOptions = logItem.querySelector('.log-options-div');
     const inputElement = document.createElement('textarea');
-    
+    inputElement.style.height = logDescription.scrollHeight + 'px';
     inputElement.classList.add('log-edit-area');
+    inputElement.classList.add('dark');
 
-    if (logItem.getAttribute('data-isPinned') === 'true') {
-        inputElement.classList.add('dark');
-    }
+    logItem.style.border = '2px dashed var(--primary-color)';
+    logItem.style.background = 'transparent';
+    
+    var originalPadding = parseInt(logItem.style.padding, 10);
+    logItem.style.padding = originalPadding - 2 + 'px';
+    console.log(originalPadding);
 
     const description = logDescription.textContent;
     inputElement.value = description;
-    inputElement.style.minHeight = logDescription.offsetHeight + 'px';
-    editOption.style.display = 'none';
+    logOptions.style.display = 'none';
 
     // Replace the description with the input element
     logDescription.parentNode.replaceChild(inputElement, logDescription);
@@ -1627,7 +1698,12 @@ function editLog(logItem) {
         if (inputElement.parentNode) {
             inputElement.parentNode.replaceChild(logDescription, inputElement);
             inputElement.removeEventListener('keydown', escHandler); 
-            editOption.style.display = 'inline-block';
+            logOptions.style.display = 'flex';
+            
+            logItem.style.border = 'none';
+            logItem.style.background = 'var(--primary-color)';
+            logItem.style.padding = originalPadding + 'px';
+
         }
     }
 
@@ -1643,7 +1719,8 @@ function editLog(logItem) {
         inputElement.style.height = '0px';
         inputElement.style.height = inputElement.scrollHeight + 'px';
     }
-    inputElement.addEventListener('input', updateInputHeight);
+    inputElement.addEventListener('input', () => setTimeout(updateInputHeight, 20));
+    updateInputHeight();
 
     // Add event listener for the escape key
     inputElement.addEventListener('keydown', escHandler);
@@ -1656,7 +1733,11 @@ function editLog(logItem) {
         if (inputElement.parentNode) {
             inputElement.parentNode.replaceChild(logDescription, inputElement);
             inputElement.removeEventListener('keydown', enterHandler); 
-            editOption.style.display = 'inline-block';
+            logOptions.style.display = 'flex';
+            
+            logItem.style.border = 'none';
+            logItem.style.background = 'var(--primary-color)';
+            logItem.style.padding = originalPadding + 'px';
 
             // Update log
             fetch(`logs`, {
@@ -1685,7 +1766,6 @@ function editLog(logItem) {
         if (event.key === 'Enter') {
             if (event.shiftKey) {
                 event.preventDefault(); 
-                updateInputHeight();
 
                 const cursorPosition = inputElement.selectionStart;
                 const textBeforeCursor = inputElement.value.substring(0, cursorPosition);
@@ -1694,6 +1774,8 @@ function editLog(logItem) {
                 inputElement.value = textBeforeCursor + '\n' + textAfterCursor;
                 inputElement.selectionStart = cursorPosition + 1;
                 inputElement.selectionEnd = cursorPosition + 1;
+
+                updateInputHeight();
 
             }
             else {

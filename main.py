@@ -261,7 +261,7 @@ def list_logs():
     try:
         task_id = request.args.get('task_id')
 
-        logs = session.query(Log).filter(Log.task_id == task_id).order_by(func.coalesce(Log.is_pinned, False).desc(), desc(Log.created_at)).all()
+        logs = session.query(Log).filter(Log.task_id == task_id, Log.is_visible != False).order_by(func.coalesce(Log.is_pinned, False).desc(), desc(Log.created_at)).all()
         logs_json = [{'id':log.id,'description':log.description,'created_at':log.created_at, 'is_pinned':log.is_pinned} for log in logs]
 
         return logs_json
@@ -539,12 +539,15 @@ def update_log():
         log = session.query(Log).filter(Log.id == log_id).first()
 
         is_pinned = data.get('isPinned')
-        new_description = data.get('newDescription');
+        new_description = data.get('newDescription')
+        delete = data.get('delete')
 
         if is_pinned is not None:
             log.is_pinned = is_pinned
         if new_description is not None:
             log.description = new_description
+        if delete is not None:
+            log.is_visible = False
 
         session.commit()
         return jsonify({"message": "Log updated"}), 200
