@@ -1578,6 +1578,7 @@ function deleteLog(logItem) {
         },
         body: JSON.stringify({
             taskId: globalTaskId,
+            projectId: globalProjectId,
             logId: logId,
             delete: true
         })
@@ -2273,6 +2274,8 @@ function calculateTaskTotalTime(taskId, changed) {
 function deleteActiveTimeBlock() {
     const putPayload = {
         timeId: activeBlock.dataset.id,
+        taskId: activeBlock.dataset.taskId,
+        projectId: activeBlock.dataset.projectId,
         isVisible: false
     };
 
