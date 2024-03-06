@@ -545,6 +545,14 @@ def update_log():
         log_id = data.get('logId')
         log = session.query(Log).filter(Log.id == log_id).first()
 
+        task_id = data.get('taskId')
+        task = session.query(Task).filter(Task.id == task_id).first()
+        task.updated_at = datetime.now()
+        
+        project_id = data.get('projectId')
+        project = session.query(Project).filter(Project.id == project_id).first()
+        project.updated_at = datetime.now()
+        
         is_pinned = data.get('isPinned')
         new_description = data.get('newDescription')
         delete = data.get('delete')
