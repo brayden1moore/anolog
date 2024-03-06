@@ -288,6 +288,7 @@ def list_time():
         time_json = [
             {
                 'id': time_id, 
+                'project_id': project_id,
                 'task_id': task_id,
                 'task_name': task_name,
                 'start': start.strftime('%Y-%m-%dT%H:%M'), 
@@ -295,7 +296,7 @@ def list_time():
                 'duration': duration,
                 'description': 'Add a description...' if description is None or description == 'null' else description
             } 
-            for time_id, task_id, task_name, start, end, duration, description in query_results
+            for time_id, project_id, task_id, task_name, start, end, duration, description in query_results
         ]
 
         return time_json
@@ -417,7 +418,6 @@ def create_log():
     session = Session()
     try:
         data = request.json
-        print(data)
         task_id = data['taskId']
         created_at = data['createdAt']
         description = data['description']
@@ -443,7 +443,6 @@ def create_time():
     session = Session()
     try:
         data = request.json
-        print(data)
         project_id = data['projectId']
         task_id = data['taskId']
         start = data['start']
@@ -453,6 +452,12 @@ def create_time():
 
         new_time = Time(user_id=current_user.id, project_id=project_id, task_id=task_id, start=start, end=end, duration=duration, description=description)
         session.add(new_time)
+
+        project = session.query(Project).filter(Project.id == project_id).first()
+        task = session.query(Task).filter(Task.id == task_id).first()
+        project.updated_at = datetime.now()
+        task.updated_at = datetime.now()
+
         session.commit()
 
         return jsonify({"message": "Time block created", "id":new_time.id}), 201
@@ -579,7 +584,7 @@ def update_time():
                     session.commit()
         else:
             time = session.query(Time).filter(Time.id == time_id).first()
-
+            
             if is_visible is not None:
                 time.is_visible = is_visible
             else:
@@ -587,6 +592,11 @@ def update_time():
                 time.end = end
                 time.duration = duration
                 time.description = description
+
+            project = session.query(Project).filter(Project.id == project_id).first()
+            task = session.query(Task).filter(Task.id == task_id).first()
+            project.updated_at = datetime.now()
+            task.updated_at = datetime.now()
 
             session.commit()
         

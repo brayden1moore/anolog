@@ -441,6 +441,7 @@ function getTime(projectId) {
             newBlock.className = 'time-block';
             newBlock.dataset.id = time.id;
             newBlock.dataset.taskId = time.task_id;
+            newBlock.dataset.projectId = time.project_id;
             newBlock.dataset.startTime = convertUTCToLocalForInput(time.start); 
             newBlock.dataset.endTime = convertUTCToLocalForInput(time.end);   
             newBlock.dataset.duration = time.duration;
