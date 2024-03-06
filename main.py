@@ -296,7 +296,7 @@ def list_time():
                 'duration': duration,
                 'description': 'Add a description...' if description is None or description == 'null' else description
             } 
-            for time_id, project_id, task_id, task_name, start, end, duration, description in query_results
+            for time_id, task_id, task_name, start, end, duration, description in query_results
         ]
 
         return time_json
