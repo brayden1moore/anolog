@@ -1753,6 +1753,7 @@ function editLog(logItem) {
                 },
                 body: JSON.stringify({
                     taskId: globalTaskId,
+                    projectId: globalProjectId,
                     logId: logItem.getAttribute('data-logId'),
                     newDescription: newDescription
                 })
