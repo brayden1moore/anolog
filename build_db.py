@@ -66,6 +66,7 @@ class Time(Base):
     start = Column(DateTime(timezone=True))
     end = Column(DateTime(timezone=True))
     duration = Column(Integer, default=0)
+    description = Column(String)
     is_visible = Column(Boolean, default=True)
 
 username = 'doadmin'

@@ -444,6 +444,7 @@ function getTime(projectId) {
             newBlock.dataset.startTime = convertUTCToLocalForInput(time.start); 
             newBlock.dataset.endTime = convertUTCToLocalForInput(time.end);   
             newBlock.dataset.duration = time.duration;
+            newBlock.dataset.description = time.description;
             newBlock.dataset.taskName = time.task_name;
             newBlock.style.width = `0px`;
             newBlock.addEventListener('click', () => openTimeDescription(newBlock));
@@ -512,6 +513,7 @@ function formatDateTime(dateString) {
 const timeDiv = document.getElementById('time-div');
 const timeContent = document.getElementById('time-content');
 const timeDescription = document.getElementById('time-description');
+const timeDescriptionText = document.getElementById('time-description-text');
 const timeDescriptionContainer = document.getElementById('time-description-container');
 let activeBlock = null;
 
@@ -529,6 +531,8 @@ function updateTimeDescription(block) {
 
     const endTimeInput = document.getElementById('end-time-input');
     endTimeInput.value = block.dataset.endTime;
+
+    timeDescriptionText.value = block.dataset.description;
 }
 
 function openTimeDescription(block) {
@@ -1254,6 +1258,7 @@ function createTimeBlock() {
     newBlock.dataset.duration = 3600;
     newBlock.dataset.id = -1;
     newBlock.dataset.taskId = globalTaskId;
+    newBlock.dataset.description = 'Add a description...';
     newBlock.dataset.taskName = document.getElementById('task-name').textContent;
     newBlock.addEventListener('click', () => openTimeDescription(newBlock));
     timeDiv.appendChild(newBlock);
@@ -2153,12 +2158,14 @@ function commitTimeBlock() {
     const endTime = new Date(endTimeInput.value);
     const differenceInMilliseconds = endTime - startTime;
     const duration = (differenceInMilliseconds / 1000).toFixed(0);
+    const description = timeDescriptionText.value;
     
     activeBlock.dataset.startTime = convertUTCToLocalForInput(startTime.toISOString().slice(0,16));
     activeBlock.dataset.endTime = convertUTCToLocalForInput(endTime.toISOString().slice(0,16));
     activeBlock.dataset.duration = duration;
     activeBlock.style.border = '0px';
     activeBlock.style.backgroundColor = 'var(--primary-color)';
+    activeBlock.dataset.description = description;
     resizeTimeBlocks();
     
     // construct task PUT payload
@@ -2168,7 +2175,8 @@ function commitTimeBlock() {
         timeId: activeBlock.dataset.id,
         start: startTime,
         end: endTime,
-        duration: duration
+        duration: duration,
+        description: description
     };
 
     // Send PUT request to Flask API
@@ -2204,6 +2212,7 @@ function hideCommitTimeButton() {
         startOrEndInput.style.backgroundColor = 'var(--primary-color)';
     });
     commitTimeBlockButton.style.display = 'none';
+    timeDescriptionText.style.background = 'none';
 }
 
 // Ask to save and highlight changes upon edit
@@ -2213,7 +2222,9 @@ startTimeInput.addEventListener('change', function(e) {
 endTimeInput.addEventListener('change', function(e) {
     showCommitTimeButton(endTimeInput);
 }); 
-
+timeDescriptionText.addEventListener('change', function(e) {
+    showCommitTimeButton(timeDescriptionText);
+});  
 
 // Commit and update stylings upon save
 commitTimeBlockButton.addEventListener('click', () => {

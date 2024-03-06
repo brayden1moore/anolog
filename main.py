@@ -279,7 +279,7 @@ def list_time():
         project_id = request.args.get('project_id')
 
         query_results = (
-            session.query(Time.id, Task.id, Task.name, Time.start, Time.end, Time.duration)
+            session.query(Time.id, Task.id, Task.name, Time.start, Time.end, Time.duration, Time.description)
             .join(Task, Time.task_id == Task.id)
             .filter(Time.project_id == project_id, Time.is_visible == True)
             .order_by(Time.start)
@@ -292,9 +292,10 @@ def list_time():
                 'task_name': task_name,
                 'start': start.strftime('%Y-%m-%dT%H:%M'), 
                 'end': end.strftime('%Y-%m-%dT%H:%M'), 
-                'duration': duration
+                'duration': duration,
+                'description': 'Add a description...' if description is None or description == 'null' else description
             } 
-            for time_id, task_id, task_name, start, end, duration in query_results
+            for time_id, task_id, task_name, start, end, duration, description in query_results
         ]
 
         return time_json
@@ -448,8 +449,9 @@ def create_time():
         start = data['start']
         end = data['end']
         duration = data['duration']
+        description = None if data['description'] == 'undefined' else data['description']
 
-        new_time = Time(user_id=current_user.id, project_id=project_id, task_id=task_id, start=start, end=end, duration=duration)
+        new_time = Time(user_id=current_user.id, project_id=project_id, task_id=task_id, start=start, end=end, duration=duration, description=description)
         session.add(new_time)
         session.commit()
 
@@ -568,10 +570,11 @@ def update_time():
         start = data.get('start')
         end = data.get('end')
         duration = data.get('duration')
+        description = data.get('description')
         is_visible = data.get('isVisible')
 
         if time_id == '-1':
-                    time = Time(user_id=current_user.id, project_id=project_id, task_id=task_id, start=start, end=end, duration=duration)
+                    time = Time(user_id=current_user.id, project_id=project_id, task_id=task_id, start=start, end=end, duration=duration, description=description)
                     session.add(time)
                     session.commit()
         else:
@@ -583,6 +586,7 @@ def update_time():
                 time.start = start
                 time.end = end
                 time.duration = duration
+                time.description = description
 
             session.commit()
         
