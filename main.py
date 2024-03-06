@@ -221,7 +221,7 @@ def list_projects():
         try:
             user_id = current_user.id
 
-            projects = session.query(Project).filter(Project.user_id==user_id, Project.is_visible==True).order_by(Project.is_completed.asc(), Project.name.asc()).all()
+            projects = session.query(Project).filter(Project.user_id==user_id, Project.is_visible==True).order_by(Project.is_completed.asc(), Project.updated_at.desc()).all()
             projects_json = [
                 {
                     'id':project.id,
