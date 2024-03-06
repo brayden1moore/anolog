@@ -221,7 +221,7 @@ def list_projects():
         try:
             user_id = current_user.id
 
-            projects = session.query(Project).filter(Project.user_id==user_id, Project.is_visible==True).order_by(Project.is_completed.asc(), Project.updated_at.desc()).all()
+            projects = session.query(Project).filter(Project.user_id==user_id, Project.is_visible==True).order_by(Project.is_completed.asc(), Project.name.asc()).all()
             projects_json = [
                 {
                     'id':project.id,
@@ -246,7 +246,7 @@ def list_tasks():
     session = Session()
     try:
         project_id = request.args.get('project_id')
-        tasks = session.query(Task).filter(Task.project_id==project_id, Task.is_visible==True).order_by(Task.is_completed.asc(), Task.updated_at.desc()).all()
+        tasks = session.query(Task).filter(Task.project_id==project_id, Task.is_visible==True).order_by(Task.is_completed.asc(), Task.name.asc()).all()
         tasks_json = [{'id':task.id,'name':task.name,'total_seconds':task.total_seconds, 'is_completed':task.is_completed, 'is_visible':task.is_visible} for task in tasks]
         
         return tasks_json
