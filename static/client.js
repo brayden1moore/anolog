@@ -1259,7 +1259,7 @@ function createTimeBlock() {
     newBlock.dataset.duration = 3600;
     newBlock.dataset.id = -1;
     newBlock.dataset.taskId = globalTaskId;
-    newBlock.dataset.description = 'Add a description...';
+    newBlock.dataset.description = '';
     newBlock.dataset.taskName = document.getElementById('task-name').textContent;
     newBlock.addEventListener('click', () => openTimeDescription(newBlock));
     timeDiv.appendChild(newBlock);
