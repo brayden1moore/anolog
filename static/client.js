@@ -1249,6 +1249,7 @@ document.getElementById('clock').addEventListener('click', toggleClock);
 addTimeBlockButton = document.getElementById('add-a-time-block');
 function createTimeBlock() {
     newBlock = document.createElement('div');
+    newBlock.setAttribute('autocomplete','off');
     newBlock.className = 'time-block';
     newBlock.dataset.duration = 3600;
     timerStartDateTime = new Date();
