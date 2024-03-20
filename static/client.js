@@ -1249,7 +1249,6 @@ document.getElementById('clock').addEventListener('click', toggleClock);
 addTimeBlockButton = document.getElementById('add-a-time-block');
 function createTimeBlock() {
     newBlock = document.createElement('div');
-    newBlock.setAttribute('autocomplete','off');
     newBlock.className = 'time-block';
     newBlock.dataset.duration = 3600;
     timerStartDateTime = new Date();
@@ -1811,11 +1810,11 @@ taskExport.addEventListener('click', function() {
 })
 const logExport = document.getElementById('log-csv');
 logExport.addEventListener('click', function() {
-    exportCsv('task_id',globalTaskId);
+    exportCsv('time',globalTaskId);
 })
 const timeExport = document.getElementById('time-csv');
 timeExport.addEventListener('click', function() {
-    exportCsv('time',globalProjectId);
+    exportCsv('days',globalProjectId);
 })
 
 
@@ -1836,10 +1835,10 @@ function exportCsv(arg, id) {
         dataType = 'projects';
     } else if (arg === 'project_id') {
         dataType = 'tasks';
-    } else if (arg === 'task_id') {
-        dataType = 'logs';
     } else if (arg === 'time') {
         dataType = 'time';
+    } else if (arg === 'days') {
+        dataType = 'days';
     }
 
     const filename = `${prefix}${dataType}_${year}${month}${day}${hour}${minute}`;

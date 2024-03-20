@@ -650,6 +650,7 @@ def export_csv():
     project_id = request.args.get('project_id')
     task_id = request.args.get('task_id')
     time = request.args.get('time')
+    days = request.args.get('days')
     auth = request.args.get('auth')
 
     output = StringIO()
@@ -670,11 +671,11 @@ def export_csv():
             data = session.query(Task).filter(Task.project_id==project_id, Task.is_visible==True).order_by(Task.created_at.asc()).all()
             model = Task
             filename = f"anolog_tasks_{the_time}"
-        elif task_id:
-            data = session.query(Log).filter(Log.task_id==task_id).order_by(Log.created_at.asc()).all()
-            model = Log
-            filename = f"anolog_logs_{the_time}"
         elif time:
+            data = session.query(Time).filter(Time.task_id==time, Time.is_visible==True).order_by(Time.start.asc()).all()
+            model = Time
+            filename = f"anolog_logs_{the_time}"
+        elif days:
             # Aggregate the total hours per day
             data = (
                 session.query(
@@ -683,7 +684,7 @@ def export_csv():
                     func.min(func.timezone('US/Eastern', Time.start)).label('earliest_start'),
                     func.max(func.timezone('US/Eastern', Time.end)).label('latest_end')
                 )
-                .filter(Time.project_id == time, Time.is_visible == True)
+                .filter(Time.project_id == days, Time.is_visible == True)
                 .group_by(func.date_trunc('day', func.timezone('US/Eastern', Time.start)))
                 .order_by('day')
             ).all()
@@ -703,10 +704,18 @@ def export_csv():
 
 
         if model and filename:
-            csv_writer.writerow([column.name for column in model.__table__.columns])
-            for row in data:
-                csv_writer.writerow([getattr(row, column.name) for column in model.__table__.columns])
-        
+            if model == Time:
+                csv_writer.writerow([column.name for column in model.__table__.columns] + ['hours'])
+                for row in data:
+                    row_data = [getattr(row, column.name) for column in model.__table__.columns]
+                    hours = getattr(row, 'duration') / 3600
+                    csv_writer.writerow(row_data + [hours])
+            else:
+                if model and filename:
+                    csv_writer.writerow([column.name for column in model.__table__.columns])
+                for row in data:
+                    csv_writer.writerow([getattr(row, column.name) for column in model.__table__.columns])
+
     finally:
         Session.remove()
     
