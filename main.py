@@ -672,7 +672,13 @@ def export_csv():
             model = Task
             filename = f"anolog_tasks_{the_time}"
         elif time:
-            data = session.query(Time).filter(Time.task_id==time, Time.is_visible==True).order_by(Time.start.asc()).all()
+            data = (
+                session.query(Time, Task.name)
+                .join(Task, Time.task_id == Task.id)
+                .filter(Time.project_id == time, Time.is_visible == True)
+                .order_by(Time.start.asc())
+                .all()
+            )  
             model = Time
             filename = f"anolog_logs_{the_time}"
         elif days:
@@ -705,11 +711,26 @@ def export_csv():
 
         if model and filename:
             if model == Time:
-                csv_writer.writerow([column.name for column in model.__table__.columns] + ['hours'])
-                for row in data:
+                project_hours = {}
+                csv_writer.writerow([column.name for column in model.__table__.columns][4:-1] + ['project','hours'])
+                for row, project in data:
                     row_data = [getattr(row, column.name) for column in model.__table__.columns]
                     hours = getattr(row, 'duration') / 3600
-                    csv_writer.writerow(row_data + [hours])
+                    csv_writer.writerow(row_data[4:-1] + [project, hours])
+                    
+                    if project in project_hours:
+                        project_hours[project] += hours
+                    else:
+                        project_hours[project] = hours
+
+                csv_writer.writerow([''])
+
+                grand_total = 0
+                for project, total_hours in project_hours.items():
+                    csv_writer.writerow(['','','','',project, total_hours])
+                    grand_total += total_hours
+                csv_writer.writerow(['','','','','',''])
+                csv_writer.writerow(['','','','','Total',grand_total])
             else:
                 if model and filename:
                     csv_writer.writerow([column.name for column in model.__table__.columns])

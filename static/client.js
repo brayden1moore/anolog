@@ -1810,7 +1810,7 @@ taskExport.addEventListener('click', function() {
 })
 const logExport = document.getElementById('log-csv');
 logExport.addEventListener('click', function() {
-    exportCsv('time',globalTaskId);
+    exportCsv('time',globalProjectId);
 })
 const timeExport = document.getElementById('time-csv');
 timeExport.addEventListener('click', function() {
