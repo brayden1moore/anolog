@@ -115,12 +115,13 @@
             align-items: center;
         }
         .demo {
+            background: 'http://api.thumbr.it/whitenoise-361x370.png?background=5f8005ff&noise=626262&density=46&opacity=15';
             position: relative;
             z-index: 0;
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
             overflow: hidden;
             border-radius: 30px;
-            height: 80%;
+            height: 600px;
         }
         .hidden {
             height: 0;
@@ -140,6 +141,7 @@
                 margin-top: 20px;
                 width: 100%;
                 max-width: 440px;
+                height: auto;
                 margin-bottom: -70%;
             }
             .container {
@@ -147,14 +149,16 @@
                 backdrop-filter: blur(100px);
                 -webkit-backdrop-filter: blur(100px);
             }
+
             @keyframes bounce {
                 0%, 100% {
-                    transform: translateY(0);
+                    transform: translateY(0) rotate(0deg);
                 }
                 50% {
-                    transform: translateY(-10px);
+                    transform: translateY(-20px) rotate(-10deg);
                 }
             }
+
             .demo-bounce {
                 animation: bounce 1s ease-in-out;
             }
@@ -163,7 +167,7 @@
 </head>
 <body>
     <div class="content-div">
-        <img class="demo" src="static/demo.gif">
+        <img class="demo" src="static/demo2.gif">
         <div class="container">
             <h1><img src="static/icon-black.png" class="header-icon"> Anolog</h1>
             <p>A simpler work log</p>
@@ -219,7 +223,7 @@
         demoClicked = true;
         demo.classList.remove('demo-bounce');
         demo.style.transition = "all 0.4s ease";
-        demo.style.transform = "translateY(-60%)";
+        demo.style.transform = "translateY(-65%)";
 
         container.style.transition = "all 0.4s ease";
         container.style.transform = "translateY(20%)";
@@ -263,8 +267,8 @@
             setTimeout(() => demo.classList.remove('demo-bounce'), 1000);
         }
     }
-    bounceDemo();
-    setInterval(bounceDemo, 2000);
+    //bounceDemo();
+    //setInterval(bounceDemo, 2000);
 
     </script>
 </body>
