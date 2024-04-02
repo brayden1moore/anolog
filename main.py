@@ -4,7 +4,7 @@ from flask import session as flask_session
 from flask import Flask, request, jsonify, render_template, Response, redirect, url_for, abort
 from build_db import User, Project, Task, Log, Time, engine
 from sqlalchemy.orm import relationship, sessionmaker, scoped_session
-from sqlalchemy import desc, func
+from sqlalchemy import desc, func, String, Numeric, cast
 from datetime import datetime, timedelta
 from io import StringIO
 import csv
@@ -586,6 +586,8 @@ def update_time():
         description = data.get('description')
         is_visible = data.get('isVisible')
 
+        print(project_id)
+
         if time_id == '-1':
                     time = Time(user_id=current_user.id, project_id=project_id, task_id=task_id, start=start, end=end, duration=duration, description=description)
                     session.add(time)
@@ -682,30 +684,35 @@ def export_csv():
             model = Time
             filename = f"anolog_logs_{the_time}"
         elif days:
-            # Aggregate the total hours per day
             data = (
                 session.query(
                     func.date_trunc('day', func.timezone('US/Eastern', Time.start)).label('day'),
-                    func.sum(Time.duration),
+                    func.sum(Time.duration).label('total_duration'),
                     func.min(func.timezone('US/Eastern', Time.start)).label('earliest_start'),
-                    func.max(func.timezone('US/Eastern', Time.end)).label('latest_end')
+                    func.max(func.timezone('US/Eastern', Time.end)).label('latest_end'),
+                    func.string_agg(
+                        Task.name + ' - ' + cast(func.round(Time.duration / 3600.0, 2), String), ', '
+                    ).label('Note')
                 )
+                .join(Task, Time.task_id == Task.id)  
                 .filter(Time.project_id == days, Time.is_visible == True)
                 .group_by(func.date_trunc('day', func.timezone('US/Eastern', Time.start)))
                 .order_by('day')
             ).all()
+
             model = None 
             filename = f"anolog_time_{the_time}"
 
             if data:
-                csv_writer.writerow(['Date', 'Total Hours', 'Formatted Hours', 'Start Time', 'End Time'])  
-                for day, total_duration, earliest_start, latest_end in data:
+                csv_writer.writerow(['Date', 'Total Hours', 'Formatted Hours', 'Start Time', 'End Time', 'Note'])  
+                for day, total_duration, earliest_start, latest_end, note in data:
                     csv_writer.writerow([
                         day.strftime('%Y-%m-%d'), 
                         total_duration/60/60, 
                         format_duration(total_duration),
                         earliest_start.strftime('%Y-%m-%d %H:%M:%S') if earliest_start else '', 
-                        latest_end.strftime('%Y-%m-%d %H:%M:%S') if latest_end else ''
+                        latest_end.strftime('%Y-%m-%d %H:%M:%S') if latest_end else '',
+                        note
                     ])
 
 

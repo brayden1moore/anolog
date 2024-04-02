@@ -430,12 +430,15 @@ function populateDays() {
 
 // GET to /time endpoint
 function getTime(projectId) {
-    timeDiv.innerHTML = '';
+    timeDiv.style.border = '2px dashed var(--primary-color)';
+    timeDiv.innerHTML = '<i id="add-a-time-block" title="Add a Time Block" class="add-button fa-solid fa-plus" style="color: var(--primary-color);"></i>';
+    addTimeBlockButton = document.getElementById('add-a-time-block');
+    addTimeBlockButton.addEventListener('click', createTimeBlock);
 
     function displayTimeData(data) {
         const totalDuration = data.reduce((sum, time) => sum + time.duration, 0);
         data.forEach((time, index) => {
-
+            timeDiv.style.border = '';
             const newBlock = document.createElement('div');
             const widthPercent = totalDuration > 0 ? (time.duration * 100 / totalDuration) : 0;
             newBlock.className = 'time-block';
@@ -450,7 +453,7 @@ function getTime(projectId) {
             newBlock.style.width = `0px`;
             newBlock.addEventListener('click', () => openTimeDescription(newBlock));
             newBlock.addEventListener('click', () => hideCommitTimeButton());
-            timeDiv.appendChild(newBlock);
+            timeDiv.insertBefore(newBlock,addTimeBlockButton);
             setTimeout(() => {
                 newBlock.style.width = `${widthPercent}%`;
             }, 200);
@@ -512,6 +515,7 @@ function formatDateTime(dateString) {
 
 // Add click listeners
 const timeDiv = document.getElementById('time-div');
+const timeDurationS = document.getElementById('duration-s');
 const timeContent = document.getElementById('time-content');
 const timeDescription = document.getElementById('time-description');
 const timeDescriptionText = document.getElementById('time-description-text');
@@ -534,6 +538,13 @@ function updateTimeDescription(block) {
     endTimeInput.value = block.dataset.endTime;
 
     timeDescriptionText.value = block.dataset.description;
+
+    if (hours==='1.00') {
+        timeDurationS.textContent = '';
+    }
+    else {
+        timeDurationS.textContent = 's';
+    }
 }
 
 function openTimeDescription(block) {
@@ -586,6 +597,7 @@ function openTimeDescription(block) {
 }
 
 function closeTimeDescription() {
+
     if (activeBlock && activeBlock.dataset.id === "-1") {
         blockToRemove = activeBlock;
         blockToRemove.style.width = '0px';
@@ -595,7 +607,7 @@ function closeTimeDescription() {
 
     const timeBlocks = document.querySelectorAll('.time-block');
     addTimeBlockButton.addEventListener('click', createTimeBlock);
-    addTimeBlockButton.style.width = '16px';
+    addTimeBlockButton.style.width = '20px';
     timeDescriptionHeight = timeDescription.offsetHeight;
     timeBlocks.forEach(function(b) {
         b.style.opacity = "1";
@@ -605,6 +617,10 @@ function closeTimeDescription() {
     timeDescriptionContainer.style.height = '0px';
     timeDiv.style.borderRadius = '7px';
     activeBlock = null;
+
+    if (timeDiv.childElementCount===1) {
+        timeDiv.style.border = '2px dashed var(--primary-color)';
+    }
 }
 document.getElementById('project-space').addEventListener('click', function(event) {
     if (!timeContent.contains(event.target)) {
@@ -1248,6 +1264,7 @@ document.getElementById('clock').addEventListener('click', toggleClock);
 // Create a new time block on click
 addTimeBlockButton = document.getElementById('add-a-time-block');
 function createTimeBlock() {
+    timeDiv.style.border = '';
     newBlock = document.createElement('div');
     newBlock.className = 'time-block';
     newBlock.dataset.duration = 3600;
@@ -1259,10 +1276,11 @@ function createTimeBlock() {
     newBlock.dataset.duration = 3600;
     newBlock.dataset.id = -1;
     newBlock.dataset.taskId = globalTaskId;
+    newBlock.dataset.projectId = globalProjectId;
     newBlock.dataset.description = '';
     newBlock.dataset.taskName = document.getElementById('task-name').textContent;
     newBlock.addEventListener('click', () => openTimeDescription(newBlock));
-    timeDiv.appendChild(newBlock);
+    timeDiv.insertBefore(newBlock, addTimeBlockButton);
     openTimeDescription(newBlock);
     resizeTimeBlocks();
     newBlock.style.backgroundColor = 'transparent';
@@ -2291,8 +2309,8 @@ function deleteActiveTimeBlock() {
     .then(data => {
         if (data.message === "Time block updated") {
             console.log("time block updated")
-            taskId = activeBlock.dataset.taskId;
-            
+            taskId = putPayload.taskId;
+
             const timeBlocks = document.querySelectorAll('.time-block');
             timeDiv.removeChild(activeBlock);
             resizeTimeBlocks();
@@ -2303,7 +2321,8 @@ function deleteActiveTimeBlock() {
             timeDescriptionContainer.style.height = '0px';
             timeDiv.style.borderRadius = '7px';
             activeBlock = null;
-            calculateTaskTotalTime(taskId, changed=true);                
+            calculateTaskTotalTime(taskId, changed=true);  
+            closeTimeDescription();              
         }
         localStorage.removeItem(`time_cache_${globalProjectId}`);
     });

@@ -719,7 +719,7 @@ li {
     cursor: pointer;
     transition: 0.2s ease;
     opacity: 0; 
-    width: 16px;
+    width: 18px;
     overflow: hidden;
 }
 .list-container:hover .add-button {
@@ -730,13 +730,14 @@ li {
 }
 
 #add-a-time-block {
+    margin-left: 2px;
     color: var(--primary-color);
-    font-size: 12pt;
+    font-size: 16pt;
     cursor: pointer;
     transition: 0.2s ease;
     opacity: 0.2; 
     overflow: hidden;
-    width: 16px;
+    width: 20px;
 }
 #add-a-time-block:hover {
     opacity: 1 !important; 
@@ -746,10 +747,12 @@ li {
 }
 
 #time-div {
+    border-radius: 8px;
     width: 100%;
     padding-top: 3px;
     padding-bottom: 3px;
     align-items: center;
+    justify-content: center;
     display: flex;
     height: 48px;
     background: #161616;
@@ -785,6 +788,7 @@ li {
     transition: 0.2s ease;
 }
 #time-description {
+    margin-right: 2px;
     padding-left: 25px;
     padding-right: 25px;
     padding-bottom: 20px;
