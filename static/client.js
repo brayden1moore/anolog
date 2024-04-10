@@ -515,12 +515,22 @@ function formatDateTime(dateString) {
 
 // Add click listeners
 const timeDiv = document.getElementById('time-div');
-const timeDurationS = document.getElementById('duration-s');
 const timeContent = document.getElementById('time-content');
 const timeDescription = document.getElementById('time-description');
 const timeDescriptionText = document.getElementById('time-description-text');
 const timeDescriptionContainer = document.getElementById('time-description-container');
 let activeBlock = null;
+
+function updateDurationS() {
+    const duration = document.getElementById('duration');
+    const timeDurationS = document.getElementById('duration-s');
+    if (duration==='1.00') {
+        timeDurationS.textContent = '';
+    }
+    else {
+        timeDurationS.textContent = 's';
+    }
+}
 
 function updateTimeDescription(block) {
     const duration = document.getElementById('duration');
@@ -538,13 +548,7 @@ function updateTimeDescription(block) {
     endTimeInput.value = block.dataset.endTime;
 
     timeDescriptionText.value = block.dataset.description;
-
-    if (hours==='1.00') {
-        timeDurationS.textContent = '';
-    }
-    else {
-        timeDurationS.textContent = 's';
-    }
+    updateDurationS();
 }
 
 function openTimeDescription(block) {
@@ -594,6 +598,7 @@ function openTimeDescription(block) {
     else {
         closeTimeDescription() 
     }
+    updateDurationS();
 }
 
 function closeTimeDescription() {
@@ -1161,19 +1166,20 @@ function makeEditable() {
     });
 }
 function processEdit(e) {
-        this.removeEventListener('blur', processEdit);
-        this.removeEventListener('keydown', processEdit);
-        let value = e.target.value;
-        let newClock = document.createElement('p');
-        newClock.id = 'clock';
-        newClock.addEventListener('click', makeEditable);
-        if (isValidTime(value)) {
-            let seconds = convertToSeconds(value);
-            globalSeconds = seconds;
-            newClock.textContent = value;
-            e.target.replaceWith(newClock);
-            addLog(globalTaskId, 'Edit');
-        }
+    updateDurationS();
+    this.removeEventListener('blur', processEdit);
+    this.removeEventListener('keydown', processEdit);
+    let value = e.target.value;
+    let newClock = document.createElement('p');
+    newClock.id = 'clock';
+    newClock.addEventListener('click', makeEditable);
+    if (isValidTime(value)) {
+        let seconds = convertToSeconds(value);
+        globalSeconds = seconds;
+        newClock.textContent = value;
+        e.target.replaceWith(newClock);
+        addLog(globalTaskId, 'Edit');
+    }
 }
 function isValidTime(time) {
     let regex = /^([0-9]{2}\.){2}[0-9]{2}$/;
