@@ -430,6 +430,9 @@ function populateDays() {
 
 // GET to /time endpoint
 function getTime(projectId) {
+    const timeDivDiv = document.getElementById('time-div-div');
+    timeDivDiv.style.width = 'auto';
+
     timeDiv.style.border = '2px dashed var(--primary-color)';
     timeDiv.innerHTML = '<i id="add-a-time-block" title="Add a Time Block" class="add-button fa-solid fa-plus" style="color: var(--primary-color);"></i>';
     addTimeBlockButton = document.getElementById('add-a-time-block');
@@ -438,6 +441,7 @@ function getTime(projectId) {
     function displayTimeData(data) {
         const totalDuration = data.reduce((sum, time) => sum + time.duration, 0);
         data.forEach((time, index) => {
+            timeDivDiv.style.width = '1000px';
             timeDiv.style.border = '';
             const newBlock = document.createElement('div');
             const widthPercent = totalDuration > 0 ? (time.duration * 100 / totalDuration) : 0;
@@ -519,6 +523,8 @@ const timeContent = document.getElementById('time-content');
 const timeDescription = document.getElementById('time-description');
 const timeDescriptionText = document.getElementById('time-description-text');
 const timeDescriptionContainer = document.getElementById('time-description-container');
+const allTimeComponents = document.getElementById('all-time-components');
+
 let activeBlock = null;
 
 function updateDurationS() {
@@ -584,6 +590,8 @@ function openTimeDescription(block) {
             } else {
                 addTimeBlockButton.removeEventListener('click', createTimeBlock);
                 addTimeBlockButton.style.width = '0px';
+                addTimeBlockButton.style.paddingRight = '0px';
+
                 block.style.opacity = "1";
                 block.style.backgroundColor = 'var(--primary-color)';
                 activeBlock = block;
@@ -613,6 +621,8 @@ function closeTimeDescription() {
     const timeBlocks = document.querySelectorAll('.time-block');
     addTimeBlockButton.addEventListener('click', createTimeBlock);
     addTimeBlockButton.style.width = '20px';
+    addTimeBlockButton.style.paddingRight = '7px';
+
     timeDescriptionHeight = timeDescription.offsetHeight;
     timeBlocks.forEach(function(b) {
         b.style.opacity = "1";
@@ -628,7 +638,7 @@ function closeTimeDescription() {
     }
 }
 document.getElementById('project-space').addEventListener('click', function(event) {
-    if (!timeContent.contains(event.target)) {
+    if (!allTimeComponents.contains(event.target)) {
         closeTimeDescription();
     }
 });

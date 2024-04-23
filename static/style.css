@@ -738,6 +738,7 @@ li {
     opacity: 0.2; 
     overflow: hidden;
     width: 20px;
+    padding-right:7px;
 }
 #add-a-time-block:hover {
     opacity: 1 !important; 
@@ -756,6 +757,7 @@ li {
     display: flex;
     height: 48px;
     background: #161616;
+    flex-direction: reverse;
     transition: 0.2s ease;
 }
 .time-block {
@@ -781,14 +783,11 @@ li {
     opacity: 0.7 !important;
 }
 #time-description-container {
-    padding-right: 2px;
-    padding-left: 2px;
     height: 0px;
     overflow: hidden;
     transition: 0.2s ease;
 }
 #time-description {
-    margin-right: 2px;
     padding-left: 25px;
     padding-right: 25px;
     padding-bottom: 20px;
@@ -969,8 +968,8 @@ input[type="datetime-local"] {
         width: auto;
         margin-bottom: 15px;
     }
-    #time-content {
-        width: auto;
+    #all-time-components {
+        width: 100% !important;
     }
     .content-div {
         display: block;
