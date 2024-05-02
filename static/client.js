@@ -431,20 +431,18 @@ function populateDays() {
 // GET to /time endpoint
 function getTime(projectId) {
     const timeDivDiv = document.getElementById('time-div-div');
-    timeDivDiv.style.width = 'auto';
 
     timeDiv.style.border = '2px dashed var(--primary-color)';
     timeDiv.innerHTML = '<i id="add-a-time-block" title="Add a Time Block" class="add-button fa-solid fa-plus" style="color: var(--primary-color);"></i>';
+    timeDivDiv.style.width = '100%';
     addTimeBlockButton = document.getElementById('add-a-time-block');
     addTimeBlockButton.addEventListener('click', createTimeBlock);
 
     function displayTimeData(data) {
         const totalDuration = data.reduce((sum, time) => sum + time.duration, 0);
         data.forEach((time, index) => {
-            timeDivDiv.style.width = '1000px';
             timeDiv.style.border = '';
             const newBlock = document.createElement('div');
-            const widthPercent = totalDuration > 0 ? (time.duration * 100 / totalDuration) : 0;
             newBlock.className = 'time-block';
             newBlock.dataset.id = time.id;
             newBlock.dataset.taskId = time.task_id;
@@ -458,9 +456,6 @@ function getTime(projectId) {
             newBlock.addEventListener('click', () => openTimeDescription(newBlock));
             newBlock.addEventListener('click', () => hideCommitTimeButton());
             timeDiv.insertBefore(newBlock,addTimeBlockButton);
-            setTimeout(() => {
-                newBlock.style.width = `${widthPercent}%`;
-            }, 200);
         });
 
         resizeTimeBlocks();
@@ -528,7 +523,7 @@ const allTimeComponents = document.getElementById('all-time-components');
 let activeBlock = null;
 
 function updateDurationS() {
-    const duration = document.getElementById('duration');
+    const duration = document.getElementById('duration').textContent;
     const timeDurationS = document.getElementById('duration-s');
     if (duration==='1.00') {
         timeDurationS.textContent = '';
@@ -1307,28 +1302,40 @@ addTimeBlockButton.addEventListener('click', createTimeBlock);
 
 // Resize time blocks
 function resizeTimeBlocks() {
+    const timeDivDiv = document.getElementById('time-div-div');
     const timeBlocks = document.querySelectorAll(".time-block");
     const today = new Date();
     const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
     let totalDuration = 0;
     let totalDurationToday = 0;
-
+    let smallestDuration = 1000000;
     timeBlocks.forEach(block => {
-        totalDuration += parseInt(block.dataset.duration, 10);
-
+        duration = parseInt(block.dataset.duration, 10);
+        totalDuration += duration;
+        if (duration < smallestDuration) {
+            smallestDuration = duration;
+        }
         if (Date.parse(block.dataset.startTime) >= startOfToday && Date.parse(block.dataset.startTime) < new Date(startOfToday).setDate(startOfToday.getDate() + 1)) {
             totalDurationToday += parseInt(block.dataset.duration, 10);
         }
     });
+
+    timeDiv.style.width = '100%';
+    let minDenominator = 100;
+    if (smallestDuration < totalDuration/minDenominator) {
+        let widthFraction = smallestDuration / totalDuration;
+        let divWidth = (timeDivDiv.offsetWidth * ((1/minDenominator)/widthFraction)) + 'px';
+        timeDiv.style.width = divWidth;
+    }
 
     const hoursLogged = document.getElementById('hours-logged');
     hoursLogged.textContent = `${(totalDuration / 60 / 60).toFixed(2)} hours logged, ${(totalDurationToday / 60 / 60).toFixed(2)} today`;
 
     timeBlocks.forEach(block => {
         let duration = parseInt(block.dataset.duration, 10);
-        let widthPercentage = (duration / totalDuration) * 100;
-        block.style.width = widthPercentage + '%';
+        let widthPercentage = (duration / totalDuration);
+        block.style.width = widthPercentage * divWidth + 'px';
         if (block.offsetWidth < 35) {
             block.style.color = 'var(--primary-color)';
         }
@@ -2125,8 +2132,10 @@ function addNewItem(type) {
         if (e.key === 'Enter') {
             if (type === 'project') {
                 addProject();
+                newInput.blur();
             } else if (type === 'task') {
                 addTask(globalProjectId);
+                newInput.blur();
             }
             newInput.focus();
         }
@@ -2187,6 +2196,7 @@ function updateDurationText() {
     } else {
         hideCommitTimeButton();
     }
+    updateDurationS();
 }
 
 // Commit time block edit

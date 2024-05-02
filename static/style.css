@@ -766,7 +766,6 @@ li {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: clip;
-    min-width: 1%;
     display: flex;
     color: #161616;
     justify-content: center;
@@ -788,6 +787,8 @@ li {
     transition: 0.2s ease;
 }
 #time-description {
+    margin-left: 2px;
+    margin-right: 4px;
     padding-left: 25px;
     padding-right: 25px;
     padding-bottom: 20px;
