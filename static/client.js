@@ -1237,8 +1237,9 @@ let toggleClock = (function() {
                 newBlock.dataset.duration = timerDuration;
                 newBlock.dataset.taskId = globalTaskId;
                 newBlock.dataset.taskName = document.getElementById('task-name').textContent;
+                newBlock.dataset.description = "";
                 newBlock.addEventListener('click', () => openTimeDescription(newBlock));
-                timeDiv.appendChild(newBlock);
+                timeDiv.insertBefore(newBlock, addTimeBlockButton);
                 resizeTimeBlocks();
 
                 // POST time block
@@ -1247,7 +1248,8 @@ let toggleClock = (function() {
                     taskId: globalTaskId,
                     start: timerStartDateTime,
                     end: timerEndDateTime,
-                    duration: timerDuration
+                    duration: timerDuration,
+                    description: ""
                 };
 
                 // Send POST request to Flask API
