@@ -183,7 +183,7 @@ function makeLog(id, isPinned, date, description) {
         dateObj = new Date();
     }
     const localDateStr = dateObj.toLocaleString();
-    const escapedLogText = description.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const escapedLogText = description;//.replace(/</g, "&lt;").replace(/>/g, "&gt;");
     const taskName = document.getElementById('task-name').textContent;
 
     let dark = 'dark';
@@ -199,13 +199,14 @@ function makeLog(id, isPinned, date, description) {
     const logEntry = `
         <div class="log-item" data-logId="${id}" data-isPinned=${isPinned} style="background-color:${backgroundColor}; color: ${color}">
             <div style="display: flex; margin-bottom: 0px; align-items: center;">
+            <span class="log-description" style="white-space: pre-line;">${escapedLogText}</span>
+
                 <div class="log-options-div">
                     <i id="pin-option-button" class="log-option-button ${dark} pin fa-solid fa-thumbtack" style="width: 0px; font-size: 10pt; overflow: hidden;"></i>
                     <i id="edit-option-button" class="log-option-button ${dark} fa fa-pencil-alt" style="width: 0px; font-size: 10pt; overflow: hidden;"></i>
                     <i id="delete-option-button" class="log-option-button ${dark} fa fa-trash" style="width: 0px; font-size: 10pt; overflow: hidden;"></i>
 
                 </div>
-                <span class="log-description" style="white-space: pre-line;">${escapedLogText}</span>
             </div>
         </div>`;
 
@@ -756,8 +757,9 @@ function addLog(taskId, logType) {
         logText = `Timer edited to (${clock.textContent})`;
     }
     else {
-        logText = logInput.value;
+        logText = logInput.innerHTML;
         isTimer = false;
+        console.log(logText);
 
         // Build log entry
         logEntry = makeLog(tempId, false, null, logText);
@@ -1358,36 +1360,20 @@ document.addEventListener("DOMContentLoaded", function() {
     const logInput = document.getElementById('log-input');
     logInput.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
-            if (e.shiftKey) {
-                e.preventDefault(); 
-
-                const cursorPosition = logInput.selectionStart;
-                const textBeforeCursor = logInput.value.substring(0, cursorPosition);
-                const textAfterCursor = logInput.value.substring(cursorPosition);
-
-                logInput.value = textBeforeCursor + '\n' + textAfterCursor;
-                logInput.selectionStart = cursorPosition + 1;
-                logInput.selectionEnd = cursorPosition + 1;
-                updateInputHeight();
-
-            } else {
-                const trimmedValue = logInput.value.trim();
-                if (trimmedValue) { 
-                    e.preventDefault();
-                    addLog(globalTaskId, logType='Comment');
-                    logInput.value = '';
-                }
+            if (!e.shiftKey) {
+                e.preventDefault();
+                addLog(globalTaskId, logType='Comment');
             }
         }
     });
 
     // Function to update the height of inputElement
-    function updateInputHeight() {
-        logInput.style.height = '0px';
-        logInput.style.height = logInput.scrollHeight + 'px';
+    function updateInputHeight(input) {
+        input.style.height = input.scrollHeight + 'px !important';
     }
-    logInput.addEventListener('input', () => setTimeout(updateInputHeight, 5));
-    updateInputHeight();
+    logInput.addEventListener('input', () => updateInputHeight(logInput));
+    updateInputHeight(logInput);
+
 
     // Mark task as completed or not yet completed when taskbox is checked
     const taskCheckbox = document.getElementById('task-checkbox');
@@ -1720,10 +1706,11 @@ function pinLog(logItem) {
 function editLog(logItem) {
     const logDescription = logItem.querySelector('.log-description');
     const logOptions = logItem.querySelector('.log-options-div');
-    const inputElement = document.createElement('textarea');
+    const inputElement = document.createElement('div');
     inputElement.style.height = logDescription.scrollHeight + 'px';
     inputElement.classList.add('log-edit-area');
     inputElement.classList.add('dark');
+    inputElement.contentEditable = "true";
 
     logItem.style.border = '2px dashed var(--primary-color)';
     logItem.style.background = 'transparent';
@@ -1732,8 +1719,8 @@ function editLog(logItem) {
     logItem.style.padding = originalPadding - 2 + 'px';
     console.log(originalPadding);
 
-    const description = logDescription.textContent;
-    inputElement.value = description;
+    const description = logDescription.innerHTML;
+    inputElement.innerHTML = description;
     logOptions.style.display = 'none';
 
     // Replace the description with the input element
@@ -1741,7 +1728,7 @@ function editLog(logItem) {
 
     // Focus the input and select its content
     inputElement.focus();
-    inputElement.select();
+    //inputElement.select();
 
     // Function to revert changes
     function revertEdit() {
@@ -1764,21 +1751,31 @@ function editLog(logItem) {
         }
     }
 
+    // Add log upon enter
+    function enterHandler(e) {
+        if (e.key === 'Enter') {
+            if (!e.shiftKey) {
+                e.preventDefault();
+                commitLogEdit();
+            }
+        }
+    };
+    inputElement.addEventListener('keypress', enterHandler);
+
     // Function to update the height of inputElement
-    function updateInputHeight() {
-        inputElement.style.height = '0px';
-        inputElement.style.height = inputElement.scrollHeight + 'px';
+    function updateInputHeight(input) {
+        input.style.height = 'auto';
+        input.style.height = input.scrollHeight + 'px !important';
     }
-    inputElement.addEventListener('input', () => setTimeout(updateInputHeight, 20));
-    updateInputHeight();
+    inputElement.addEventListener('keypress', () => setTimeout(updateInputHeight(inputElement),5));
 
     // Add event listener for the escape key
     inputElement.addEventListener('keydown', escHandler);
 
     // Function to commit changes
     function commitLogEdit() {
-        const newDescription = inputElement.value;
-        logDescription.textContent = newDescription;
+        const newDescription = inputElement.innerHTML;
+        logDescription.innerHTML = newDescription;
 
         if (inputElement.parentNode) {
             inputElement.parentNode.replaceChild(logDescription, inputElement);
@@ -1811,31 +1808,6 @@ function editLog(logItem) {
             });
         }
     }
-
-    // Function to handle enter key
-    function enterHandler(event) {
-        if (event.key === 'Enter') {
-            if (event.shiftKey) {
-                event.preventDefault(); 
-
-                const cursorPosition = inputElement.selectionStart;
-                const textBeforeCursor = inputElement.value.substring(0, cursorPosition);
-                const textAfterCursor = inputElement.value.substring(cursorPosition);
-
-                inputElement.value = textBeforeCursor + '\n' + textAfterCursor;
-                inputElement.selectionStart = cursorPosition + 1;
-                inputElement.selectionEnd = cursorPosition + 1;
-
-                updateInputHeight();
-
-            }
-            else {
-                commitLogEdit();
-            }
-        }
-    }
-
-    inputElement.addEventListener('keydown', enterHandler);
 }
 
 // Add click listeners to export buttons
