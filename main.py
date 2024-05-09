@@ -281,7 +281,7 @@ def list_time():
         query_results = (
             session.query(Time.id, Task.id, Task.name, Time.start, Time.end, Time.duration, Time.description)
             .join(Task, Time.task_id == Task.id)
-            .filter(Time.project_id == project_id, Time.is_visible == True)
+            .filter(Time.project_id == project_id, Time.is_visible == True, Time.start != None, Time.end != None, Time.duration > 0)
             .order_by(Time.start)
         ).all()
 
