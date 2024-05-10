@@ -385,6 +385,9 @@ function populateDays() {
                     dayInfo.style.transition = "0.2s ease";
                     dayDiv.style.transition = "0.1s ease";
                     dayDiv.style.borderRadius = "10px 10px 0px 0px";
+                    dayInfo.style.borderBottom = "none";
+                    dayInfo.style.border = "2px solid #2a2a2a";
+                    dayInfo.style.borderTop = "none";
                     dayInfo.style.height = "30px";
                     dayInfo.textContent = daySquare.title; 
                 };
