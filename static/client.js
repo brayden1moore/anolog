@@ -406,6 +406,7 @@ function populateDays() {
             });
 
             function clearDayInfo() {
+                dayInfo.style.border = "none";
                 dayInfo.style.transition = "0.1s";
                 dayDiv.style.transition = "0.3s ease";
                 dayInfo.style.height = "0px";
