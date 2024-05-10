@@ -913,7 +913,6 @@ input[type="datetime-local"] {
 }
 
 .log-description {
-    display: flex;
     line-height: 24px;
     flex: auto;
 }

@@ -186,9 +186,17 @@ function makeLog(id, isPinned, date, description) {
     const escapedLogText = description;//.replace(/</g, "&lt;").replace(/>/g, "&gt;");
     const taskName = document.getElementById('task-name').textContent;
 
+    let style = ''
     let dark = 'dark';
     let color = '#161616';
     let backgroundColor = 'var(--primary-color)';
+    
+    if (escapedLogText.includes("<br>")) {
+        style = "";
+    }
+    else {
+        style = "white-space: pre-line;";
+    }
 
     if (isPinned) { 
         dark = 'dark';
@@ -199,7 +207,7 @@ function makeLog(id, isPinned, date, description) {
     const logEntry = `
         <div class="log-item" data-logId="${id}" data-isPinned=${isPinned} style="background-color:${backgroundColor}; color: ${color}">
             <div style="display: flex; margin-bottom: 0px; align-items: center;">
-            <span class="log-description" style="white-space: pre-line;">${escapedLogText}</span>
+            <span class="log-description" style="${style}">${escapedLogText}</span>
 
                 <div class="log-options-div">
                     <i id="delete-option-button" class="log-option-button ${dark} fa fa-trash" style="width: 0px; font-size: 10pt; overflow: hidden;"></i>
@@ -1718,6 +1726,7 @@ function editLog(logItem) {
     inputElement.focus();
     //inputElement.select();
 
+
     // Function to revert changes
     function revertEdit() {
         if (inputElement.parentNode) {
@@ -1756,6 +1765,7 @@ function editLog(logItem) {
         input.style.height = input.scrollHeight + 'px !important';
     }
     inputElement.addEventListener('keypress', () => setTimeout(updateInputHeight(inputElement),5));
+    updateInputHeight(inputElement);
 
     // Add event listener for the escape key
     inputElement.addEventListener('keydown', escHandler);
