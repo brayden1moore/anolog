@@ -876,6 +876,7 @@ input[type="datetime-local"] {
 
 .log-options-div {
     width: 0px;
+    height: 0px;
     transition: 0.2s ease;
     display: flex;
 }
@@ -908,6 +909,7 @@ input[type="datetime-local"] {
 
 .log-item:hover:not(:hover .log-description) .log-options-div {
     width: 60px;
+    height: 15px;
 }
 
 .log-option-button:hover {
