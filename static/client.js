@@ -212,7 +212,6 @@ function makeLog(id, isPinned, date, description) {
     const element = document.createElement('div');
     element.innerHTML = logEntry;
     logItem = element.firstElementChild;
-    addLogClickListener(logItem);
 
     const pinOption = logItem.querySelector('#pin-option-button');
     const editOption = logItem.querySelector('#edit-option-button');
@@ -762,7 +761,6 @@ function addLog(taskId, logType) {
         // Build log entry
         logEntry = makeLog(tempId, false, null, logText);
         logItemsContainer.insertBefore(logEntry, logItemsContainer.childNodes[0]);
-        addLogClickListener(logEntry);
     }
 
     // construct PUT payload
@@ -1657,7 +1655,6 @@ function pinLog(logItem) {
             clonedLogItem.style.color = '#161616';
             pinnedLogsContainer.appendChild(clonedLogItem);
             clonedLogItem.setAttribute('data-isPinned', 'true');
-            addLogClickListener(clonedLogItem);
 
             const pinOption = clonedLogItem.querySelector('#pin-option-button');
             const editOption = clonedLogItem.querySelector('#edit-option-button');
