@@ -550,8 +550,8 @@ li {
 .export-button {
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);
     background-color: #161616;
-    height: 40px;
-    width: 40px;
+    height: 44px;
+    width: 44px;
     margin-bottom: 0px;
     outline: none;
     border: 2px solid #2a2a2a;
@@ -569,7 +569,7 @@ li {
     width: 80px;
     margin-bottom: 0px;
     outline: none;
-    border: 2px solid #2a2a2a;
+    border: none;
     color: #161616;
     transition: 0.2s ease-in-out;
     cursor: pointer;
@@ -581,8 +581,8 @@ li {
 .logout-button {
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);
     background-color: #161616;
-    height: 40px;
-    width: 40px;
+    height: 44px;
+    width: 44px;
     margin-left: 5px;
     outline: none;
     border: 2px solid #2a2a2a;
@@ -654,7 +654,7 @@ li {
     overflow: hidden;
     position: absolute;
     top: 100%;
-    right: 45px; 
+    right: 49px; 
     z-index: 1; 
     transition: 0.2s ease;
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);

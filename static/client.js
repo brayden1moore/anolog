@@ -1902,7 +1902,7 @@ function addBorderRadius() {
 }
 function removeBorderRadius() {
     exportButton.style.borderRadius = '10px';  
-    exportButton.style.width = '40px';
+    exportButton.style.width = '44px';
 }
 exportButton.addEventListener('mouseover', addBorderRadius);
 exportButton.addEventListener('mouseout', removeBorderRadius);
