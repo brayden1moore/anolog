@@ -109,6 +109,7 @@ header {
     transition: 0.2s ease;
 }
 #day-info {
+    border: 2px solid #2a2a2a;
     border-radius: 0px 0px 10px 10px;
     padding-left: 12px;
     transition: 0.1s ease;
