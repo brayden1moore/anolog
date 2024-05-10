@@ -202,10 +202,9 @@ function makeLog(id, isPinned, date, description) {
             <span class="log-description" style="white-space: pre-line;">${escapedLogText}</span>
 
                 <div class="log-options-div">
-                    <i id="pin-option-button" class="log-option-button ${dark} pin fa-solid fa-thumbtack" style="width: 0px; font-size: 10pt; overflow: hidden;"></i>
-                    <i id="edit-option-button" class="log-option-button ${dark} fa fa-pencil-alt" style="width: 0px; font-size: 10pt; overflow: hidden;"></i>
                     <i id="delete-option-button" class="log-option-button ${dark} fa fa-trash" style="width: 0px; font-size: 10pt; overflow: hidden;"></i>
-
+                    <i id="edit-option-button" class="log-option-button ${dark} fa fa-pencil-alt" style="width: 0px; font-size: 10pt; overflow: hidden;"></i>
+                    <i id="pin-option-button" class="log-option-button ${dark} pin fa-solid fa-thumbtack" style="width: 0px; font-size: 10pt; overflow: hidden;"></i>
                 </div>
             </div>
         </div>`;
@@ -676,7 +675,7 @@ function addProject() {
         }).then(response => response.json())
         .then(data => {
             if (data.message === "Project created") {
-                console.log('project Created');
+                console.log('project created');
                 newLink.setAttribute('data-projectid',data.id)
                 addProjectClickListener(newLink, data.id, newProjectName);
                 addHoverListener(newLink, 'project', data.id);
@@ -726,7 +725,7 @@ function addTask(projectId) {
         .then(data => {
             if (data.message === "Task created") {
                 // Create and insert the new list item before the input item
-                console.log('task Created');
+                console.log('task created');
                 newLink.setAttribute('data-taskId', data.id);
                 addTaskClickListener(newLink, data.id, data.name);
                 addHoverListener(newLink, 'task', data.id);
@@ -759,7 +758,6 @@ function addLog(taskId, logType) {
     else {
         logText = logInput.innerHTML;
         isTimer = false;
-        console.log(logText);
 
         // Build log entry
         logEntry = makeLog(tempId, false, null, logText);
@@ -888,13 +886,6 @@ function addTaskClickListener(newLink, taskId) {
         newLink.style.opacity = '1';
 
     });
-}
-
-// Add click listener to log 
-function addLogClickListener(logItem) {
-    logItem.addEventListener('dblclick', function(e) {
-        console.log('');
-    })
 }
 
 // Add unload listener
@@ -1637,12 +1628,12 @@ function pinLog(logItem) {
             hiddenLogItem = logItemsContainer.querySelector(`[data-logId="${logId}"]`);
             hiddenLogItem.style.height = 'auto';
             hiddenLogItem.style.padding = '15px';
-            hiddenLogItem.style.display = 'flex';
+            hiddenLogItem.style.display = 'block';
 
             // Make sure the text content is updated
             const hiddenDescription = hiddenLogItem.querySelector('.log-description');
             const pinnedDescription = logItem.querySelector('.log-description');
-            hiddenDescription.textContent = pinnedDescription.textContent;
+            hiddenDescription.innerHTML = pinnedDescription.innerHTML;
             pinnedLogsContainer.removeChild(logItem);
         } else {
             // Pin if not pinned
@@ -1690,6 +1681,7 @@ function pinLog(logItem) {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
+            projectId: globalProjectId,
             taskId: globalTaskId,
             logId: logId,
             isPinned: isPinned !== 'true'
@@ -1717,7 +1709,6 @@ function editLog(logItem) {
     
     var originalPadding = parseInt(logItem.style.padding, 10);
     logItem.style.padding = originalPadding - 2 + 'px';
-    console.log(originalPadding);
 
     const description = logDescription.innerHTML;
     inputElement.innerHTML = description;

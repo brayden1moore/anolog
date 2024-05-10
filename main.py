@@ -10,9 +10,7 @@ from io import StringIO
 import csv
 import bcrypt
 import json
-
 import os
-print(os.getcwd())
 
 try: 
     with open('config.json', 'r') as f:
@@ -378,10 +376,7 @@ def create_project():
         new_project = Project(name=data['name'], user_id=data['user_id'])
         session.add(new_project)
         session.commit()
-    
         new_task = Task(project_id=new_project.id, name='New Task', is_visible=True)
-        print('Project id',new_project.id)
-        print('Task project id',new_task.project_id)
         session.add(new_task)
         session.commit()
         return jsonify({"message": "Project created", "id":new_project.id}), 201
@@ -474,7 +469,6 @@ def update_project():
     session = Session()
     try:
         data = request.json
-        print('Project put',data)
         project_id = data.get('projectId')
         project = session.query(Project).filter(Project.id == project_id).first()   
         project.updated_at = datetime.now()
@@ -487,7 +481,6 @@ def update_project():
             project.name = name
         if is_visible is not None:
             project.is_visible = is_visible
-            print(project.is_visible)
         if is_completed is not None:
             project.is_completed = is_completed
 
@@ -504,7 +497,6 @@ def update_task():
     session = Session()
     try:
         data = request.json
-        print('Task put',data)
         task_id = data.get('taskId')
         
         task = session.query(Task).filter(Task.id == task_id).first()
@@ -540,7 +532,6 @@ def update_log():
     session = Session()
     try:
         data = request.json
-        print('Log put',data)
 
         log_id = data.get('logId')
         log = session.query(Log).filter(Log.id == log_id).first()
@@ -586,8 +577,6 @@ def update_time():
         description = data.get('description')
         is_visible = data.get('isVisible')
 
-        print(project_id)
-
         if time_id == '-1':
                     time = Time(user_id=current_user.id, project_id=project_id, task_id=task_id, start=start, end=end, duration=duration, description=description)
                     session.add(time)
@@ -624,7 +613,6 @@ def update_user():
     session = Session()
     try:
         data = request.json
-        print('User put', data)
 
         user_id = current_user.id
         color = data.get('color')
