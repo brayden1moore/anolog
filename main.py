@@ -695,7 +695,7 @@ def export_csv():
                 csv_writer.writerow(['Date', 'Total Hours', 'Formatted Hours', 'Start Time', 'End Time', 'Note'])  
                 for day, total_duration, earliest_start, latest_end, note in data:
                     csv_writer.writerow([
-                        day.strftime('%Y-%m-%d'), 
+                        day,#.strftime('%Y-%m-%d'),
                         total_duration/60/60, 
                         format_duration(total_duration),
                         earliest_start.strftime('%Y-%m-%d %H:%M:%S') if earliest_start else '', 
