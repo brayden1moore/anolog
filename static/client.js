@@ -376,7 +376,7 @@ function populateDays() {
                 daySquare.style.opacity = (data[day]['duration'] / maxDuration) + 0.1;
             }
             else {
-                daySquare.title = `${monthAbbrev} ${day} - 0:00`;
+                daySquare.title = `${monthAbbrev} ${day} - 0.00`;
             }
 
             function updateDayInfo(daySquare) {

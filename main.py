@@ -333,7 +333,7 @@ def get_days():
             day_dict = {}
             day_number = day.day
             day_dict['date'] = day
-            day_dict['hours'] = format_duration(total_duration)
+            day_dict['hours'] = round(total_duration/60/60,2) #format_duration(total_duration)
             day_dict['duration'] = total_duration
             day_json[day_number] = day_dict
 
