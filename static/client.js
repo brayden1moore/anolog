@@ -372,11 +372,11 @@ function populateDays() {
             daySquare.style.textAlign = 'center';
             
             if (data[day]){
-                daySquare.title = `${monthAbbrev} ${day} - ${data[day]['hours']}`;
+                daySquare.title = `${monthAbbrev} ${day} - ${data[day]['hours']} hours`;
                 daySquare.style.opacity = (data[day]['duration'] / maxDuration) + 0.1;
             }
             else {
-                daySquare.title = `${monthAbbrev} ${day} - 0.00`;
+                daySquare.title = `${monthAbbrev} ${day} - 0.00 hours`;
             }
 
             function updateDayInfo(daySquare) {
