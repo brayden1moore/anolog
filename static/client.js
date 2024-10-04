@@ -188,8 +188,8 @@ function makeLog(id, isPinned, date, description) {
 
     let style = ''
     let dark = 'dark';
-    let color = '#161616';
-    let backgroundColor = 'var(--primary-color)';
+    let color = 'var(--card-color)';
+    let backgroundColor = 'var(--text-color)';
     
     if (escapedLogText.includes("<br>")) {
         style = "";
@@ -201,11 +201,11 @@ function makeLog(id, isPinned, date, description) {
     if (isPinned) { 
         dark = 'dark';
         color = '#161616';
-        backgroundColor = 'var(--primary-color)';
+        backgroundColor = 'var(--text-color)';
     }
 
     const logEntry = `
-        <div class="log-item" data-logId="${id}" data-isPinned=${isPinned} style="background-color:${backgroundColor}; color: ${color}">
+        <div class="log-item" data-logId="${id}" data-isPinned=${isPinned} style="background-color:${backgroundColor}; color: ${color};">
         <div class="log-options-div">
         <i id="pin-option-button" class="log-option-button ${dark} pin fa-solid fa-thumbtack" style="width: 0px; font-size: 10pt; overflow: hidden;"></i>
         <i id="edit-option-button" class="log-option-button ${dark} fa fa-pencil-alt" style="width: 0px; font-size: 10pt; overflow: hidden;"></i>
@@ -366,7 +366,7 @@ function populateDays() {
             daySquare.style.width = `${(divWidth/daysInMonth)-2}%`;
             daySquare.style.height = '20px';
             daySquare.style.borderRadius = '4px';
-            daySquare.style.backgroundColor = 'var(--primary-color)';
+            daySquare.style.backgroundColor = 'var(--text-color)';
             daySquare.style.display = 'inline-block';
             daySquare.style.margin = '2px';
             daySquare.style.textAlign = 'center';
@@ -386,7 +386,7 @@ function populateDays() {
                     dayDiv.style.transition = "0.1s ease";
                     dayDiv.style.borderRadius = "10px 10px 0px 0px";
                     dayInfo.style.borderBottom = "none";
-                    dayInfo.style.border = "2px solid #2a2a2a";
+                    dayInfo.style.border = "2px solid var(--border-color)";
                     dayInfo.style.borderTop = "none";
                     dayInfo.style.height = "30px";
                     dayInfo.textContent = daySquare.title; 
@@ -443,8 +443,8 @@ function populateDays() {
 function getTime(projectId) {
     const timeDivDiv = document.getElementById('time-div-div');
 
-    timeDiv.style.border = '2px dashed var(--primary-color)';
-    timeDiv.innerHTML = '<i id="add-a-time-block" title="Add a Time Block" class="add-button fa-solid fa-plus" style="color: var(--primary-color);"></i>';
+    timeDiv.style.border = '2px dashed var(--text-color)';
+    timeDiv.innerHTML = '<i id="add-a-time-block" title="Add a Time Block" class="add-button fa-solid fa-plus" style="color: var(--text-color);"></i>';
     timeDivDiv.style.width = '100%';
     addTimeBlockButton = document.getElementById('add-a-time-block');
     addTimeBlockButton.addEventListener('click', createTimeBlock);
@@ -567,7 +567,7 @@ function openTimeDescription(block) {
     let timeDescriptionHeight = timeDescription.offsetHeight;
     const timeBlocks = document.querySelectorAll('.time-block');
         timeBlocks.forEach(function(b) {
-            b.style.backgroundColor = 'var(--primary-color)';
+            b.style.backgroundColor = 'var(--text-color)';
             b.style.opacity = "0.3";
             b.style.borderRadius = '5px';
         });
@@ -584,7 +584,7 @@ function openTimeDescription(block) {
                 timeDescriptionContainer.style.height = '0px';
                 timeDescriptionContainer.style.opacity = '0.7';
                 block.style.opacity = "1";
-                block.style.backgroundColor = 'var(--primary-color)';
+                block.style.backgroundColor = 'var(--text-color)';
                 activeBlock = block;
                 timeDiv.style.borderRadius = '7px 7px 0 0';
                 block.style.borderRadius = '5px 5px 0 0';
@@ -599,7 +599,7 @@ function openTimeDescription(block) {
                 addTimeBlockButton.style.paddingRight = '0px';
 
                 block.style.opacity = "1";
-                block.style.backgroundColor = 'var(--primary-color)';
+                block.style.backgroundColor = 'var(--text-color)';
                 activeBlock = block;
                 timeDiv.style.borderRadius = '7px 7px 0 0';
                 block.style.borderRadius = '5px 5px 0 0';
@@ -632,7 +632,7 @@ function closeTimeDescription() {
     timeDescriptionHeight = timeDescription.offsetHeight;
     timeBlocks.forEach(function(b) {
         b.style.opacity = "1";
-        b.style.backgroundColor = 'var(--primary-color)';
+        b.style.backgroundColor = 'var(--text-color)';
         b.style.borderRadius = '5px';
     });
     timeDescriptionContainer.style.height = '0px';
@@ -640,7 +640,7 @@ function closeTimeDescription() {
     activeBlock = null;
 
     if (timeDiv.childElementCount===1) {
-        timeDiv.style.border = '2px dashed var(--primary-color)';
+        timeDiv.style.border = '2px dashed var(--text-color)';
     }
 }
 document.getElementById('project-space').addEventListener('click', function(event) {
@@ -1288,7 +1288,7 @@ function createTimeBlock() {
     openTimeDescription(newBlock);
     resizeTimeBlocks();
     newBlock.style.backgroundColor = 'transparent';
-    newBlock.style.border = '2px dashed var(--primary-color)';
+    newBlock.style.border = '2px dashed var(--text-color)';
     showCommitTimeButton(endTimeInput);
 }
 addTimeBlockButton.addEventListener('click', createTimeBlock);
@@ -1299,18 +1299,28 @@ function resizeTimeBlocks() {
     const timeBlocks = document.querySelectorAll(".time-block");
     const today = new Date();
     const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-
+    const startOfThisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const startOfNextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+    
     let totalDuration = 0;
     let totalDurationToday = 0;
-    let smallestDuration = 1000000;
+    let totalDurationThisMonth = 0;
+    let smallestDuration = Infinity;
+    
     timeBlocks.forEach(block => {
-        duration = parseInt(block.dataset.duration, 10);
+        const duration = parseInt(block.dataset.duration, 10);
         totalDuration += duration;
+    
         if (duration < smallestDuration) {
             smallestDuration = duration;
         }
-        if (Date.parse(block.dataset.startTime) >= startOfToday && Date.parse(block.dataset.startTime) < new Date(startOfToday).setDate(startOfToday.getDate() + 1)) {
-            totalDurationToday += parseInt(block.dataset.duration, 10);
+    
+        const startTime = new Date(block.dataset.startTime);
+        if (startTime >= startOfToday && startTime < new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000)) {
+            totalDurationToday += duration;
+        }    
+        if (startTime >= startOfThisMonth && startTime < startOfNextMonth) {
+            totalDurationThisMonth += duration;
         }
     });
 
@@ -1323,14 +1333,14 @@ function resizeTimeBlocks() {
     }
 
     const hoursLogged = document.getElementById('hours-logged');
-    hoursLogged.textContent = `${(totalDuration / 60 / 60).toFixed(2)} hours logged, ${(totalDurationToday / 60 / 60).toFixed(2)} today`;
+    hoursLogged.textContent = `${(totalDuration / 60 / 60).toFixed(2)} hours, ${(totalDurationThisMonth / 60 / 60).toFixed(2)} this month, ${(totalDurationToday / 60 / 60).toFixed(2)} today`;
 
     timeBlocks.forEach(block => {
         let duration = parseInt(block.dataset.duration, 10);
         let widthPercentage = (duration / totalDuration);
         block.style.width = widthPercentage * divWidth + 'px';
-        if (block.offsetWidth < 35) {
-            block.style.color = 'var(--primary-color)';
+        if (block.offsetWidth < 45) {
+            block.style.color = 'var(--text-color)';
         }
         else {
             block.style.color = '#161616';
@@ -1651,7 +1661,7 @@ function pinLog(logItem) {
 
             // Create item in pinned log
             clonedLogItem.style.opacity = '1'; 
-            clonedLogItem.style.background = 'var(--primary-color)';
+            clonedLogItem.style.background = 'var(--text-color)';
             clonedLogItem.style.color = '#161616';
             pinnedLogsContainer.appendChild(clonedLogItem);
             clonedLogItem.setAttribute('data-isPinned', 'true');
@@ -1702,7 +1712,7 @@ function editLog(logItem) {
     inputElement.classList.add('dark');
     inputElement.contentEditable = "true";
 
-    logItem.style.border = '2px dashed var(--primary-color)';
+    logItem.style.border = '2px dashed var(--text-color)';
     logItem.style.background = 'transparent';
     
     var originalPadding = parseInt(logItem.style.padding, 10);
@@ -1728,7 +1738,7 @@ function editLog(logItem) {
             logOptions.style.display = 'flex';
             
             logItem.style.border = 'none';
-            logItem.style.background = 'var(--primary-color)';
+            logItem.style.background = 'var(--text-color)';
             logItem.style.padding = originalPadding + 'px';
 
         }
@@ -1774,7 +1784,7 @@ function editLog(logItem) {
             logOptions.style.display = 'flex';
             
             logItem.style.border = 'none';
-            logItem.style.background = 'var(--primary-color)';
+            logItem.style.background = 'var(--text-color)';
             logItem.style.padding = originalPadding + 'px';
 
             // Update log
@@ -1996,8 +2006,8 @@ function toggleDarkmode(initialToggle) {
         document.body.style.backgroundColor = "var(--primary-color)";
         darkmodeIcon.className = "fa-regular fa-moon";
         darkmodeIcon.style.fontSize = "14pt";
-        title.style.color = "#161616";
-        logo.style.background = "conic-gradient(transparent 0% 25%, #161616 25% 100%)";
+        title.style.color = "var(--card-color)";
+        logo.style.background = "conic-gradient(transparent 0% 25%, var(--card-color) 25% 100%)";
     }
     else {
         // Make darkmode
@@ -2005,8 +2015,8 @@ function toggleDarkmode(initialToggle) {
         document.body.style.backgroundColor = "#111111";
         darkmodeIcon.className = "fa-solid fa-moon";
         darkmodeIcon.style.fontSize = "14pt";
-        title.style.color =  "var(--primary-color)";
-        logo.style.background = "conic-gradient(transparent 0% 25%, var(--primary-color) 25% 100%)";
+        title.style.color =  "var(--text-color)";
+        logo.style.background = "conic-gradient(transparent 0% 25%, var(--text-color) 25% 100%)";
     }
 
     if (!firstLoad) {
@@ -2165,26 +2175,25 @@ function updateDurationText() {
 }
 
 // Commit time block edit
-function commitTimeBlock() {
+function commitTimeBlock(block) {
     const startTime = new Date(startTimeInput.value);
     const endTime = new Date(endTimeInput.value);
     const differenceInMilliseconds = endTime - startTime;
     const duration = (differenceInMilliseconds / 1000).toFixed(0);
     const description = timeDescriptionText.value;
     
-    activeBlock.dataset.startTime = convertUTCToLocalForInput(startTime.toISOString().slice(0,16));
-    activeBlock.dataset.endTime = convertUTCToLocalForInput(endTime.toISOString().slice(0,16));
-    activeBlock.dataset.duration = duration;
-    activeBlock.style.border = '0px';
-    activeBlock.style.backgroundColor = 'var(--primary-color)';
-    activeBlock.dataset.description = description;
-    resizeTimeBlocks();
+    block.dataset.startTime = convertUTCToLocalForInput(startTime.toISOString().slice(0,16));
+    block.dataset.endTime = convertUTCToLocalForInput(endTime.toISOString().slice(0,16));
+    block.dataset.duration = duration;
+    block.style.border = '0px';
+    block.style.backgroundColor = 'var(--text-color)';
+    block.dataset.description = description;
     
     // construct task PUT payload
     const putPayload = {
         projectId: globalProjectId,
         taskId: globalTaskId,
-        timeId: activeBlock.dataset.id,
+        timeId: block.dataset.id,
         start: startTime,
         end: endTime,
         duration: duration,
@@ -2203,10 +2212,11 @@ function commitTimeBlock() {
     .then(data => {
         if (data.message === "Time block updated") {
             console.log("time block updated")
-            activeBlock.dataset.id = data.time_id;
-            calculateTaskTotalTime(activeBlock.dataset.taskId, changed=true);
+            block.dataset.id = data.time_id;
+            calculateTaskTotalTime(block.dataset.taskId, changed=true);
             localStorage.removeItem(`time_cache_${globalProjectId}`);
             setTimeout(populateDays, 1000);
+            resizeTimeBlocks();
         }
     });
 }
@@ -2221,7 +2231,7 @@ function showCommitTimeButton(startOrEndInput) {
 function hideCommitTimeButton() {
     const startOrEndInputs = document.querySelectorAll('.datetime-input');
     startOrEndInputs.forEach(function(startOrEndInput) {
-        startOrEndInput.style.backgroundColor = 'var(--primary-color)';
+        startOrEndInput.style.backgroundColor = 'var(--text-color)';
     });
     commitTimeBlockButton.style.display = 'none';
     timeDescriptionText.style.background = 'none';
@@ -2240,7 +2250,7 @@ timeDescriptionText.addEventListener('change', function(e) {
 
 // Commit and update stylings upon save
 commitTimeBlockButton.addEventListener('click', () => {
-    commitTimeBlock();
+    commitTimeBlock(activeBlock);
     hideCommitTimeButton();
 });
 
