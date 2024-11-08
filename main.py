@@ -4,7 +4,7 @@ from flask import session as flask_session
 from flask import Flask, request, jsonify, render_template, Response, redirect, url_for, abort
 from build_db import User, Project, Task, Log, Time, engine
 from sqlalchemy.orm import relationship, sessionmaker, scoped_session
-from sqlalchemy import desc, func, String, Numeric, cast
+from sqlalchemy import desc, func, String, Numeric, cast, extract
 from datetime import datetime, timedelta
 from io import StringIO
 import csv
@@ -276,10 +276,23 @@ def list_time():
 
         project_id = request.args.get('project_id')
 
+        # Get current month and year
+        current_date = datetime.now()
+        current_month = current_date.month
+        current_year = current_date.year
+
         query_results = (
             session.query(Time.id, Task.id, Task.name, Time.start, Time.end, Time.duration, Time.description)
             .join(Task, Time.task_id == Task.id)
-            .filter(Time.project_id == project_id, Time.is_visible == True, Time.start != None, Time.end != None, Time.duration > 0)
+            .filter(
+                Time.project_id == project_id,
+                Time.is_visible == True,
+                Time.start != None,
+                Time.end != None,
+                Time.duration > 0,
+                extract('month', Time.start) == current_month,
+                extract('year', Time.start) == current_year
+            )
             .order_by(Time.start)
         ).all()
 
@@ -455,7 +468,7 @@ def create_time():
 
         session.commit()
 
-        return jsonify({"message": "Time block created", "id":new_time.id}), 201
+        return jsonify({"message": "Time block updated", "id":new_time.id}), 201
     
     finally:
         Session.remove()

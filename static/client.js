@@ -158,7 +158,7 @@ function populateTasks(projectId) {
     }
 
     // Check cache first
-    let cachedTasks = localStorage.getItem(`logs_cache_${projectId}`);
+    let cachedTasks = localStorage.getItem(`tasks_cache_${projectId}`);
     if (cachedTasks) {
         console.log('tasks read from client-side cache');
         displayTaskData(JSON.parse(cachedTasks));
@@ -1297,14 +1297,23 @@ addTimeBlockButton.addEventListener('click', createTimeBlock);
 function resizeTimeBlocks() {
     const timeDivDiv = document.getElementById('time-div-div');
     const timeBlocks = document.querySelectorAll(".time-block");
+    
+    // get time bounds 
     const today = new Date();
     const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const startOfThisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    const startOfNextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
-    
+    const startOfWeek = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate() - today.getDay()
+    );    
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 7);
+
     let totalDuration = 0;
     let totalDurationToday = 0;
-    let totalDurationThisMonth = 0;
+    let totalDurationThisWeek = 0;
     let smallestDuration = Infinity;
     
     timeBlocks.forEach(block => {
@@ -1319,8 +1328,8 @@ function resizeTimeBlocks() {
         if (startTime >= startOfToday && startTime < new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000)) {
             totalDurationToday += duration;
         }    
-        if (startTime >= startOfThisMonth && startTime < startOfNextMonth) {
-            totalDurationThisMonth += duration;
+        if (startTime >= startOfWeek && startTime < endOfWeek) {
+            totalDurationThisWeek += duration;
         }
     });
 
@@ -1333,7 +1342,7 @@ function resizeTimeBlocks() {
     }
 
     const hoursLogged = document.getElementById('hours-logged');
-    hoursLogged.textContent = `${(totalDuration / 60 / 60).toFixed(2)} hours, ${(totalDurationThisMonth / 60 / 60).toFixed(2)} this month, ${(totalDurationToday / 60 / 60).toFixed(2)} today`;
+    hoursLogged.textContent = `${(totalDuration / 60 / 60).toFixed(2)} hours this month, ${(totalDurationThisWeek / 60 / 60).toFixed(2)} this week, ${(totalDurationToday / 60 / 60).toFixed(2)} today`;
 
     timeBlocks.forEach(block => {
         let duration = parseInt(block.dataset.duration, 10);
