@@ -437,7 +437,10 @@ function populateDays() {
             square.style.width = `${(divWidth/daysInMonth)-2}%`;
         })
     }
-   
+
+const dayColors = [
+    '#7f2828','#fff955','#41a5f1','#fd6d5d','#d379bd','#67ce6a','#2d3b5f'
+]
 
 // GET to /time endpoint
 function getTime(projectId) {
@@ -466,6 +469,9 @@ function getTime(projectId) {
             newBlock.style.width = `0px`;
             newBlock.addEventListener('click', () => openTimeDescription(newBlock));
             newBlock.addEventListener('click', () => hideCommitTimeButton());
+            
+            const dayOfWeek = new Date(convertUTCToLocalForInput(time.start)).getDay();
+            newBlock.style.backgroundColor = dayColors[dayOfWeek];
             timeDiv.insertBefore(newBlock,addTimeBlockButton);
         });
 
@@ -550,6 +556,9 @@ function updateTimeDescription(block) {
     const hours = (blockDuration / 60 / 60).toFixed(2);
     duration.textContent = hours;
 
+    timeDescription.style.backgroundColor = block.style.backgroundColor;
+    console.log(block.style.backgroundColor);
+
     const timeDescriptionTaskName = document.getElementById('time-description-task-name'); 
     timeDescriptionTaskName.textContent = block.dataset.taskName;
 
@@ -567,7 +576,6 @@ function openTimeDescription(block) {
     let timeDescriptionHeight = timeDescription.offsetHeight;
     const timeBlocks = document.querySelectorAll('.time-block');
         timeBlocks.forEach(function(b) {
-            b.style.backgroundColor = 'var(--text-color)';
             b.style.opacity = "0.3";
             b.style.borderRadius = '5px';
         });
@@ -584,7 +592,6 @@ function openTimeDescription(block) {
                 timeDescriptionContainer.style.height = '0px';
                 timeDescriptionContainer.style.opacity = '0.7';
                 block.style.opacity = "1";
-                block.style.backgroundColor = 'var(--text-color)';
                 activeBlock = block;
                 timeDiv.style.borderRadius = '7px 7px 0 0';
                 block.style.borderRadius = '5px 5px 0 0';
@@ -599,7 +606,6 @@ function openTimeDescription(block) {
                 addTimeBlockButton.style.paddingRight = '0px';
 
                 block.style.opacity = "1";
-                block.style.backgroundColor = 'var(--text-color)';
                 activeBlock = block;
                 timeDiv.style.borderRadius = '7px 7px 0 0';
                 block.style.borderRadius = '5px 5px 0 0';
@@ -632,7 +638,6 @@ function closeTimeDescription() {
     timeDescriptionHeight = timeDescription.offsetHeight;
     timeBlocks.forEach(function(b) {
         b.style.opacity = "1";
-        b.style.backgroundColor = 'var(--text-color)';
         b.style.borderRadius = '5px';
     });
     timeDescriptionContainer.style.height = '0px';
@@ -1348,12 +1353,6 @@ function resizeTimeBlocks() {
         let duration = parseInt(block.dataset.duration, 10);
         let widthPercentage = (duration / totalDuration);
         block.style.width = widthPercentage * divWidth + 'px';
-        if (block.offsetWidth < 45) {
-            block.style.color = 'var(--text-color)';
-        }
-        else {
-            block.style.color = '#161616';
-        }
     });
 }
 
