@@ -2016,7 +2016,7 @@ function toggleDarkmode(initialToggle) {
     if (darkmode) {
         // Make lightmode
         darkmode = false;
-        document.body.style.backgroundColor = "var(--primary-color)";
+        document.body.style.backgroundColor = "var(--text-color)";
         darkmodeIcon.className = "fa-regular fa-moon";
         darkmodeIcon.style.fontSize = "14pt";
         title.style.color = "var(--card-color)";
@@ -2025,7 +2025,7 @@ function toggleDarkmode(initialToggle) {
     else {
         // Make darkmode
         darkmode = true;
-        document.body.style.backgroundColor = "#111111";
+        document.body.style.backgroundColor = "#000000";
         darkmodeIcon.className = "fa-solid fa-moon";
         darkmodeIcon.style.fontSize = "14pt";
         title.style.color =  "var(--text-color)";
