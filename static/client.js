@@ -8,6 +8,10 @@ let firstLoad = true;
 let showCompletedTasks = false;
 let showCompletedProjects = false;
 
+const dayColors = [
+    '#7f2828','#fff955','#41a5f1','#fd6d5d','#d379bd','#67ce6a','#2d3b5f'
+]
+
 // Clear local storage on first load
 window.onload = function() {
     localStorage.clear();
@@ -370,8 +374,10 @@ function populateDays() {
             daySquare.style.display = 'inline-block';
             daySquare.style.margin = '2px';
             daySquare.style.textAlign = 'center';
-            
+
             if (data[day]){
+                let dayOfWeek = new Date(year, month, day).getDay();
+                daySquare.style.backgroundColor = dayColors[dayOfWeek];
                 daySquare.title = `${monthAbbrev} ${day} - ${data[day]['hours']} hours`;
                 daySquare.style.opacity = (data[day]['duration'] / maxDuration) + 0.1;
             }
@@ -437,10 +443,6 @@ function populateDays() {
             square.style.width = `${(divWidth/daysInMonth)-2}%`;
         })
     }
-
-const dayColors = [
-    '#7f2828','#fff955','#41a5f1','#fd6d5d','#d379bd','#67ce6a','#2d3b5f'
-]
 
 // GET to /time endpoint
 function getTime(projectId) {
@@ -2239,7 +2241,7 @@ function showCommitTimeButton(startOrEndInput) {
 function hideCommitTimeButton() {
     const startOrEndInputs = document.querySelectorAll('.datetime-input');
     startOrEndInputs.forEach(function(startOrEndInput) {
-        startOrEndInput.style.backgroundColor = 'var(--text-color)';
+        startOrEndInput.style.backgroundColor = 'transparent';
     });
     commitTimeBlockButton.style.display = 'none';
     timeDescriptionText.style.background = 'none';
