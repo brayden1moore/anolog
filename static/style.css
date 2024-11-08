@@ -1,8 +1,8 @@
 :root {
     --primary-color: {{primary_color}};
-    --text-color: #e2e2e2;
-    --card-color: #161616;
-    --border-color: #000000;
+    --text-color: #fae6d7;
+    --card-color: #1b1b1b;
+    --border-color: #161616;
 
 }
 .logo {
@@ -614,6 +614,7 @@ li {
     border-radius: 10px;
     transition: 0.2s ease;
     cursor: pointer;
+    display: none;
 }
 .color-button:hover{
     opacity:0.5;

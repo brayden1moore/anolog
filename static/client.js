@@ -8,6 +8,11 @@ let firstLoad = true;
 let showCompletedTasks = false;
 let showCompletedProjects = false;
 
+const today = new Date();
+const year = today.getFullYear();
+const month = today.getMonth();
+const dayOfWeek = today.getDay();
+
 const dayColors = [
     '#7f2828','#fff955','#41a5f1','#fd6d5d','#d379bd','#67ce6a','#2d3b5f'
 ]
@@ -329,9 +334,6 @@ function populateLogs(taskId) {
 function populateDays() {
     const dayInfo = document.getElementById('day-info');
     const dayDiv = document.querySelector('.day-div');
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth();
     const monthAbbreviations = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     const monthAbbrev = monthAbbreviations[month];
     const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -1294,8 +1296,9 @@ function createTimeBlock() {
     timeDiv.insertBefore(newBlock, addTimeBlockButton);
     openTimeDescription(newBlock);
     resizeTimeBlocks();
+
     newBlock.style.backgroundColor = 'transparent';
-    newBlock.style.border = '2px dashed var(--text-color)';
+    newBlock.style.border = `2px dashed ${dayColors[dayOfWeek]}`;
     showCommitTimeButton(endTimeInput);
 }
 addTimeBlockButton.addEventListener('click', createTimeBlock);
@@ -2196,7 +2199,7 @@ function commitTimeBlock(block) {
     block.dataset.endTime = convertUTCToLocalForInput(endTime.toISOString().slice(0,16));
     block.dataset.duration = duration;
     block.style.border = '0px';
-    block.style.backgroundColor = 'var(--text-color)';
+    block.style.backgroundColor = dayColors[dayOfWeek];
     block.dataset.description = description;
     
     // construct task PUT payload
