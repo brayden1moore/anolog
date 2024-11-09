@@ -1,21 +1,20 @@
 <!DOCTYPE html>
 <html>
 <head>    
-    <link rel="preload" href="static/demo.gif" as="image">
-    <link rel="preload" href="static/background.gif" as="image">    
+    <link rel="preload" href="static/example.png" as="image">
     <link rel="icon" type="image/png" href="static/icon-black.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta charset="UTF-8">
     <title>Anolog - Login</title>
     <style>
         :root {
-            --primary-color:linear-gradient(90deg, #99b3c2, #8dbdc8, #84c7c6, #87cfbb, #98d5aa, #b4d896, #d8d886, #ffd480);            ;
+            --primary-color:#fae6d7;            ;
         }
         body {
             height: 98vh;
             display:flex;
             align-items: center;
-            /*background-image: url("static/background.gif");*/
+            background-color: #fae6d7;
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif, sans-serif;
         }
         h1 {
@@ -36,7 +35,7 @@
         }
         .container {
             /* From https://css.glass */
-            background: rgba(255, 255, 255, 0.26);
+            background: transparent;
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
             backdrop-filter: blur(100px);
             -webkit-backdrop-filter: blur(100px);
@@ -82,7 +81,7 @@
         }
         button {
             background-color: #161616;
-            color:  #DDDDDD;
+            color:  #fae6d7;
             margin-top: 15px;
             padding: 10px;
             width: 80%;
@@ -92,9 +91,11 @@
             transition: 0.3s ease;
             margin-bottom: 10px;
             cursor: pointer;
+            border: #161616 2px solid;
         }
         button:hover {
-            opacity: 0.5;
+            background-color: #fae6d7;
+            color: #161616;
         }
         .link-button {
             background: none;
@@ -115,7 +116,6 @@
             align-items: center;
         }
         .demo {
-            background: 'http://api.thumbr.it/whitenoise-361x370.png?background=5f8005ff&noise=626262&density=46&opacity=15';
             position: relative;
             z-index: 0;
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
@@ -131,46 +131,63 @@
         }
         @media (orientation: portrait) {
             body {
-                height: 80vh;
+                height: 100vh;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                overflow: hidden;
+                margin: 0;
             }
+
             .content-div {
                 display: flex;
                 flex-direction: column;
-            }
-            .demo {
-                margin-top: 20px;
+                align-items: center;
                 width: 100%;
-                max-width: 440px;
+                height: 100%;
+            }
+
+            .demo {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
                 height: auto;
-                margin-bottom: -70%;
+                border-radius: 0;
+                box-shadow: none;
+                object-fit: cover;
+                z-index: -1; 
+                filter: blur(3px);
             }
+
             .container {
-                margin: 0;
-                backdrop-filter: blur(100px);
-                -webkit-backdrop-filter: blur(100px);
+                position: absolute;
+                background-color: #fae6d78a;
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                padding: 20px;
+                border-radius: 20px;
+                width: 80%;
+                max-width: 400px;
+                text-align: center;
+                z-index: 1;                 
+                margin-left: auto;
             }
 
-            @keyframes bounce {
-                0%, 100% {
-                    transform: translateY(0) rotate(0deg);
-                }
-                50% {
-                    transform: translateY(-20px) rotate(-10deg);
-                }
-            }
-
-            .demo-bounce {
-                animation: bounce 1s ease-in-out;
+            .signin-input {
+                background: none;
+                border-bottom: 1px solid black;
+                width: 100%;
             }
         }
     </style>
 </head>
 <body>
     <div class="content-div">
-        <img class="demo" src="static/demo2.gif">
+        <img class="demo" src="static/example.webp">
         <div class="container">
             <h1><img src="static/icon-black.png" class="header-icon"> Anolog</h1>
-            <p>A simpler work log</p>
+            <p>A simpler work log.</p>
             <form method="post" action="/login">
                 <input id='email' class='signin-input' type="email" name="email" placeholder="Email" required>
                 <input class='signin-input' type="password" name="password" placeholder="Password" required>
