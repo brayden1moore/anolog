@@ -273,25 +273,21 @@ def list_logs():
 def list_time():
     session = Session()
     try:
-
         project_id = request.args.get('project_id')
-
-        # Get current month and year
         current_date = datetime.now()
-        current_month = current_date.month
-        current_year = current_date.year
-
+        start_of_month = datetime(current_date.year, current_date.month, 1)
+        next_month = start_of_month.replace(month=start_of_month.month % 12 + 1, day=1)
+        
         query_results = (
             session.query(Time.id, Task.id, Task.name, Time.start, Time.end, Time.duration, Time.description)
             .join(Task, Time.task_id == Task.id)
             .filter(
                 Time.project_id == project_id,
                 Time.is_visible == True,
-                Time.start != None,
+                Time.start >= start_of_month,
+                Time.start < next_month,
                 Time.end != None,
-                Time.duration > 0,
-                extract('month', Time.start) == current_month,
-                extract('year', Time.start) == current_year
+                Time.duration > 0
             )
             .order_by(Time.start)
         ).all()
@@ -305,8 +301,8 @@ def list_time():
                 'start': start.strftime('%Y-%m-%dT%H:%M'), 
                 'end': end.strftime('%Y-%m-%dT%H:%M'), 
                 'duration': duration,
-                'description': 'Add a description...' if description is None or description == 'null' else description
-            } 
+                'description': 'Add a description...' if not description else description
+            }
             for time_id, task_id, task_name, start, end, duration, description in query_results
         ]
 

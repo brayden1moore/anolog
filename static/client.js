@@ -11,7 +11,25 @@ let showCompletedProjects = false;
 const today = new Date();
 const year = today.getFullYear();
 const month = today.getMonth();
-const dayOfWeek = today.getDay();
+const todaysDayOfWeek = today.getDay();
+
+function getDaySuffix(day) {
+    if (day >= 11 && day <= 13) return "th"; 
+    switch (day % 10) {
+        case 1: return "st";
+        case 2: return "nd";
+        case 3: return "rd";
+        default: return "th";
+    }
+}
+
+function getWeekNumber(date) {
+    const startOfYear = new Date(date.getFullYear(), 0, 1);
+    const startDay = startOfYear.getDay();
+    const dayOfYear = Math.floor((date - startOfYear) / (1000 * 60 * 60 * 24));
+    const offset = (startDay !== 0) ? 7 - startDay : 0;
+    return Math.ceil((dayOfYear + offset + 3) / 7);
+}
 
 const dayColors = [
     '#7f2828','#fff955','#41a5f1','#fd6d5d','#d379bd','#67ce6a','#2d3b5f'
@@ -335,6 +353,8 @@ function populateDays() {
     const dayInfo = document.getElementById('day-info');
     const dayDiv = document.querySelector('.day-div');
     const monthAbbreviations = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
     const monthAbbrev = monthAbbreviations[month];
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const divWidth = dayDiv.offsetWidth;
@@ -365,6 +385,19 @@ function populateDays() {
             }
         }
 
+        let weeklyTotals = {};
+        for (let day = 1; day <= daysInMonth; day++) {
+            let squareDate = new Date(year, month, day);
+            let weekNumber = getWeekNumber(squareDate);
+    
+            if (data[day]) {
+                if (!weeklyTotals[weekNumber]) {
+                    weeklyTotals[weekNumber] = 0;
+                }
+                weeklyTotals[weekNumber] += parseFloat(data[day]['hours']);
+            }
+        }
+
         for (let day = 1; day <= daysInMonth; day++) {
             const daySquare = document.createElement('div');
             daySquare.classList.add('day-square');
@@ -377,14 +410,19 @@ function populateDays() {
             daySquare.style.margin = '2px';
             daySquare.style.textAlign = 'center';
 
+            let squareDate = new Date(year, month, day)
+            let dayOfWeek = squareDate.getDay();
+            let weekNumber = getWeekNumber(squareDate);
+
+
+
             if (data[day]){
-                let dayOfWeek = new Date(year, month, day).getDay();
                 daySquare.style.backgroundColor = dayColors[dayOfWeek];
-                daySquare.title = `${monthAbbrev} ${day} - ${data[day]['hours']} hours`;
+                daySquare.dataset.title = `${dayNames[dayOfWeek]}, ${monthAbbrev} ${day}${getDaySuffix(day)}<br><b>${data[day]['hours']} hours</b>, ${weeklyTotals[weekNumber].toFixed(2)} for the week`;
                 daySquare.style.opacity = (data[day]['duration'] / maxDuration) + 0.1;
             }
             else {
-                daySquare.title = `${monthAbbrev} ${day} - 0.00 hours`;
+                daySquare.dataset.title = `${dayNames[dayOfWeek]}, ${monthAbbrev} ${day}${getDaySuffix(day)}<br>0.00 hours, ${weeklyTotals[weekNumber] ? weeklyTotals[weekNumber].toFixed(2) : '0.00'} for the week`;
             }
 
             function updateDayInfo(daySquare) {
@@ -396,8 +434,9 @@ function populateDays() {
                     dayInfo.style.borderBottom = "none";
                     dayInfo.style.border = "2px solid var(--border-color)";
                     dayInfo.style.borderTop = "none";
-                    dayInfo.style.height = "30px";
-                    dayInfo.textContent = daySquare.title; 
+                    dayInfo.style.height = "55px";
+                    dayInfo.style.lineHeight = "22px";
+                    dayInfo.innerHTML = daySquare.dataset.title; 
                 };
             }
 
@@ -1298,7 +1337,7 @@ function createTimeBlock() {
     resizeTimeBlocks();
 
     newBlock.style.backgroundColor = 'transparent';
-    newBlock.style.border = `2px dashed ${dayColors[dayOfWeek]}`;
+    newBlock.style.border = `2px dashed ${dayColors[todaysDayOfWeek]}`;
     showCommitTimeButton(endTimeInput);
 }
 addTimeBlockButton.addEventListener('click', createTimeBlock);
@@ -2199,7 +2238,7 @@ function commitTimeBlock(block) {
     block.dataset.endTime = convertUTCToLocalForInput(endTime.toISOString().slice(0,16));
     block.dataset.duration = duration;
     block.style.border = '0px';
-    block.style.backgroundColor = dayColors[dayOfWeek];
+    block.style.backgroundColor = dayColors[todaysDayOfWeek];
     block.dataset.description = description;
     
     // construct task PUT payload
@@ -2228,7 +2267,8 @@ function commitTimeBlock(block) {
             block.dataset.id = data.time_id;
             calculateTaskTotalTime(block.dataset.taskId, changed=true);
             localStorage.removeItem(`time_cache_${globalProjectId}`);
-            setTimeout(populateDays, 1000);
+            localStorage.removeItem('days_cache');
+            setTimeout(populateDays, 500);
             resizeTimeBlocks();
         }
     });
