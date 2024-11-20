@@ -5,5 +5,5 @@ SQLAlchemy==1.4.22
 bcrypt==3.2.0
 itsdangerous==2.1.2
 Werkzeug==2.2.3
-psycopg2==2.9.7
+Psycopg2-binary
 gunicorn==20.1.0

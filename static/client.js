@@ -1998,7 +1998,6 @@ document.addEventListener('input', function(event) {
 document.addEventListener('change', function(event) {
     if (event.target.id === 'color-picker') {
         document.documentElement.style.setProperty('--primary-color', event.target.value);
-        updateFavicon(event.target.value);
         // Send PUT to /user endpoint
         fetch('/user', {
             method: 'PUT',
@@ -2059,7 +2058,6 @@ function toggleDarkmode(initialToggle) {
         darkmodeIcon.className = "fa-regular fa-moon";
         darkmodeIcon.style.fontSize = "14pt";
         title.style.color = "var(--card-color)";
-        logo.style.background = "conic-gradient(transparent 0% 25%, var(--card-color) 25% 100%)";
     }
     else {
         // Make darkmode
@@ -2068,7 +2066,6 @@ function toggleDarkmode(initialToggle) {
         darkmodeIcon.className = "fa-solid fa-moon";
         darkmodeIcon.style.fontSize = "14pt";
         title.style.color =  "var(--text-color)";
-        logo.style.background = "conic-gradient(transparent 0% 25%, var(--text-color) 25% 100%)";
     }
 
     if (!firstLoad) {
