@@ -276,7 +276,13 @@ def list_time():
         project_id = request.args.get('project_id')
         current_date = datetime.now()
         start_of_month = datetime(current_date.year, current_date.month, 1)
-        next_month = start_of_month.replace(month=start_of_month.month % 12 + 1, day=1)
+        if start_of_month.month == 12: 
+            next_month = datetime(start_of_month.year + 1, 1, 1)  # January of the next year
+        else:
+            next_month = datetime(start_of_month.year, start_of_month.month + 1, 1)
+
+        print(start_of_month)
+        print(next_month)
         
         query_results = (
             session.query(Time.id, Task.id, Task.name, Time.start, Time.end, Time.duration, Time.description)
