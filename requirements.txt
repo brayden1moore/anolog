@@ -7,3 +7,4 @@ itsdangerous==2.1.2
 Werkzeug==2.2.3
 Psycopg2-binary
 gunicorn==20.1.0
+pytz==2024.1
