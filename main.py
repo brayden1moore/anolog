@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from io import StringIO
 import csv
 import bcrypt
+import pytz
 import json
 import os
 
@@ -321,8 +322,12 @@ def list_time():
 @app.route('/days', methods=['GET'])
 @login_required
 def get_days():
-    current_month = datetime.now().month
-    current_year = datetime.now().year
+
+    tz_name = request.args.get('tz_name', 'UTC')
+    local_tz = pytz.timezone(tz_name)
+    now_local = datetime.now(local_tz)
+    current_month = now_local.month
+    current_year = now_local.year
 
     try:
         session = Session()

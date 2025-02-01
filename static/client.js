@@ -366,7 +366,8 @@ function populateDays() {
         displayDayData(JSON.parse(cachedDays));
     }
     else {
-        fetch(`/days`)
+        const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        fetch(`/days?tz_name=${localTz}`)
         .then(response => response.json())
         .then(data => {
             displayDayData(data);
