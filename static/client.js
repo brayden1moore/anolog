@@ -12,6 +12,7 @@ const today = new Date();
 const year = today.getFullYear();
 const month = today.getMonth();
 const todaysDayOfWeek = today.getDay();
+const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 function getDaySuffix(day) {
     if (day >= 11 && day <= 13) return "th"; 
@@ -366,7 +367,6 @@ function populateDays() {
         displayDayData(JSON.parse(cachedDays));
     }
     else {
-        const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
         fetch(`/days?tz_name=${localTz}`)
         .then(response => response.json())
         .then(data => {
@@ -529,7 +529,7 @@ function getTime(projectId) {
         displayTimeData(JSON.parse(cachedTime));
     }
     else {
-        fetch(`/time?project_id=${projectId}`, {credentials: "include"}) 
+        fetch(`/time?project_id=${projectId}&tz_name=${localTz}`, {credentials: "include"}) 
         .then(response => {
             if (!response.ok) {
                 throw new Error('Network response was not ok');
