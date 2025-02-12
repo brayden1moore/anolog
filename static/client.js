@@ -26,10 +26,9 @@ function getDaySuffix(day) {
 
 function getWeekNumber(date) {
     const startOfYear = new Date(date.getFullYear(), 0, 1);
-    const startDay = startOfYear.getDay();
-    const dayOfYear = Math.floor((date - startOfYear) / (1000 * 60 * 60 * 24));
-    const offset = (startDay !== 0) ? 7 - startDay : 0;
-    return Math.ceil((dayOfYear + offset + 3) / 7);
+    const firstThursday = new Date(date.getFullYear(), 0, 4);
+    const weekStart = firstThursday.getTime() - (firstThursday.getDay() - 4) * 86400000;
+    return Math.ceil((date.getTime() - weekStart) / (7 * 86400000)) + 1;
 }
 
 const dayColors = [
@@ -387,15 +386,16 @@ function populateDays() {
         }
 
         let weeklyTotals = {};
+
         for (let day = 1; day <= daysInMonth; day++) {
             let squareDate = new Date(year, month, day);
             let weekNumber = getWeekNumber(squareDate);
-    
-            if (data[day]) {
+        
+            if (data[day] && data[day]['hours']) {
                 if (!weeklyTotals[weekNumber]) {
                     weeklyTotals[weekNumber] = 0;
                 }
-                weeklyTotals[weekNumber] += parseFloat(data[day]['hours']);
+                weeklyTotals[weekNumber] += parseFloat(data[day]['hours']) || 0; 
             }
         }
 
@@ -414,8 +414,6 @@ function populateDays() {
             let squareDate = new Date(year, month, day)
             let dayOfWeek = squareDate.getDay();
             let weekNumber = getWeekNumber(squareDate);
-
-
 
             if (data[day]){
                 daySquare.style.backgroundColor = dayColors[dayOfWeek];
