@@ -25,10 +25,20 @@ function getDaySuffix(day) {
 }
 
 function getWeekNumber(date) {
-    const startOfYear = new Date(date.getFullYear(), 0, 1);
-    const firstThursday = new Date(date.getFullYear(), 0, 4);
-    const weekStart = firstThursday.getTime() - (firstThursday.getDay() - 4) * 86400000;
-    return Math.ceil((date.getTime() - weekStart) / (7 * 86400000)) + 1;
+    const currentDate = 
+        (typeof date === 'object') ? date : new Date();
+    const januaryFirst = 
+        new Date(currentDate.getFullYear(), 0, 1);
+    const daysToNextMonday = 
+        (januaryFirst.getDay() === 1) ? 0 : 
+        (7 - januaryFirst.getDay()) % 7;
+    const nextMonday = 
+        new Date(currentDate.getFullYear(), 0, 
+        januaryFirst.getDate() + daysToNextMonday);
+
+    return (currentDate < nextMonday) ? 52 : 
+    (currentDate > nextMonday ? Math.ceil(
+    (currentDate - nextMonday) / (24 * 3600 * 1000) / 7) : 1);
 }
 
 const dayColors = [
@@ -488,6 +498,7 @@ function populateDays() {
 function getTime(projectId) {
     const timeDivDiv = document.getElementById('time-div-div');
 
+    timeDiv.style.justifyContent = 'center';
     timeDiv.style.border = '2px dashed var(--text-color)';
     timeDiv.innerHTML = '<i id="add-a-time-block" title="Add a Time Block" class="add-button fa-solid fa-plus" style="color: var(--text-color);"></i>';
     timeDivDiv.style.width = '100%';
@@ -497,6 +508,7 @@ function getTime(projectId) {
     function displayTimeData(data) {
         const totalDuration = data.reduce((sum, time) => sum + time.duration, 0);
         data.forEach((time, index) => {
+            timeDiv.style.justifyContent = 'flex-end';
             timeDiv.style.border = '';
             const newBlock = document.createElement('div');
             newBlock.className = 'time-block';
@@ -947,6 +959,7 @@ function addHoverListener(newLink, elementType, elementId) {
     let timeoutId;
 
     function displayCustomHoverMenu(e) {
+        console.log(newLink);
         e.preventDefault();
         // Remove existing hover menus
         const existingMenu = document.querySelector('.custom-hover-menu');
@@ -1041,12 +1054,12 @@ function addHoverListener(newLink, elementType, elementId) {
             }
 
             if (elementType==='project'){
-                completeProject(globalProjectId, isCompleted);
+                completeProject(elementId, isCompleted);
             }
             else {
                 const taskCheckbox = document.getElementById('task-checkbox');
                 const taskLabel = document.getElementById('task-name');
-                completeTask(taskCheckbox, taskLabel, isCompleted);
+                completeTask(taskCheckbox, taskLabel, isCompleted, elementId);
             }
             
             // Remove the hover menu
@@ -1070,12 +1083,12 @@ function addHoverListener(newLink, elementType, elementId) {
             } else {
                 // Second click: Proceed with deletion
                 if (elementType==='project') {
-                    deleteProject(globalProjectId);
+                    deleteProject(elementId);
                     const taskList = document.getElementById('task-list-ul');
                     taskList.innerHTML = "";
                 }
                 else {
-                    deleteTask(globalTaskId);
+                    deleteTask(elementId);
                 }
 
                 // Remove the hover menu
@@ -1448,8 +1461,8 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 // Complete task
-function completeTask(taskCheckbox, taskLabel, isCompleted) {
-    const selectedTask = document.querySelector(`p[data-taskId="${globalTaskId}"]`);
+function completeTask(taskCheckbox, taskLabel, isCompleted, taskId) {
+    const selectedTask = document.querySelector(`p[data-taskId="${taskId}"]`);
     const listItem = selectedTask.closest('li');
 
     if (isCompleted) {
@@ -1495,7 +1508,7 @@ function completeTask(taskCheckbox, taskLabel, isCompleted) {
 
 // Complete project
 function completeProject(projectId, isCompleted) {
-    const selectedProject = document.querySelector(`p[data-projectId="${globalProjectId}"]`);
+    const selectedProject = document.querySelector(`p[data-projectId="${projectId}"]`);
     const listItem = selectedProject.closest('li');
     
     if (isCompleted) {
