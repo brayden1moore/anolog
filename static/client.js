@@ -24,6 +24,15 @@ function getDaySuffix(day) {
     }
 }
 
+function s(time) {
+    if (time == 1) {
+        return '';
+    }
+    else {
+        return 's';
+    }
+}
+
 function getWeekNumber(date) {
     const currentDate = 
         (typeof date === 'object') ? date : new Date();
@@ -47,8 +56,12 @@ const dayColors = [
 
 // Clear local storage on first load
 window.onload = function() {
+    const keep = localStorage.getItem("month_year_cache");
     localStorage.clear();
-};
+    if (keep !== null) {
+      localStorage.setItem("month_year_cache", keep);
+    }
+  };
 
 // GET from /projects endpoint and populate list
 function populateProjects() {
@@ -284,6 +297,7 @@ function addLogDeleteClickListener(logOptionButton, logItem) {
     logOptionButton.addEventListener('click', () => deleteLog(logItem));
 }
 
+
 // GET from /tasks /hours and /logs endpoints and populate content
 function populateLogs(taskId) {
 
@@ -358,16 +372,81 @@ function populateLogs(taskId) {
     }     
 }
 
+function setMonthYear() {
+    selectedMonth = monthSelect.value;
+    selectedYear = yearSelect.value;
+    const monthYear = { month: selectedMonth, year: selectedYear };
+    localStorage.clear();
+    console.log(monthYear);
+    localStorage.setItem("month_year_cache", JSON.stringify(monthYear));
+    window.location.reload();
+}
+
+function getMonthYear() {
+    // Load month and year
+    let cachedMonthYear = localStorage.getItem("month_year_cache");
+    let selectedMonth, selectedYear;
+    
+    if (cachedMonthYear) {
+        console.log("month and year read from client-side cache");
+        const parsed = JSON.parse(cachedMonthYear);
+        selectedMonth = parsed.month;
+        selectedYear = parsed.year;
+    } else {
+        const currentDate = new Date();
+        selectedYear = currentDate.getFullYear();
+        selectedMonth = currentDate.getMonth();
+        const monthYear = { month: selectedMonth, year: selectedYear };
+        localStorage.setItem("month_year_cache", JSON.stringify(monthYear));
+    }
+
+    return { selectedMonth, selectedYear };
+}
+
+const monthSelect = document.getElementById('month-select');
+const yearSelect = document.getElementById('year-select');
+monthSelect.addEventListener('change', () => setMonthYear());
+yearSelect.addEventListener('change', () => setMonthYear());
+
+
 // Fill day div
 function populateDays() {
     const dayInfo = document.getElementById('day-info');
     const dayDiv = document.querySelector('.day-div');
+    const dayTable = document.getElementById('day-table');
     const monthAbbreviations = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
     const monthAbbrev = monthAbbreviations[month];
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const divWidth = dayDiv.offsetWidth;
+
+    const { selectedMonth, selectedYear } = getMonthYear();
+    
+    // make month select
+    const monthSelect = document.getElementById("month-select");
+    monthAbbreviations.forEach((month, idx) => {
+      const opt = document.createElement("option");
+      opt.value = idx;
+      opt.textContent = month;
+      console.log(selectedMonth);
+      if (idx == selectedMonth) {
+        opt.selected = true;
+      }
+        monthSelect.appendChild(opt);
+    });
+    
+    // make year select
+    const yearSelect = document.getElementById("year-select");
+
+    const currentYear = new Date().getFullYear();
+    for (let y = currentYear; y >= 2023; y--) {
+      const opt = document.createElement("option");
+      opt.value = y;
+      opt.textContent = y;
+      if (y == selectedYear) opt.selected = true;
+      yearSelect.appendChild(opt);
+    }
 
     // Get day data
     let cachedDays = localStorage.getItem(`days_cache`);
@@ -376,7 +455,7 @@ function populateDays() {
         displayDayData(JSON.parse(cachedDays));
     }
     else {
-        fetch(`/days?tz_name=${localTz}`)
+        fetch(`/days?tz_name=${localTz}&month=${selectedMonth}&year=${selectedYear}`)
         .then(response => response.json())
         .then(data => {
             displayDayData(data);
@@ -386,7 +465,8 @@ function populateDays() {
 
     function displayDayData(data){
         // Clear existing content
-        dayDiv.innerHTML = '';
+        const dayTable = document.getElementById('day-table');
+        dayTable.innerHTML = '';
         let maxDuration = 0;
         for (const dayNumber in data) {
             const dayData = data[dayNumber];
@@ -427,7 +507,7 @@ function populateDays() {
 
             if (data[day]){
                 daySquare.style.backgroundColor = dayColors[dayOfWeek];
-                daySquare.dataset.title = `${dayNames[dayOfWeek]}, ${monthAbbrev} ${day}${getDaySuffix(day)}<br><b>${data[day]['hours']} hours</b>, ${weeklyTotals[weekNumber].toFixed(2)} for the week`;
+                daySquare.dataset.title = `${dayNames[dayOfWeek]}, ${monthAbbrev} ${day}${getDaySuffix(day)}<br><b>${data[day]['hours']} hour${s(data[day]['hours'])}</b>, ${weeklyTotals[weekNumber].toFixed(2)} for the week`;
                 daySquare.style.opacity = (data[day]['duration'] / maxDuration) + 0.1;
             }
             else {
@@ -450,13 +530,13 @@ function populateDays() {
             }
 
             document.addEventListener('touchstart', function(event) {
-                if (!dayDiv.contains(event.target)) {
+                if (!dayTable.contains(event.target)) {
                     clearDayInfo();
                 }
             });
 
             document.addEventListener('mouseover', function(event) {
-                if (!dayDiv.contains(event.target)) {
+                if (!dayTable.contains(event.target)) {
                     clearDayInfo();
                 }
             });
@@ -475,7 +555,7 @@ function populateDays() {
             daySquare.addEventListener('mouseover', updateDayInfo(daySquare));
             daySquare.addEventListener('touchstart', updateDayInfo(daySquare));
 
-            dayDiv.appendChild(daySquare);
+            dayTable.appendChild(daySquare);
         }
     }
     resizeDays();
@@ -539,7 +619,9 @@ function getTime(projectId) {
         displayTimeData(JSON.parse(cachedTime));
     }
     else {
-        fetch(`/time?project_id=${projectId}&tz_name=${localTz}`, {credentials: "include"}) 
+        const {selectedMonth, selectedYear} = getMonthYear();
+        console.log(getMonthYear());
+        fetch(`/time?project_id=${projectId}&tz_name=${localTz}&month=${selectedMonth}&year=${selectedYear}`, {credentials: "include"}) 
         .then(response => {
             if (!response.ok) {
                 throw new Error('Network response was not ok');
@@ -611,7 +693,6 @@ function updateTimeDescription(block) {
     duration.textContent = hours;
 
     timeDescription.style.backgroundColor = block.style.backgroundColor;
-    console.log(block.style.backgroundColor);
 
     const timeDescriptionTaskName = document.getElementById('time-description-task-name'); 
     timeDescriptionTaskName.textContent = block.dataset.taskName;
@@ -1403,7 +1484,8 @@ function resizeTimeBlocks() {
     }
 
     const hoursLogged = document.getElementById('hours-logged');
-    hoursLogged.textContent = `${(totalDuration / 60 / 60).toFixed(2)} hours this month, ${(totalDurationThisWeek / 60 / 60).toFixed(2)} this week, ${(totalDurationToday / 60 / 60).toFixed(2)} today`;
+    const hoursRounded = (totalDuration / 60 / 60).toFixed(2);
+    hoursLogged.textContent = `${hoursRounded} hour${s(hoursRounded)} this month, ${(totalDurationThisWeek / 60 / 60).toFixed(2)} this week, ${(totalDurationToday / 60 / 60).toFixed(2)} today`;
 
     timeBlocks.forEach(block => {
         let duration = parseInt(block.dataset.duration, 10);

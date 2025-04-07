@@ -108,9 +108,19 @@ header {
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);
 }
 #day-table {
-    border: 0px;
+    transition: 0.1s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center ;
+    padding-left: 0px;
+    padding-right: 0px;
+    height: 40px;
+    background-color: var(--card-color);
+    border-radius: 10px;
+    width: 100%;
 }
 .day-square {
+    height: 18px;
     transition: 0.2s ease;
 }
 #day-info {
@@ -944,6 +954,18 @@ input[type="datetime-local"] {
 .log-edit-area.dark {
     color: var(--text-color);
     border: none;
+}
+
+#month-select {
+    margin-right: 5px;
+    background-color: var(--text-color);
+    font-size: 14px;
+}
+
+#year-select {
+    margin-right: 5px;
+    background-color: var(--text-color);
+    font-size: 14px;
 }
 
 @keyframes fadeIn {

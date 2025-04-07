@@ -278,17 +278,17 @@ def list_time():
         
         tz_name = request.args.get('tz_name', 'UTC')
         local_tz = pytz.timezone(tz_name)
-        current_date = datetime.now(local_tz)
 
-        start_of_month = datetime(current_date.year, current_date.month, 1)
-        if start_of_month.month == 12: 
-            next_month = datetime(start_of_month.year + 1, 1, 1)  # January of the next year
+        month = int(request.args.get('month')) + 1
+        year = int(request.args.get('year'))
+
+        start_of_month = local_tz.localize(datetime(year, month, 1))
+
+        if month == 12:
+            next_month = local_tz.localize(datetime(year + 1, 1, 1))
         else:
-            next_month = datetime(start_of_month.year, start_of_month.month + 1, 1)
-
-        print(start_of_month)
-        print(next_month)
-        
+            next_month = local_tz.localize(datetime(year, month + 1, 1))
+            
         query_results = (
             session.query(Time.id, Task.id, Task.name, Time.start, Time.end, Time.duration, Time.description)
             .join(Task, Time.task_id == Task.id)
@@ -329,9 +329,8 @@ def get_days():
 
     tz_name = request.args.get('tz_name', 'UTC')
     local_tz = pytz.timezone(tz_name)
-    now_local = datetime.now(local_tz)
-    current_month = now_local.month
-    current_year = now_local.year
+    month = int(request.args.get('month')) + 1
+    year = int(request.args.get('year'))
 
     try:
         session = Session()
@@ -345,8 +344,8 @@ def get_days():
             .filter(
                 Time.user_id == current_user.id, 
                 Time.is_visible == True,
-                func.extract('month', func.timezone('US/Eastern', Time.start)) == current_month,
-                func.extract('year', func.timezone('US/Eastern', Time.start)) == current_year
+                func.extract('month', func.timezone('US/Eastern', Time.start)) == month,
+                func.extract('year', func.timezone('US/Eastern', Time.start)) == year
             )
             .group_by(func.date_trunc('day', func.timezone('US/Eastern', Time.start)))
             .order_by('day')
