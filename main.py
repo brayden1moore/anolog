@@ -744,12 +744,12 @@ def export_csv():
             if model == Time:                
                 wb = Workbook()
                 wb.remove(wb.active)
+                columns_list = list(model.__table__.columns)
                 
                 # Convert to DataFrame
                 rows_data = []
                 for row, project in data:
                     row_dict = {}
-                    columns_list = list(model.__table__.columns)
                     for column in columns_list[4:-1]:
                         value = getattr(row, column.name)
                         if column.name in ['start', 'end'] and value and hasattr(value, 'tzinfo') and value.tzinfo:
