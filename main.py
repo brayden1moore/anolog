@@ -761,7 +761,8 @@ def export_csv():
                 
                 df = pd.DataFrame(rows_data)
                 df.columns = [str(i.name).title() for i in columns_list[4:-1]] + ['Project','Hours']
-                df = df.loc[df['Start'] >= datetime(selected_year, selected_month, 1)]
+                df = df.loc[df['Start'] >= datetime(selected_year, selected_month, 1)].rename(columns={'Start':'Start (Pacific)',
+                                                                                                       'End':'End (Pacific)'})
                 
                 # Summary tab
                 summary = df.groupby('Project')['Hours'].sum().reset_index()
