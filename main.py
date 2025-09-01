@@ -755,20 +755,20 @@ def export_csv():
                         if column.name in ['start', 'end'] and value and hasattr(value, 'tzinfo') and value.tzinfo:
                             value = value.replace(tzinfo=None)
                         row_dict[column.name] = value
-                    row_dict['project'] = project
-                    row_dict['hours'] = getattr(row, 'duration') / 3600
+                    row_dict['Project'] = project
+                    row_dict['Pours'] = getattr(row, 'duration') / 3600
                     rows_data.append(row_dict)
                 
                 df = pd.DataFrame(rows_data)
-                df.columns = [str(i.name).title() for i in columns_list[4:-1]]
+                df.columns = [str(i.name).title() for i in columns_list[4:-1]] + ['Project','Hours']
                 
                 # Summary tab
-                summary = df.groupby('project')['hours'].sum().reset_index()
+                summary = df.groupby('Project')['Hours'].sum().reset_index()
                 make_tab(summary, wb, 'Summary')
                 
                 # Individual project tabs
-                for project in df['project'].unique():
-                    project_df = df[df['project'] == project]
+                for project in df['Project'].unique():
+                    project_df = df[df['Project'] == project]
                     sheet_name = str(project)[:31]  # Excel sheet name limit
                     make_tab(project_df, wb, sheet_name)
                 
