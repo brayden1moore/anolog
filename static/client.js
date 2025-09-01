@@ -417,11 +417,11 @@ function populateDays() {
     const monthAbbreviations = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-    const monthAbbrev = monthAbbreviations[month];
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const divWidth = dayDiv.offsetWidth;
-
     const { selectedMonth, selectedYear } = getMonthYear();
+
+    const monthAbbrev = monthAbbreviations[selectedMonth];
+    const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+    const divWidth = dayDiv.offsetWidth;
     
     // make month select
     const monthSelect = document.getElementById("month-select");
@@ -478,7 +478,7 @@ function populateDays() {
         let weeklyTotals = {};
 
         for (let day = 1; day <= daysInMonth; day++) {
-            let squareDate = new Date(year, month, day);
+            let squareDate = new Date(selectedYear, selectedMonth, day);
             let weekNumber = getWeekNumber(squareDate);
         
             if (data[day] && data[day]['hours']) {
@@ -501,7 +501,7 @@ function populateDays() {
             daySquare.style.margin = '2px';
             daySquare.style.textAlign = 'center';
 
-            let squareDate = new Date(year, month, day)
+            let squareDate = new Date(selectedYear, selectedMonth, day)
             let dayOfWeek = squareDate.getDay();
             let weekNumber = getWeekNumber(squareDate);
 
@@ -2003,17 +2003,24 @@ function exportCsv(arg, id) {
         dataType = 'days';
     }
 
+
+    const { selectedMonth, selectedYear } = getMonthYear();
     const filename = `${prefix}${dataType}_${year}${month}${day}${hour}${minute}`;
 
     // Fetch CSV data and trigger download
-    fetch(`/export_csv?${arg}=${id}`)
+    fetch(`/export_csv?${arg}=${id}&month=${selectedMonth}&year=${selectedYear}`)
     .then(response => response.blob())
     .then(blob => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.style.display = 'none';
         a.href = url;
-        a.download = `${filename}.csv`;  // Use the dynamically generated filename
+        if (dataType == "time") {
+            a.download = `${filename}.xlsx`; 
+        }
+        else {
+            a.download = `${filename}.csv`; 
+        }
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -2040,6 +2047,10 @@ document.querySelector('.toggle').addEventListener('click', function() {
 
 // Open export menu
 const exportButton = document.getElementById('export-button');
+exportButton.addEventListener('click', function() {
+    exportCsv('time',globalProjectId);
+})
+
 const dropdownMenu = document.getElementById('dropdown-menu');
 function addBorderRadius() {
     exportButton.style.borderRadius = '10px 10px 0 0';
@@ -2049,10 +2060,10 @@ function removeBorderRadius() {
     exportButton.style.borderRadius = '10px';  
     exportButton.style.width = '44px';
 }
-exportButton.addEventListener('mouseover', addBorderRadius);
-exportButton.addEventListener('mouseout', removeBorderRadius);
-dropdownMenu.addEventListener('mouseover', addBorderRadius);
-dropdownMenu.addEventListener('mouseout', removeBorderRadius);
+//exportButton.addEventListener('mouseover', addBorderRadius);
+//exportButton.addEventListener('mouseout', removeBorderRadius);
+//dropdownMenu.addEventListener('mouseover', addBorderRadius);
+//dropdownMenu.addEventListener('mouseout', removeBorderRadius);
 
 // Collapse menu only on mobile
 const listContainer = document.querySelector('.list-container');

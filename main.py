@@ -6,12 +6,14 @@ from build_db import User, Project, Task, Log, Time, engine
 from sqlalchemy.orm import relationship, sessionmaker, scoped_session
 from sqlalchemy import desc, func, String, Numeric, cast, extract
 from datetime import datetime, timedelta
+from openpyxl import Workbook
 from io import StringIO
 import csv
 import bcrypt
 import pytz
 import json
 import os
+import io
 
 try: 
     with open('config.json', 'r') as f:
@@ -654,6 +656,14 @@ def update_user():
         Session.remove()
 
 ## Export
+
+import pandas as pd
+from openpyxl.utils.dataframe import dataframe_to_rows
+def make_tab(df, wb, sheet_name):
+    ws = wb.create_sheet(sheet_name)
+    for r in dataframe_to_rows(df, index=False, header=True):
+        ws.append(r)
+
 # Export as csv
 @app.route('/export_csv', methods=['GET'])
 @login_required
@@ -665,6 +675,10 @@ def export_csv():
     time = request.args.get('time')
     days = request.args.get('days')
     auth = request.args.get('auth')
+    selected_month = int(request.args.get('month')) + 1
+    selected_year = int(request.args.get('year'))
+    next_month = selected_month + 1 if selected_month != 12 else 1
+    next_year = selected_year if selected_month != 12 else selected_year + 1
 
     output = StringIO()
     csv_writer = csv.writer(output)
@@ -675,25 +689,25 @@ def export_csv():
         if user_id:
             data = session.query(Project).filter(Project.user_id==user_id, Project.is_visible==True).order_by(Project.created_at.asc()).all()
             model = Project
-            filename = f"anolog_projects_{the_time}"
+            filename = f"anolog_projects_{the_time}.csv"
         elif auth=='0':
             data = session.query(User).order_by(User.created_at.asc()).all()
             model = User
-            filename = f"anolog_users_{the_time}"   
+            filename = f"anolog_users_{the_time}.csv"   
         elif project_id:   
             data = session.query(Task).filter(Task.project_id==project_id, Task.is_visible==True).order_by(Task.created_at.asc()).all()
             model = Task
-            filename = f"anolog_tasks_{the_time}"
+            filename = f"anolog_tasks_{the_time}.csv"
         elif time:
             data = (
                 session.query(Time, Task.name)
                 .join(Task, Time.task_id == Task.id)
-                .filter(Time.project_id == time, Time.is_visible == True)
+                .filter(Time.project_id == time, Time.is_visible == True, Time.start >= datetime(selected_year, selected_month, 1), Time.start < datetime(next_year, next_month, 1))
                 .order_by(Time.start.asc())
                 .all()
             )  
             model = Time
-            filename = f"anolog_logs_{the_time}"
+            filename = f"anolog_time_{the_time}.csv"
         elif days:
             data = (
                 session.query(
@@ -712,7 +726,7 @@ def export_csv():
             ).all()
 
             model = None 
-            filename = f"anolog_time_{the_time}"
+            filename = f"anolog_time_{the_time}.csv"
 
             if data:
                 csv_writer.writerow(['Date', 'Total Hours', 'Formatted Hours', 'Start Time', 'End Time', 'Note'])  
@@ -726,45 +740,57 @@ def export_csv():
                         note
                     ])
 
-
         if model and filename:
-            if model == Time:
-                project_hours = {}
-                csv_writer.writerow([column.name for column in model.__table__.columns][4:-1] + ['project','hours'])
+            if model == Time:                
+                wb = Workbook()
+                wb.remove(wb.active)
+                
+                # Convert to DataFrame
+                rows_data = []
                 for row, project in data:
-                    row_data = [getattr(row, column.name) for column in model.__table__.columns]
-                    hours = getattr(row, 'duration') / 3600
-                    csv_writer.writerow(row_data[4:-1] + [project, hours])
-                    
-                    if project in project_hours:
-                        project_hours[project] += hours
-                    else:
-                        project_hours[project] = hours
-
-                csv_writer.writerow([''])
-
-                grand_total = 0
-                for project, total_hours in project_hours.items():
-                    csv_writer.writerow(['','','','',project, total_hours])
-                    grand_total += total_hours
-                csv_writer.writerow(['','','','','',''])
-                csv_writer.writerow(['','','','','Total',grand_total])
-            else:
-                if model and filename:
-                    csv_writer.writerow([column.name for column in model.__table__.columns])
-                for row in data:
-                    csv_writer.writerow([getattr(row, column.name) for column in model.__table__.columns])
+                    row_dict = {}
+                    for column in model.__table__.columns[4:-1]:
+                        value = getattr(row, column.name)
+                        if column.name in ['start', 'end'] and value and hasattr(value, 'tzinfo') and value.tzinfo:
+                            value = value.replace(tzinfo=None)
+                        row_dict[column.name] = value
+                    row_dict['project'] = project
+                    row_dict['hours'] = getattr(row, 'duration') / 3600
+                    rows_data.append(row_dict)
+                
+                df = pd.DataFrame(rows_data)
+                
+                # Summary tab
+                summary = df.groupby('project')['hours'].sum().reset_index()
+                make_tab(summary, wb, 'Summary')
+                
+                # Individual project tabs
+                for project in df['project'].unique():
+                    project_df = df[df['project'] == project]
+                    sheet_name = str(project)[:31]  # Excel sheet name limit
+                    make_tab(project_df, wb, sheet_name)
+                
+                filename = filename.replace('.csv', '.xlsx')
+                excel_buffer = io.BytesIO()
+                wb.save(excel_buffer)
+                excel_buffer.seek(0)
+                
+                return Response(
+                    excel_buffer.getvalue(),
+                    mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    headers={"Content-disposition": f"attachment; filename={filename}"}
+                )
+        else: 
+            output.seek(0)
+    
+            return Response(
+                output,
+                mimetype="text/csv" if not time else 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                headers={"Content-disposition": f"attachment; filename={filename}"}
+            )
 
     finally:
         Session.remove()
-    
-    output.seek(0)
-    
-    return Response(
-        output,
-        mimetype="text/csv",
-        headers={"Content-disposition": f"attachment; filename={filename}.csv"}
-    )
 
 
 if __name__ == '__main__':

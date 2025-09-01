@@ -566,7 +566,7 @@ li {
 }
 .export-button:hover{
     opacity:0.5;
-}
+}/*
 .export-option {
     background-color: var(--text-color);
     height: 40px;
@@ -581,7 +581,7 @@ li {
 .export-option:hover {
     background-color: var(--card-color);
     color: var(--text-color);
-}
+} */
 .logout-button {
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);
     background-color: var(--card-color);
@@ -664,7 +664,7 @@ li {
     transition: 0.2s ease;
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);
 }
-#export-button:hover + .dropdown-menu,
+/*#export-button:hover + .dropdown-menu,
 .dropdown-menu:hover {
     height: 160px;
     width: 80px;
@@ -672,7 +672,7 @@ li {
 }
 #export-button:hover  {
     width: 80px;
-}
+}*/
 #time-csv {
     border-radius:  0 0 10px 10px;
 }
