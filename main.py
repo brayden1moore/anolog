@@ -760,7 +760,7 @@ def export_csv():
                     rows_data.append(row_dict)
                 
                 df = pd.DataFrame(rows_data)
-                df.columns = [i.title() for i in columns_list[4:-1]]
+                df.columns = [str(i.name).title() for i in columns_list[4:-1]]
                 
                 # Summary tab
                 summary = df.groupby('project')['hours'].sum().reset_index()
