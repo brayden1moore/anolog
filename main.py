@@ -749,7 +749,8 @@ def export_csv():
                 rows_data = []
                 for row, project in data:
                     row_dict = {}
-                    for column in model.__table__.columns[4:-1]:
+                    columns_list = list(model.__table__.columns)
+                    for column in columns_list[4:-1]:
                         value = getattr(row, column.name)
                         if column.name in ['start', 'end'] and value and hasattr(value, 'tzinfo') and value.tzinfo:
                             value = value.replace(tzinfo=None)
