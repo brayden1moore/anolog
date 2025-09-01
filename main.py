@@ -753,7 +753,7 @@ def export_csv():
                     for column in columns_list[4:-1]:
                         value = getattr(row, column.name)
                         if column.name in ['start', 'end'] and value and hasattr(value, 'tzinfo') and value.tzinfo:
-                            value = value.replace(tzinfo=None)
+                            value = value.astimezone(pytz.timezone('US/Pacific')).replace(tzinfo=None)
                         row_dict[column.name] = value
                     row_dict['Project'] = project
                     row_dict['Pours'] = getattr(row, 'duration') / 3600
@@ -761,6 +761,7 @@ def export_csv():
                 
                 df = pd.DataFrame(rows_data)
                 df.columns = [str(i.name).title() for i in columns_list[4:-1]] + ['Project','Hours']
+                df = df.loc[df['Start'] >= datetime(selected_year, selected_month, 1)]
                 
                 # Summary tab
                 summary = df.groupby('Project')['Hours'].sum().reset_index()
