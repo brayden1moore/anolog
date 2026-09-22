@@ -812,6 +812,7 @@ input[type="datetime-local"] {
     opacity: 0.55;
 }
 
+
 /* ---------- right column ---------- */
 #time-column {
     min-width: 0;
@@ -1121,7 +1122,6 @@ input[type="datetime-local"] {
 .editor .fields {
     display: flex;
     flex-wrap: wrap;
-    align-items: flex-end;
     gap: 12px 16px;
     margin-top: 14px;
 }
@@ -1202,6 +1202,10 @@ input[type="datetime-local"] {
     text-align: center;
     color: var(--muted);
     font-size: 10pt;
+}
+
+#task-select {
+    margin-top: 9px;
 }
 
 /* every task reads as active now that selection does nothing */
