@@ -906,6 +906,8 @@ input[type="datetime-local"] {
     place-items: center;
     font-size: 11px;
     transition: transform 0.2s var(--ease);
+    padding-left: 7px;
+    padding-top: 3px;
 }
 #toggle-button:hover {
     transform: scale(1.08);
