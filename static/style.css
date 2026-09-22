@@ -805,7 +805,7 @@ input[type="datetime-local"] {
     box-shadow: none;
 }
 .day-block.info-open #day-info {
-    height: 64px;
+    height: 40px;
     padding: 9px 18px 16px;
 }
 #day-info .dim {
