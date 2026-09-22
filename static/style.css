@@ -237,8 +237,8 @@ h2 {
     max-height: 500px;
     overflow-y: scroll;
     margin-left: 0;
-    padding-left: 2px;
-    list-style-type: none;
+    padding-left: 20px;
+    list-style-type:circle;
     color: var(--text-color);
 }
 #new-project-li, #new-task-li {
@@ -791,13 +791,13 @@ input[type="datetime-local"] {
 #day-info {
     height: 0;
     overflow: hidden;
-    padding: 0 18px;
+    padding: 0 14px;
     border: none;
     border-radius: 0 0 10px 10px;
     background-color: var(--card-color);
     color: var(--text-color);
-    font-size: 13px;
-    line-height: 21px;
+    font-size: 12px;
+    line-height: 18px;
     box-shadow: 0 6px 15px 0 rgba(0, 0, 0, 0.19);
     transition: height 0.18s var(--ease), padding 0.18s var(--ease), box-shadow 0.18s var(--ease);
 }
@@ -805,8 +805,8 @@ input[type="datetime-local"] {
     box-shadow: none;
 }
 .day-block.info-open #day-info {
-    height: 64px;
-    padding: 9px 18px 16px;
+    height: 48px;
+    padding: 6px 14px 10px;
 }
 #day-info .dim {
     opacity: 0.55;
@@ -927,7 +927,7 @@ input[type="datetime-local"] {
     border-bottom: 1px solid var(--faint);
 }
 .entries-head h2 {
-    font-size: 12pt;
+    font-size: 11pt;
     margin: 0;
 }
 .add-entry {
@@ -1212,10 +1212,14 @@ input[type="datetime-local"] {
     display: flex;
     align-items: center;
     gap: 9px;
-    margin:0px;
 }
 #task-list-ul .task-or-project:hover {
     border-bottom: 1px solid transparent;
+}
+/* the colour swatch is the marker now */
+#task-list-ul {
+    list-style-type: none;
+    padding-left: 0;
 }
 .task-swatch {
     width: 9px;
