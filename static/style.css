@@ -927,7 +927,7 @@ input[type="datetime-local"] {
     border-bottom: 1px solid var(--faint);
 }
 .entries-head h2 {
-    font-size: 11pt;
+    font-size: 12pt;
     margin: 0;
 }
 .add-entry {
