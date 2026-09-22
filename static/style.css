@@ -238,7 +238,7 @@ h2 {
     overflow-y: scroll;
     margin-left: 0;
     padding-left: 2px;
-    list-style-type:circle;
+    list-style-type: none;
     color: var(--text-color);
 }
 #new-project-li, #new-task-li {
