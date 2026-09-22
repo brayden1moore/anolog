@@ -103,7 +103,7 @@ header {
     margin-top: 25px;
     display: grid;
     grid-template-columns: 260px minmax(0, 1fr);
-    gap: 22px;
+    gap: 25px;
     align-items: start;
 }
 .list-container {
@@ -115,17 +115,14 @@ header {
     box-sizing: border-box;
     background-color: var(--card-color);
     border-radius: 10px;
-    margin-bottom: 25px;
-    margin-right: 25px;
     height: fit-content;
-    width: auto;
+    width: 100%;
     transition: 0.2s ease;
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);
 }
 .list-container:focus-within {
-    overflow:visible; 
-    color: var(--card-color);           
-    width: 270px;
+    overflow: visible;
+    color: var(--card-color);
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);
 }
 .list-collapsed #project-list-ul, .list-collapsed #task-list-ul {
@@ -1228,13 +1225,14 @@ input[type="datetime-local"] {
     display: inline-block;
     position: relative;
     cursor: pointer;
+    transform-origin: left center;
     transition: transform 0.15s var(--ease), box-shadow 0.15s ease;
 }
 /* invisible 21px hit area, so a 9px swatch is still clickable */
 .task-swatch::after {
     content: '';
     position: absolute;
-    inset: -6px;
+    inset: -6px -6px -6px 0;
 }
 .task-or-project:hover .task-swatch {
     transform: scale(1.25);
