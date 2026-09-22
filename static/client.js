@@ -151,6 +151,7 @@ function populateTasks(projectId) {
 
             const newTaskListItem = document.createElement('li');
             newTaskListItem.classList.add('task-or-project-li');
+            newTaskListItem.style.height = '0px';
 
             const newTaskLink = document.createElement('p');
             newTaskLink.className = 'task-or-project';
@@ -201,15 +202,29 @@ function setMonthYear() {
     const monthSelect = document.getElementById('month-select');
     const yearSelect = document.getElementById('year-select');
     localStorage.setItem('month_year_cache', JSON.stringify({
-        selectedMonth: parseInt(monthSelect.value, 10),
-        selectedYear: parseInt(yearSelect.value, 10)
+        month: parseInt(monthSelect.value, 10),
+        year: parseInt(yearSelect.value, 10)
     }));
 }
 
 function getMonthYear() {
-    const cached = localStorage.getItem('month_year_cache');
-    if (cached) return JSON.parse(cached);
-    return { selectedMonth: today.getMonth(), selectedYear: today.getFullYear() };
+    let selectedMonth = today.getMonth();
+    let selectedYear = today.getFullYear();
+
+    try {
+        const cached = JSON.parse(localStorage.getItem('month_year_cache'));
+        if (cached) {
+            // older caches used {month, year}; accept either and ignore anything unusable
+            const month = parseInt(cached.month !== undefined ? cached.month : cached.selectedMonth, 10);
+            const year = parseInt(cached.year !== undefined ? cached.year : cached.selectedYear, 10);
+            if (month >= 0 && month <= 11) selectedMonth = month;
+            if (year > 1970) selectedYear = year;
+        }
+    } catch (e) {
+        console.warn('month_year_cache unreadable, falling back to this month');
+    }
+
+    return { selectedMonth, selectedYear };
 }
 
 /* ============================================================
@@ -822,9 +837,13 @@ function populateDays() {
             option.textContent = year;
             yearSelect.appendChild(option);
         }
-        const { selectedMonth, selectedYear } = getMonthYear();
-        monthSelect.value = selectedMonth;
-        yearSelect.value = selectedYear;
+        const cachedMonthYear = getMonthYear();
+        monthSelect.value = cachedMonthYear.selectedMonth;
+        yearSelect.value = cachedMonthYear.selectedYear;
+        // a cached year outside the option range would leave the select empty
+        if (monthSelect.value === '') monthSelect.value = today.getMonth();
+        if (yearSelect.value === '') yearSelect.value = today.getFullYear();
+        setMonthYear();
 
         [monthSelect, yearSelect].forEach(select => {
             select.addEventListener('change', function() {
@@ -1356,9 +1375,13 @@ document.getElementById('logout-button').addEventListener('click', function() {
 });
 
 // Toggle darkmode
-function toggleDarkmode() {
+function toggleDarkmode(initialToggle) {
     const title = document.querySelector('h1');
     const darkmodeIcon = document.querySelector('#darkmode-icon');
+
+    if (initialToggle) {
+        darkmode = !darkmode;
+    }
 
     if (darkmode) {
         darkmode = false;
@@ -1383,8 +1406,10 @@ function toggleDarkmode() {
     }
     firstLoad = false;
 }
-document.querySelector('.darkmode-button').addEventListener('click', toggleDarkmode);
-toggleDarkmode();
+document.querySelector('.darkmode-button').addEventListener('click', function() {
+    toggleDarkmode();
+});
+toggleDarkmode(true);
 
 // Toggle show completed
 function toggleShowCompleted(type) {

@@ -1213,6 +1213,9 @@ input[type="datetime-local"] {
     align-items: center;
     gap: 9px;
 }
+#task-list-ul .task-or-project:hover {
+    border-bottom: 1px solid transparent;
+}
 .task-swatch {
     width: 9px;
     height: 9px;
