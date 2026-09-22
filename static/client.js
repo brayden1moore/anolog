@@ -35,8 +35,9 @@ function pad(n) {
     return String(n).padStart(2, '0');
 }
 
-// Colour a task keeps for good: its position in the project's task list, then the
-// palette cycles. Tasks that have since been completed or hidden fall back to a hash.
+// A task's colour: whatever the user picked, otherwise its position in the project's
+// task list with the palette cycling. Tasks that have since been completed or hidden
+// aren't in the list at all, so those fall back to a hash of the id.
 function colorForTask(taskId) {
     if (taskColors[taskId]) return taskColors[taskId];
     return taskPalette[Math.abs(parseInt(taskId, 10) || 0) % taskPalette.length];
@@ -147,7 +148,7 @@ function populateTasks(projectId) {
         currentTasks = data.filter(task => task.is_visible !== false);
 
         currentTasks.forEach((task, index) => {
-            taskColors[task.id] = taskPalette[index % taskPalette.length];
+            taskColors[task.id] = task.color || taskPalette[index % taskPalette.length];
 
             const newTaskListItem = document.createElement('li');
             newTaskListItem.classList.add('task-or-project-li');
@@ -156,8 +157,11 @@ function populateTasks(projectId) {
             const newTaskLink = document.createElement('p');
             newTaskLink.className = 'task-or-project';
             newTaskLink.innerHTML =
-                `<span class="task-swatch" style="background-color:${taskColors[task.id]}"></span>` +
-                `<span>${escapeHtml(task.name)}</span>`;
+                `<label class="task-swatch" title="Change colour" style="background-color:${taskColors[task.id]}">` +
+                    `<input type="color" class="task-color-input" value="${taskColors[task.id]}">` +
+                `</label>` +
+                `<span class="task-name">${escapeHtml(task.name)}</span>`;
+            addColorPickerListener(newTaskLink, task.id);
             newTaskLink.dataset.totalSeconds = task.total_seconds;
             newTaskLink.dataset.isCompleted = task.is_completed;
             newTaskLink.setAttribute('data-taskId', task.id);
@@ -196,6 +200,45 @@ function populateTasks(projectId) {
             localStorage.setItem(`tasks_cache_${projectId}`, JSON.stringify(data));
         });
     }
+}
+
+// Clicking a swatch opens the browser colour picker. Dragging previews live on the
+// entry cards; the value is only saved when the picker commits.
+function addColorPickerListener(taskLink, taskId) {
+    const input = taskLink.querySelector('.task-color-input');
+    if (!input) return;
+
+    input.addEventListener('input', () => applyTaskColor(taskId, input.value));
+    input.addEventListener('change', () => {
+        applyTaskColor(taskId, input.value);
+        saveTaskColor(taskId, input.value);
+    });
+}
+
+// Repaint without rebuilding the list, so dragging the picker stays smooth
+function applyTaskColor(taskId, color) {
+    taskColors[taskId] = color;
+    const task = currentTasks.find(t => t.id == taskId);
+    if (task) task.color = color;
+
+    const swatch = document.querySelector(`[data-taskid="${taskId}"] .task-swatch`);
+    if (swatch) swatch.style.backgroundColor = color;
+
+    document.querySelectorAll(`.entry-wrap[data-task-id="${taskId}"]`).forEach(wrap => {
+        wrap.style.setProperty('--accent', color);
+        wrap.style.setProperty('--on-accent', inkOn(color));
+    });
+}
+
+function saveTaskColor(taskId, color) {
+    fetch('/tasks', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskId: taskId, color: color })
+    })
+    .then(response => response.json())
+    .then(() => localStorage.removeItem(`tasks_cache_${globalProjectId}`))
+    .catch(error => console.error('There has been a problem with your fetch operation:', error));
 }
 
 function setMonthYear() {
@@ -432,6 +475,7 @@ function buildEntryCard(entry) {
     const wrap = document.createElement('div');
     wrap.className = 'entry-wrap' + (isOpen ? ' open' : '') + (entry.isNew ? ' pending' : '');
     wrap.dataset.id = entry.id;
+    wrap.dataset.taskId = view.taskId;
     wrap.style.setProperty('--accent', accent);
     wrap.style.setProperty('--on-accent', inkOn(accent));
 
@@ -1054,8 +1098,8 @@ function addHoverListener(newLink, elementType, elementId) {
                         newLink.textContent = inputElement.value;
                     } else {
                         renameTask(newLink.getAttribute('data-taskId'), inputElement.value);
-                        const swatch = newLink.querySelector('.task-swatch');
-                        newLink.innerHTML = (swatch ? swatch.outerHTML : '') + `<span>${escapeHtml(inputElement.value)}</span>`;
+                        const nameSpan = newLink.querySelector('.task-name');
+                        if (nameSpan) nameSpan.textContent = inputElement.value;
                     }
 
                     if (inputElement.parentNode) inputElement.parentNode.replaceChild(newLink, inputElement);

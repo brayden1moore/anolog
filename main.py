@@ -248,7 +248,7 @@ def list_tasks():
     try:
         project_id = request.args.get('project_id')
         tasks = session.query(Task).filter(Task.project_id==project_id, Task.is_visible==True).order_by(Task.is_completed.asc(), Task.name.asc()).all()
-        tasks_json = [{'id':task.id,'name':task.name,'total_seconds':task.total_seconds, 'is_completed':task.is_completed, 'is_visible':task.is_visible} for task in tasks]
+        tasks_json = [{'id':task.id,'name':task.name,'total_seconds':task.total_seconds, 'is_completed':task.is_completed, 'is_visible':task.is_visible, 'color':task.color} for task in tasks]
         
         return tasks_json
     finally:
@@ -534,9 +534,12 @@ def update_task():
         is_completed = data.get('isCompleted')
         is_visible = data.get('isVisible')
         total_seconds = data.get('totalSeconds')
+        color = data.get('color')
 
         if name:
             task.name = name
+        if color:
+            task.color = color
         if is_completed is not None:
             task.is_completed = is_completed
         if is_visible is not None:
