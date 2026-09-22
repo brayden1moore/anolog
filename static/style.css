@@ -1238,7 +1238,7 @@ input[type="datetime-local"] {
     transform: scale(1.25);
 }
 .task-swatch:hover {
-    box-shadow: 0 0 0 1px rgba(250, 230, 215, 0.25);
+    transform: scale(1.4);
 }
 .task-color-input {
     position: absolute;
