@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>Anolog</title>
+</head>
+<body class="light">
+
+<div id="header-div">
+    <h1>ANOLOG</h1>
+    <div id="options-div">
+        <p class="option" id="light">LIGHT</p>
+        <p class="option" id="export">EXPORT</p>
+        <p class="option" id="logout">LOGOUT</p>
+    </div>
+</div>
+
+<div id="summary-div"></div>
+
+<div id="projects-div">
+    <div class="project" id="project-128">FPS</div>
+    <div class="project" id="project-129">NPact</div>
+    <div class="project new-project">+</div>
+</div>
+
+<div id="main-div">
+    <div id="task-div">
+        <div class="a-task" id="task-123">
+            <div class="task-name">VCF</div>
+        </div>
+
+        <div class="a-task" id="task-124">
+            <div class="task-name">OCF</div>
+        </div>
+
+        <div class="a-task" id="task-125">
+            <div class="task-name">PEF</div>
+        </div>
+    </div>
+
+    <div id="time-div">
+        <div id="log-time-div">
+            <div id="log-time-label">LOG TIME</div>
+            <div id="project-and-task-div">
+                Project: <select id="project-select">
+                    <option>FPS</option>
+                    <option>NPact</option>
+                </select>
+                Task: <select id="task-select">
+                    <option>VCF</option>
+                    <option>OCF</option>  
+                    <option>PEF</option>  
+                </select>
+            </div>
+            <div id="date-pickers">From: <input class='datetime-input' type="datetime-local" id="start-time-input"> To: <input class='datetime-input' type="datetime-local" id="end-time-input"><i id="commit-time-block-button" title="Commit Changes" class="fa-solid fa-check"></i></div>
+            Summary: <input id="new-log-description" placeholder="Describe what you did...">
+        </div>
+    </div>
+
+    <div id="cal-div">
+        <div id="month-div">
+            <div class="change-month" id="prev-month"><</div>
+            <div id="current-month"></div>
+            <div class="change-month" id="next-month">></div>       
+        </div>
+
+        <div class="days-of-week" id="weekday-abbrevs">
+            <div class="weekday-abbrev day sunday">S</div>
+            <div class="weekday-abbrev day">M</div>
+            <div class="weekday-abbrev day">T</div>
+            <div class="weekday-abbrev day">W</div>
+            <div class="weekday-abbrev day">T</div>
+            <div class="weekday-abbrev day">F</div>
+            <div class="weekday-abbrev day saturday">S</div>
+        </div>
+
+        <div id="days-div"></div>
+
+    </div>
+</div>
+    
+</body>
+</html>
+<style>
+
+body {
+    font-family: "Andale Mono";
+    --yellow: #FFFF00;
+    --blue: #00BBFF;
+    --red: #FF4747;
+    --purple: #8661F5;
+    --orange: #FF8000;
+    --green: #00E7C0;
+}
+
+.light {
+    background-color: white;
+    color: black
+}
+
+.dark {
+    background-color: rgb(100, 100, 100);
+}
+
+@font-face {
+  font-family: "Andale Mono";
+  src: url("andalemono.ttf") format("truetype");
+  font-style:normal;
+  font-weight: 1 1000;
+}
+
+#header-div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+#options-div {
+    display: flex;
+    align-items: center;
+    gap: 1em;
+    cursor: pointer;
+}
+
+.option:hover{
+    border-bottom: 1px solid black;
+}
+
+h1 {
+    font-family: "Arial Black";
+    cursor: default;
+}
+
+body { 
+    height: 70vh;
+    margin: 40px;
+}
+
+#summary-div {
+    border: 1px black solid;
+    height: 100px;
+    margin-bottom: 30px;
+    display: flex;
+    width: 100%;
+}
+
+#new-log-description {
+    width: auto;
+}
+
+#projects-div {
+    border: none;
+    border-left: 1px solid black;
+    height: 50px;
+    display: flex;
+}
+
+#main-div {
+    height: 90%;
+    border: 1px black solid;
+    display: flex;
+    padding: 30px;
+}
+
+#task-div {
+    padding: 20px;
+    flex: 0.5;
+    border: 1px black solid;
+    margin-right: 20px;
+}
+
+#time-div {
+    padding: 20px;
+    flex: 0.8;
+    border: 1px black solid;
+    margin-right: 20px;
+}
+
+#cal-div {
+    flex: 1;
+}
+
+input {
+    outline: 0;
+    border: 1px solid black;
+    height: 20px;
+}
+
+#log-time-div {
+    border: 1px black solid;  
+    padding: 20px;
+}
+
+#log-time-label {
+    border-bottom: 1px solid black;
+    margin-bottom: 20px;
+}
+
+#project-select, #task-select {
+    margin-bottom: 10px;
+}
+
+#date-pickers {
+    margin-bottom: 10px;
+}
+
+.a-task {
+    margin-bottom: 20px;
+    border: 1px solid black;
+    height: 50px;
+    flex: 1;
+    cursor: pointer;
+}
+
+.a-task:hover {
+    background-color: black !important;
+    color: white;
+}
+
+.task-name {
+    padding-left: 20px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+#task-123 {
+    background-color: var(--green);
+}
+
+#task-124 {
+    background-color: var(--blue);
+}
+
+#task-125 {
+    background-color: var(--orange);
+}
+
+.project {
+    display: flex;
+    font-family: "Andale Mono";
+    border: 1px solid black;
+    border-left: 0;
+    border-bottom: 0;
+    min-width: 100px;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+}
+
+.project:hover {
+    background-color: black !important; 
+    color: white; 
+}
+
+.new-project {
+    min-width: 50px !important;
+    border: 1px solid transparent;
+    border-left: 0;
+    border-bottom: 0;
+}
+
+.new-project:hover {
+    background-color: transparent !important;
+    color: black;
+    border: 1px dashed black;
+    border-left: 0;
+    border-bottom: 0;
+}
+
+#project-128 {
+    background-color: var(--yellow);
+}
+
+.change-month {
+    flex: 0.195;
+    cursor: pointer;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.change-month:hover {
+    color: black;
+    background-color: white;
+}
+
+#current-month {
+    flex: 1;
+}
+
+#month-div {
+    height: 50px;
+    width: 100%;
+    display: flex;
+    text-align: center;
+    align-items: center;
+    cursor:default;
+    background-color: black;
+    color: white;
+    border: 1px solid black;
+}
+
+.weekday-abbrev {
+    justify-content: center !important;
+    align-items: center;
+    background-color: var(--yellow);
+    font-size: 12pt !important;
+    border-top: 1px solid black;
+}
+
+.days-of-week {
+    display: flex;
+    height: 60px;
+    align-items: center;
+    width: calc(100% + 2px);
+}
+
+.day {
+    cursor:default;
+    height: 100%;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-left: 1px solid black;
+    border-bottom: 1px solid black;
+}
+
+.last-day {
+    border-right: 1px solid black;
+}
+
+.blank-day-beginning {
+    border-left: 1px solid transparent;
+}
+
+.blank-day-end {
+    border-left: 0;
+    border-right: 1px solid transparent !important;
+    border-bottom: 0;
+}
+
+
+/**.sunday {
+    border-left: 0;
+}**/
+
+.saturday {
+    border-right: 1px solid black;
+}
+
+@media screen and (max-width: 1000px) {
+
+    #main-div {
+        display: block;
+        height: auto;
+    }
+    #task-div {
+        border: 1px black solid;
+        margin-bottom: 20px;
+        padding-right: 0px;
+        margin-right: 0px;
+        display: flex;
+    }
+
+    .a-task {
+        margin-bottom: 0px;
+        margin-right: 20px;
+    }
+
+    #time-div {
+        border: 1px black solid;
+        margin-bottom: 20px;
+        margin-right: 0px;
+    }
+}
+
+</style>
+
+<script>
+
+function toggleLight() {
+    elements = document.querySelectorAll('div');
+    elements.forEach(element => {
+        console.log(element.style.border);
+        element.style.border = element.style.border.replace('black','white') + '!important';
+        //console.log(element.style.border);
+    });
+    const body = document.body;
+    body.classList.add('dark');
+    body.classList.remove('light');
+    
+    const light = document.getElementById('light');
+    light.textContent = 'DARK';
+}
+
+document.getElementById('light').addEventListener('click', toggleLight);
+
+function makeCalendar(direction) {
+
+    const daysDiv = document.getElementById('days-div');
+    const currentMonth = document.getElementById('current-month');
+    const monthAbbreviations = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    
+    daysDiv.innerHTML = '';
+
+    let today = new Date();
+    let thisYear = today.getFullYear();
+    let thisMonth = today.getMonth();
+
+    if (direction == -1) {
+        if (currentMonth.dataset.month == 0) {
+            thisYear = Number(currentMonth.dataset.year) - 1;
+            thisMonth = 11;
+        }
+        else {
+            thisYear = Number(currentMonth.dataset.year);
+            thisMonth = Number(currentMonth.dataset.month) - 1;
+        }
+    }
+    else if (direction == 1) {
+        if (currentMonth.dataset.month == 11) {
+            thisYear = Number(currentMonth.dataset.year) + 1;
+            thisMonth = 0;
+        }
+        else {
+            thisYear = currentMonth.dataset.year;
+            thisMonth = Number(currentMonth.dataset.month) +1;
+            console.log(thisMonth);
+        }
+    }
+
+    let firstOfMonth = new Date(year=thisYear, month=thisMonth, day=1);
+    let blankDays = firstOfMonth.getDay();
+    let daysInMonth = new Date(thisYear, thisMonth + 1, 0).getDate();
+
+    currentMonth.textContent = `${monthAbbreviations[thisMonth]} ${thisYear}`;
+    currentMonth.dataset.month = thisMonth;
+    currentMonth.dataset.year = thisYear;
+
+    let i = 1;
+    let b = 1;
+    let daysInWeek = 0;
+    while (i <= daysInMonth) {
+        newRow = document.createElement('div');
+        newRow.classList.add('days-of-week');
+
+        while (daysInWeek < 7) {
+            const newDay = document.createElement('div');
+            newDay.classList.add('day'); 
+            
+            if (daysInWeek == 0) {
+                newDay.classList.add('sunday');
+            }
+            else if (daysInWeek == 6) {
+                newDay.classList.add('saturday');
+            }
+
+            if (i == daysInMonth) {
+                newDay.classList.add('last-day');
+            }
+
+            if ((i > daysInMonth)) {
+                newDay.classList.add('blank-day-end');
+            }
+            else if ((b <= blankDays)) {
+                newDay.classList.add('blank-day-beginning');
+                b++;
+            }
+            else {
+                newDay.textContent = i;
+                i++;
+            }
+
+            newRow.appendChild(newDay);
+            daysInWeek++;
+        }
+
+        daysDiv.appendChild(newRow);
+        daysInWeek = 0;
+    }
+}
+
+makeCalendar();
+
+const prevMonth = document.getElementById('prev-month');
+const nextMonth = document.getElementById('next-month');
+prevMonth.addEventListener('click', () => makeCalendar(-1))
+nextMonth.addEventListener('click', () => makeCalendar(1))
+
+
+</script>

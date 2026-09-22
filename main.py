@@ -1,6 +1,6 @@
 from urllib import response
 from flask_mail import Mail, Message
-from flask import session as flask_session
+from flask import session as Uploadvvvion
 from flask import Flask, request, jsonify, render_template, Response, redirect, url_for, abort
 from build_db import User, Project, Task, Log, Time, engine
 from sqlalchemy.orm import relationship, sessionmaker, scoped_session
@@ -314,7 +314,7 @@ def list_time():
                 'start': start.strftime('%Y-%m-%dT%H:%M'), 
                 'end': end.strftime('%Y-%m-%dT%H:%M'), 
                 'duration': duration,
-                'description': 'Add a description...' if not description else description
+                'description': description or ''
             }
             for time_id, task_id, task_name, start, end, duration, description in query_results
         ]
@@ -603,27 +603,48 @@ def update_time():
         is_visible = data.get('isVisible')
 
         if time_id == '-1':
-                    time = Time(user_id=current_user.id, project_id=project_id, task_id=task_id, start=start, end=end, duration=duration, description=description)
-                    session.add(time)
-                    session.commit()
+            time = Time(user_id=current_user.id, project_id=project_id, task_id=task_id, start=start, end=end, duration=duration, description=description)
+            session.add(time)
+            session.commit()
+
+            project = session.query(Project).filter(Project.id == project_id).first()
+            task = session.query(Task).filter(Task.id == task_id).first()
+            if project:
+                project.updated_at = datetime.now()
+            if task:
+                task.updated_at = datetime.now()
+
+            session.commit()
         else:
             time = session.query(Time).filter(Time.id == time_id).first()
-            
+
+            if time is None:
+                return jsonify({"message": "Time block not found"}), 404
+
+            previous_task_id = time.task_id
+
             if is_visible is not None:
                 time.is_visible = is_visible
             else:
+                if task_id is not None:
+                    time.task_id = task_id
                 time.start = start
                 time.end = end
                 time.duration = duration
                 time.description = description
 
             project = session.query(Project).filter(Project.id == project_id).first()
-            task = session.query(Task).filter(Task.id == task_id).first()
-            project.updated_at = datetime.now()
-            task.updated_at = datetime.now()
+            if project:
+                project.updated_at = datetime.now()
+
+            # an entry can move between tasks, so touch whichever it left and whichever it joined
+            for affected_task_id in {previous_task_id, time.task_id}:
+                task = session.query(Task).filter(Task.id == affected_task_id).first()
+                if task:
+                    task.updated_at = datetime.now()
 
             session.commit()
-        
+
         return jsonify({"message": "Time block updated",
                         "time_id": time.id}), 200
 

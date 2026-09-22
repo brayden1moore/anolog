@@ -1,21 +1,24 @@
 var globalProjectId;
 var globalTaskId;
-var globalLogId;
-var globalSeconds;
 
-let intervalId = null;
 let firstLoad = true;
 let showCompletedTasks = false;
 let showCompletedProjects = false;
 
 const today = new Date();
-const year = today.getFullYear();
-const month = today.getMonth();
-const todaysDayOfWeek = today.getDay();
 const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
+// Task colours: the original seven plus a violet, so eight tasks never collide
+const taskPalette = [
+    '#41a5f1', '#fd6d5d', '#67ce6a', '#d379bd', '#fff955', '#9d7cf0', '#2d3b5f', '#7f2828'
+];
+let taskColors = {};
+
+const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
 function getDaySuffix(day) {
-    if (day >= 11 && day <= 13) return "th"; 
+    if (day >= 11 && day <= 13) return "th";
     switch (day % 10) {
         case 1: return "st";
         case 2: return "nd";
@@ -25,55 +28,57 @@ function getDaySuffix(day) {
 }
 
 function s(time) {
-    if (time == 1) {
-        return '';
-    }
-    else {
-        return 's';
-    }
+    return (time == 1) ? '' : 's';
 }
 
-function getWeekNumber(date) {
-    const currentDate = 
-        (typeof date === 'object') ? date : new Date();
-    const januaryFirst = 
-        new Date(currentDate.getFullYear(), 0, 1);
-    const daysToNextMonday = 
-        (januaryFirst.getDay() === 1) ? 0 : 
-        (7 - januaryFirst.getDay()) % 7;
-    const nextMonday = 
-        new Date(currentDate.getFullYear(), 0, 
-        januaryFirst.getDate() + daysToNextMonday);
-
-    return (currentDate < nextMonday) ? 52 : 
-    (currentDate > nextMonday ? Math.ceil(
-    (currentDate - nextMonday) / (24 * 3600 * 1000) / 7) : 1);
+function pad(n) {
+    return String(n).padStart(2, '0');
 }
 
-const dayColors = [
-    '#7f2828','#fff955','#41a5f1','#fd6d5d','#d379bd','#67ce6a','#2d3b5f'
-]
+// Colour a task keeps for good: its position in the project's task list, then the
+// palette cycles. Tasks that have since been completed or hidden fall back to a hash.
+function colorForTask(taskId) {
+    if (taskColors[taskId]) return taskColors[taskId];
+    return taskPalette[Math.abs(parseInt(taskId, 10) || 0) % taskPalette.length];
+}
+
+// Dark or light ink, whichever actually reads on that fill
+function inkOn(hex) {
+    const channel = v => {
+        v /= 255;
+        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    };
+    const r = channel(parseInt(hex.slice(1, 3), 16));
+    const g = channel(parseInt(hex.slice(3, 5), 16));
+    const b = channel(parseInt(hex.slice(5, 7), 16));
+    return (0.2126 * r + 0.7152 * g + 0.0722 * b) > 0.179 ? '#17140f' : '#fae6d7';
+}
+
+function escapeHtml(text) {
+    return String(text === null || text === undefined ? '' : text)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
 
 // Clear local storage on first load
 window.onload = function() {
     const keep = localStorage.getItem("month_year_cache");
     localStorage.clear();
     if (keep !== null) {
-      localStorage.setItem("month_year_cache", keep);
+        localStorage.setItem("month_year_cache", keep);
     }
-  };
+};
 
 // GET from /projects endpoint and populate list
 function populateProjects() {
     const ulElement = document.getElementById('project-list-ul');
     const projectNameLabel = document.getElementById('project-name');
-    
+
     function displayProjectData(data) {
         ulElement.innerHTML = "";
         let first = true;
-        data.forEach((project, index) => {
-            if (project.is_visible !== false){
-                if (first===true && globalProjectId===undefined){
+        data.forEach(project => {
+            if (project.is_visible !== false) {
+                if (first === true && globalProjectId === undefined) {
                     globalProjectId = project.id;
                     populateTasks(globalProjectId);
                     getTime(globalProjectId);
@@ -89,19 +94,17 @@ function populateProjects() {
                 newListItem.appendChild(newLink);
                 newLink.style.opacity = '0.5';
 
-                if (project.id === globalProjectId){
+                if (project.id === globalProjectId) {
                     newLink.style.opacity = '1';
                     newLink.style.fontWeight = 'bold';
                     projectNameLabel.textContent = project.name;
                     projectNameLabel.style.opacity = "1";
-                }
-                
-                else {
+                } else {
                     newListItem.setAttribute('data-completed', false);
                 }
 
                 addProjectClickListener(newLink, project.id, project.name);
-                addHoverListener(newLink, 'project', data.id);
+                addHoverListener(newLink, 'project', project.id);
                 ulElement.appendChild(newListItem);
                 newListItem.style.height = '0px';
 
@@ -110,24 +113,19 @@ function populateProjects() {
                     newListItem.setAttribute('data-completed', true);
                     newListItem.style.overflow = 'hidden';
                     newListItem.style.margin = 'auto';
-                }
-                else {
+                } else {
                     newLink.style.width = '170px';
                     newListItem.style.height = 'auto';
                 }
-
-
-
             }
         });
     }
 
     let cachedProjects = localStorage.getItem(`projects_cache_${globalUserId}`);
     if (cachedProjects) {
+        console.log('projects read from client-side cache');
         displayProjectData(JSON.parse(cachedProjects));
-        console.log('projects read from client-side cache')
-    }
-    else {
+    } else {
         fetch(`/projects`)
         .then(response => response.json())
         .then(data => {
@@ -137,495 +135,158 @@ function populateProjects() {
     }
 }
 
-// GET from /tasks endpoint and populate list
+// GET from /tasks endpoint, populate list, assign colours, fill the timer dropdown
+let currentTasks = [];
+
 function populateTasks(projectId) {
 
     function displayTaskData(data) {
         const taskUlElement = document.getElementById('task-list-ul');
         taskUlElement.innerHTML = '';
-        let first = true;
-        data.forEach(task => {
-            if (task.is_visible !== false) {
- 
-                const newTaskListItem = document.createElement('li');
-                newTaskListItem.classList.add('task-or-project-li');
-                newTaskListItem.style.height = '0px';
+        taskColors = {};
+        currentTasks = data.filter(task => task.is_visible !== false);
 
-                const newTaskLink = document.createElement('p');
-                newTaskLink.className = 'task-or-project';
-                newTaskLink.textContent = task.name;
-                newTaskLink.dataset.totalSeconds = task.total_seconds;
-                newTaskLink.dataset.isCompleted = task.is_completed;
+        currentTasks.forEach((task, index) => {
+            taskColors[task.id] = taskPalette[index % taskPalette.length];
 
-                newTaskLink.setAttribute('data-taskId', task.id);
-                newTaskListItem.appendChild(newTaskLink);
-                taskUlElement.appendChild(newTaskListItem);
-                addTaskClickListener(newTaskLink, task.id, task.name);
-                addHoverListener(newTaskLink, 'task', task.id);
+            const newTaskListItem = document.createElement('li');
+            newTaskListItem.classList.add('task-or-project-li');
 
-                // Mark completed if is_complete
-                var fullHeight = newTaskListItem.scrollHeight;
-                
-                if (task.is_completed === true) {
-                    newTaskLink.style.textDecoration = 'line-through';
-                    newTaskListItem.setAttribute('data-completed', true);
-                    newTaskListItem.style.overflow = 'hidden';
-                    newTaskListItem.style.margin = 'auto';
-                }
-                else {
-                    newTaskListItem.style.height = fullHeight + 'px';
-                    newTaskLink.style.textDecoration = '';
-                    newTaskListItem.setAttribute('data-completed', false);
-                }
+            const newTaskLink = document.createElement('p');
+            newTaskLink.className = 'task-or-project';
+            newTaskLink.innerHTML =
+                `<span class="task-swatch" style="background-color:${taskColors[task.id]}"></span>` +
+                `<span>${escapeHtml(task.name)}</span>`;
+            newTaskLink.dataset.totalSeconds = task.total_seconds;
+            newTaskLink.dataset.isCompleted = task.is_completed;
+            newTaskLink.setAttribute('data-taskId', task.id);
 
-                // Make bold if it is the selected task
-                if (first) {
-                    newTaskLink.style.opacity = '1';
-                    newTaskLink.style.fontWeight = 'bold';
-                }
-                else {
-                    newTaskLink.style.opacity = '0.5';
-                    newTaskLink.style.fontWeight = 'normal';
-                }
+            newTaskListItem.appendChild(newTaskLink);
+            taskUlElement.appendChild(newTaskListItem);
+            addHoverListener(newTaskLink, 'task', task.id);
 
-                // Populate logs if it's the first one
-                if (first===true){
-                    if (globalTaskId!==task.id) {
-                        populateLogs(task.id);
-                    }
-                    globalTaskId=task.id;
-                    
-                    first = false;
-
-                    const logContent = document.getElementById('log-content');
-                    const logDiv = document.getElementById('log-div');
-                    logContent.style.visibility = 'visible';
-                    logDiv.style.opacity = '1';
-                }
+            if (task.is_completed === true) {
+                newTaskLink.style.textDecoration = 'line-through';
+                newTaskListItem.setAttribute('data-completed', true);
+                newTaskListItem.style.overflow = 'hidden';
+                newTaskListItem.style.margin = 'auto';
+            } else {
+                newTaskListItem.style.height = 'auto';
+                newTaskListItem.setAttribute('data-completed', false);
             }
-
         });
+
+        if (currentTasks.length && (globalTaskId === undefined || !taskColors[globalTaskId])) {
+            globalTaskId = currentTasks[0].id;
+        }
+        renderTimerTasks();
+        renderTimes();
     }
 
-    // Check cache first
     let cachedTasks = localStorage.getItem(`tasks_cache_${projectId}`);
     if (cachedTasks) {
         console.log('tasks read from client-side cache');
         displayTaskData(JSON.parse(cachedTasks));
-    }
-    else {
-        // Send projectId to /tasks endpoint
+    } else {
         fetch(`/tasks?project_id=${projectId}`)
         .then(response => response.json())
         .then(data => {
             displayTaskData(data);
             localStorage.setItem(`tasks_cache_${projectId}`, JSON.stringify(data));
-        });           
-    }
-}
-
-function makeLog(id, isPinned, date, description) {
-    let dateObj;
-    if (date !== null) {
-        dateObj = new Date(date);
-    }
-    else {
-        dateObj = new Date();
-    }
-    const localDateStr = dateObj.toLocaleString();
-    const escapedLogText = description;//.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    const taskName = document.getElementById('task-name').textContent;
-
-    let style = ''
-    let dark = 'dark';
-    let color = 'var(--card-color)';
-    let backgroundColor = 'var(--text-color)';
-    
-    if (escapedLogText.includes("<br>")) {
-        style = "";
-    }
-    else {
-        style = "white-space: pre-line;";
-    }
-
-    if (isPinned) { 
-        dark = 'dark';
-        color = '#161616';
-        backgroundColor = 'var(--text-color)';
-    }
-
-    const logEntry = `
-        <div class="log-item" data-logId="${id}" data-isPinned=${isPinned} style="background-color:${backgroundColor}; color: ${color};">
-        <div class="log-options-div">
-        <i id="pin-option-button" class="log-option-button ${dark} pin fa-solid fa-thumbtack" style="width: 0px; font-size: 10pt; overflow: hidden;"></i>
-        <i id="edit-option-button" class="log-option-button ${dark} fa fa-pencil-alt" style="width: 0px; font-size: 10pt; overflow: hidden;"></i>
-        <i id="delete-option-button" class="log-option-button ${dark} fa fa-trash" style="width: 0px; font-size: 10pt; overflow: hidden;"></i>
-        </div>
-        <div style="display: flex; margin-bottom: 0px; align-items: center;">
-            <span class="log-description" style="${style}">${escapedLogText}</span>
-            </div>
-
-        </div>`;
-
-    const element = document.createElement('div');
-    element.innerHTML = logEntry;
-    logItem = element.firstElementChild;
-
-    const pinOption = logItem.querySelector('#pin-option-button');
-    const editOption = logItem.querySelector('#edit-option-button');
-    const deleteOption = logItem.querySelector('#delete-option-button');
-
-    if (isPinned) {
-        const logOptions = logItem.querySelector('.log-options-div');
-        logOptions.style.minWidth = '20px';
-        pinOption.style.minWidth = '15px';
-    }
-
-    addLogPinClickListener(pinOption, logItem);
-    addLogEditClickListener(editOption, logItem);
-    addLogDeleteClickListener(deleteOption, logItem);
-    return logItem;
-}
-
-function addLogPinClickListener(logOptionButton, logItem) {
-    logOptionButton.addEventListener('click', () => pinLog(logItem));
-}
-function addLogEditClickListener(logOptionButton, logItem) {
-    logOptionButton.addEventListener('click', () => editLog(logItem));
-}
-function addLogDeleteClickListener(logOptionButton, logItem) {
-    logOptionButton.addEventListener('click', () => deleteLog(logItem));
-}
-
-
-// GET from /tasks /hours and /logs endpoints and populate content
-function populateLogs(taskId) {
-
-    const logItemsContainer = document.getElementById('log-items-container');
-    logItemsContainer.innerHTML = '';
-
-    const pinnedLogsContainer = document.getElementById('pinned-logs-container');
-    pinnedLogsContainer.innerHTML = '';
-    
-    const taskName = document.getElementById('task-name');
-    const taskCheckbox = document.getElementById('task-checkbox');
-
-    let thisTask = document.querySelector(`p[data-taskid="${taskId}"]`);
-    taskName.textContent = thisTask.textContent;
-    globalSeconds = thisTask.dataset.totalSeconds;
-    taskIsCompleted = thisTask.dataset.isCompleted;
-    updateClock();
-
-    if (taskIsCompleted === "true") {
-        taskName.style.textDecoration = 'line-through';
-        taskCheckbox.checked = true;
-    }
-    else {
-        taskName.style.textDecoration = '';
-        taskCheckbox.checked = false;
-    }
-
-    function displayLogData(data) {
-        // Append responses to entry log
-        data.forEach((log, index) => {
-            showIt = (log.description.includes("Timer stop (") || log.description.includes("Timer start (") || log.description.includes("Timer edited to (")) ? false : true;
-            if (showIt) {
-
-                let logEntry = makeLog(log.id, false, log.created_at, log.description);
-                let pinnedLogEntry = makeLog(log.id, true, log.created_at, log.description);
-                
-                logEntry.style.opacity = '0';
-                pinnedLogEntry.style.opacity = '0';
-
-                if (log.is_pinned) {
-                    pinnedLogsContainer.appendChild(pinnedLogEntry);
-                    pinnedLogEntry.style.opacity = '1';
-                    logEntry.style.opacity = '1';
-                    logEntry.style.height = '0px';
-                    logEntry.style.padding = '0px';
-                    logItemsContainer.appendChild(logEntry);
-                    logEntry.style.display = 'none';
-                }
-                else{
-                    logItemsContainer.appendChild(logEntry);
-                    setTimeout(() => logEntry.style.opacity = '1', 10);
-                }
-                //adjustLogItemsContainerHeight();
-            }
         });
-        
     }
-
-    // Check cache first
-    let cachedLogs = localStorage.getItem(`logs_cache_${taskId}`);
-    if (cachedLogs) {
-        console.log('logs read from client-side cache');
-        displayLogData(JSON.parse(cachedLogs));
-    }
-    else {
-        fetch(`/logs?task_id=${taskId}`)
-        .then(response => response.json())
-        .then(data => {
-            displayLogData(data);
-            localStorage.setItem(`logs_cache_${taskId}`, JSON.stringify(data));
-        })
-    }     
 }
 
 function setMonthYear() {
-    selectedMonth = monthSelect.value;
-    selectedYear = yearSelect.value;
-    const monthYear = { month: selectedMonth, year: selectedYear };
-    localStorage.clear();
-    console.log(monthYear);
-    localStorage.setItem("month_year_cache", JSON.stringify(monthYear));
-    window.location.reload();
+    const monthSelect = document.getElementById('month-select');
+    const yearSelect = document.getElementById('year-select');
+    localStorage.setItem('month_year_cache', JSON.stringify({
+        selectedMonth: parseInt(monthSelect.value, 10),
+        selectedYear: parseInt(yearSelect.value, 10)
+    }));
 }
 
 function getMonthYear() {
-    // Load month and year
-    let cachedMonthYear = localStorage.getItem("month_year_cache");
-    let selectedMonth, selectedYear;
-    
-    if (cachedMonthYear) {
-        console.log("month and year read from client-side cache");
-        const parsed = JSON.parse(cachedMonthYear);
-        selectedMonth = parsed.month;
-        selectedYear = parsed.year;
-    } else {
-        const currentDate = new Date();
-        selectedYear = currentDate.getFullYear();
-        selectedMonth = currentDate.getMonth();
-        const monthYear = { month: selectedMonth, year: selectedYear };
-        localStorage.setItem("month_year_cache", JSON.stringify(monthYear));
-    }
-
-    return { selectedMonth, selectedYear };
+    const cached = localStorage.getItem('month_year_cache');
+    if (cached) return JSON.parse(cached);
+    return { selectedMonth: today.getMonth(), selectedYear: today.getFullYear() };
 }
 
-const monthSelect = document.getElementById('month-select');
-const yearSelect = document.getElementById('year-select');
-monthSelect.addEventListener('change', () => setMonthYear());
-yearSelect.addEventListener('change', () => setMonthYear());
+/* ============================================================
+   Time entries
+   ============================================================ */
 
+// entries are held locally as { id, taskId, taskName, start, end, description }
+// with start/end as local 'YYYY-MM-DDTHH:MM' strings, ready for datetime-local
+let timeEntries = [];
+let openEntryId = null;   // id of the entry whose editor is open
+let draft = null;         // uncommitted edits; nothing is written until the check is clicked
 
-// Fill day div
-function populateDays() {
-    const dayInfo = document.getElementById('day-info');
-    const dayDiv = document.querySelector('.day-div');
-    const dayTable = document.getElementById('day-table');
-    const monthAbbreviations = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const entriesContainer = document.getElementById('entries');
+const addTimeBlockButton = document.getElementById('add-a-time-block');
 
-    const { selectedMonth, selectedYear } = getMonthYear();
+// Convert a UTC date string to a local string for the datetime-local input
+function convertUTCToLocalForInput(utcDateString) {
+    const utcDate = new Date(utcDateString + 'Z');
+    const localDate = new Date(utcDate.getTime() - (utcDate.getTimezoneOffset() * 60000));
+    return localDate.toISOString().slice(0, 16);
+}
 
-    const monthAbbrev = monthAbbreviations[selectedMonth];
-    const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
-    const divWidth = dayDiv.offsetWidth;
-    
-    // make month select
-    const monthSelect = document.getElementById("month-select");
-    monthAbbreviations.forEach((month, idx) => {
-      const opt = document.createElement("option");
-      opt.value = idx;
-      opt.textContent = month;
-      console.log(selectedMonth);
-      if (idx == selectedMonth) {
-        opt.selected = true;
-      }
-        monthSelect.appendChild(opt);
-    });
-    
-    // make year select
-    const yearSelect = document.getElementById("year-select");
+function durationSeconds(entry) {
+    return Math.max(0, (new Date(entry.end) - new Date(entry.start)) / 1000);
+}
 
-    const currentYear = new Date().getFullYear();
-    for (let y = currentYear; y >= 2023; y--) {
-      const opt = document.createElement("option");
-      opt.value = y;
-      opt.textContent = y;
-      if (y == selectedYear) opt.selected = true;
-      yearSelect.appendChild(opt);
-    }
+function hoursOf(seconds) {
+    return (seconds / 60 / 60).toFixed(2);
+}
 
-    // Get day data
-    let cachedDays = localStorage.getItem(`days_cache`);
-    if (cachedDays) {
-        console.log('days read from client-side cache');
-        displayDayData(JSON.parse(cachedDays));
-    }
-    else {
-        fetch(`/days?tz_name=${localTz}&month=${selectedMonth}&year=${selectedYear}`)
-        .then(response => response.json())
-        .then(data => {
-            displayDayData(data);
-            localStorage.setItem(`days_cache`, JSON.stringify(data));
-        })
-    }    
+function formatClockTime(localString) {
+    const date = new Date(localString);
+    let hours = date.getHours();
+    const ampm = hours >= 12 ? 'pm' : 'am';
+    hours = hours % 12 || 12;
+    return `${hours}:${pad(date.getMinutes())}${ampm}`;
+}
 
-    function displayDayData(data){
-        // Clear existing content
-        const dayTable = document.getElementById('day-table');
-        dayTable.innerHTML = '';
-        let maxDuration = 0;
-        for (const dayNumber in data) {
-            const dayData = data[dayNumber];
-            if (dayData.duration > maxDuration) {
-                maxDuration = dayData.duration;
-            }
-        }
+function taskNameFor(taskId, fallback) {
+    const task = currentTasks.find(t => t.id == taskId);
+    return task ? task.name : (fallback || 'Unassigned');
+}
 
-        let weeklyTotals = {};
+function startOfWeek(date) {
+    const start = new Date(date.getFullYear(), date.getMonth(), date.getDate() - date.getDay());
+    start.setHours(0, 0, 0, 0);
+    return start;
+}
 
-        for (let day = 1; day <= daysInMonth; day++) {
-            let squareDate = new Date(selectedYear, selectedMonth, day);
-            let weekNumber = getWeekNumber(squareDate);
-        
-            if (data[day] && data[day]['hours']) {
-                if (!weeklyTotals[weekNumber]) {
-                    weeklyTotals[weekNumber] = 0;
-                }
-                weeklyTotals[weekNumber] += parseFloat(data[day]['hours']) || 0; 
-            }
-        }
-
-        for (let day = 1; day <= daysInMonth; day++) {
-            const daySquare = document.createElement('div');
-            daySquare.classList.add('day-square');
-            daySquare.style.opacity = '0.1';
-            daySquare.style.width = `${(divWidth/daysInMonth)-2}%`;
-            daySquare.style.height = '20px';
-            daySquare.style.borderRadius = '4px';
-            daySquare.style.backgroundColor = 'var(--text-color)';
-            daySquare.style.display = 'inline-block';
-            daySquare.style.margin = '2px';
-            daySquare.style.textAlign = 'center';
-
-            let squareDate = new Date(selectedYear, selectedMonth, day)
-            let dayOfWeek = squareDate.getDay();
-            let weekNumber = getWeekNumber(squareDate);
-
-            if (data[day]){
-                daySquare.style.backgroundColor = dayColors[dayOfWeek];
-                daySquare.dataset.title = `${dayNames[dayOfWeek]}, ${monthAbbrev} ${day}${getDaySuffix(day)}<br><b>${data[day]['hours']} hour${s(data[day]['hours'])}</b>, ${weeklyTotals[weekNumber].toFixed(2)} for the week`;
-                daySquare.style.opacity = (data[day]['duration'] / maxDuration) + 0.1;
-            }
-            else {
-                daySquare.dataset.title = `${dayNames[dayOfWeek]}, ${monthAbbrev} ${day}${getDaySuffix(day)}<br>0.00 hours, ${weeklyTotals[weekNumber] ? weeklyTotals[weekNumber].toFixed(2) : '0.00'} for the week`;
-            }
-
-            function updateDayInfo(daySquare) {
-                return function() {
-                    dayInfo.style.paddingTop = "8px";
-                    dayInfo.style.transition = "0.2s ease";
-                    dayDiv.style.transition = "0.1s ease";
-                    dayDiv.style.borderRadius = "10px 10px 0px 0px";
-                    dayInfo.style.borderBottom = "none";
-                    dayInfo.style.border = "2px solid var(--border-color)";
-                    dayInfo.style.borderTop = "none";
-                    dayInfo.style.height = "55px";
-                    dayInfo.style.lineHeight = "22px";
-                    dayInfo.innerHTML = daySquare.dataset.title; 
-                };
-            }
-
-            document.addEventListener('touchstart', function(event) {
-                if (!dayTable.contains(event.target)) {
-                    clearDayInfo();
-                }
-            });
-
-            document.addEventListener('mouseover', function(event) {
-                if (!dayTable.contains(event.target)) {
-                    clearDayInfo();
-                }
-            });
-
-            function clearDayInfo() {
-                dayInfo.style.border = "none";
-                dayInfo.style.transition = "0.1s";
-                dayDiv.style.transition = "0.3s ease";
-                dayInfo.style.height = "0px";
-                dayInfo.style.paddingTop = "0px";
-                dayInfo.textContent = ''; 
-                dayDiv.style.borderRadius = "10px 10px 10px 10px";
-            }
-            
-            // Loop through each daySquare or ensure this logic is applied within your existing loop
-            daySquare.addEventListener('mouseover', updateDayInfo(daySquare));
-            daySquare.addEventListener('touchstart', updateDayInfo(daySquare));
-
-            dayTable.appendChild(daySquare);
-        }
-    }
-    resizeDays();
-  }
-  
-  populateDays();
-
-  function resizeDays(){
-        const daySquares = document.querySelectorAll('.day-square');
-        const dayDiv = document.querySelector('.day-div');
-
-        daysInMonth = daySquares.length;
-        divWidth = dayDiv.offsetWidth;
-        daySquares.forEach((square, index) => {
-            square.style.width = `${(divWidth/daysInMonth)-2}%`;
-        })
-    }
+function sameDay(a, b) {
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
 
 // GET to /time endpoint
 function getTime(projectId) {
-    const timeDivDiv = document.getElementById('time-div-div');
-
-    timeDiv.style.justifyContent = 'center';
-    timeDiv.style.border = '2px dashed var(--text-color)';
-    timeDiv.innerHTML = '<i id="add-a-time-block" title="Add a Time Block" class="add-button fa-solid fa-plus" style="color: var(--text-color);"></i>';
-    timeDivDiv.style.width = '100%';
-    addTimeBlockButton = document.getElementById('add-a-time-block');
-    addTimeBlockButton.addEventListener('click', createTimeBlock);
-
     function displayTimeData(data) {
-        const totalDuration = data.reduce((sum, time) => sum + time.duration, 0);
-        data.forEach((time, index) => {
-            timeDiv.style.justifyContent = 'flex-end';
-            timeDiv.style.border = '';
-            const newBlock = document.createElement('div');
-            newBlock.className = 'time-block';
-            newBlock.dataset.id = time.id;
-            newBlock.dataset.taskId = time.task_id;
-            newBlock.dataset.projectId = time.project_id;
-            newBlock.dataset.startTime = convertUTCToLocalForInput(time.start); 
-            newBlock.dataset.endTime = convertUTCToLocalForInput(time.end);   
-            newBlock.dataset.duration = time.duration;
-            newBlock.dataset.description = time.description;
-            newBlock.dataset.taskName = time.task_name;
-            newBlock.style.width = `0px`;
-            newBlock.addEventListener('click', () => openTimeDescription(newBlock));
-            newBlock.addEventListener('click', () => hideCommitTimeButton());
-            
-            const dayOfWeek = new Date(convertUTCToLocalForInput(time.start)).getDay();
-            newBlock.style.backgroundColor = dayColors[dayOfWeek];
-            timeDiv.insertBefore(newBlock,addTimeBlockButton);
-        });
-
-        resizeTimeBlocks();
+        timeEntries = data.map(time => ({
+            id: time.id,
+            taskId: time.task_id,
+            taskName: time.task_name,
+            start: convertUTCToLocalForInput(time.start),
+            end: convertUTCToLocalForInput(time.end),
+            // the API sends the placeholder string when description is null
+            description: (time.description === 'Add a description...') ? '' : (time.description || '')
+        }));
+        renderTimes();
     }
 
     let cachedTime = localStorage.getItem(`time_cache_${projectId}`);
-
     if (cachedTime) {
         console.log('time read from client-side cache');
         displayTimeData(JSON.parse(cachedTime));
-    }
-    else {
-        const {selectedMonth, selectedYear} = getMonthYear();
-        console.log(getMonthYear());
-        fetch(`/time?project_id=${projectId}&tz_name=${localTz}&month=${selectedMonth}&year=${selectedYear}`, {credentials: "include"}) 
+    } else {
+        const { selectedMonth, selectedYear } = getMonthYear();
+        fetch(`/time?project_id=${projectId}&tz_name=${localTz}&month=${selectedMonth}&year=${selectedYear}`, { credentials: "include" })
         .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
+            if (!response.ok) throw new Error('Network response was not ok');
             return response.json();
         })
         .then(data => {
@@ -634,160 +295,616 @@ function getTime(projectId) {
             } catch (e) {
                 console.error('Error saving data to LocalStorage:', e);
             }
-            
             displayTimeData(data);
         })
-        .catch(error => {
-            console.error('There has been a problem with your fetch operation:', error);
-        });
+        .catch(error => console.error('There has been a problem with your fetch operation:', error));
     }
 }
 
-// Function to convert a UTC date string to a local date string for the datetime-local input
-function convertUTCToLocalForInput(utcDateString) {
-    const utcDate = new Date(utcDateString + 'Z'); // Ensure the 'Z' is there to parse as UTC
-    const localDate = new Date(utcDate.getTime() - (utcDate.getTimezoneOffset() * 60000));
-    return localDate.toISOString().slice(0, 16);
+// The open entry previews its draft; everything else shows what is stored
+function viewOf(entry) {
+    return (draft && draft.id === entry.id) ? Object.assign({}, entry, draft) : entry;
 }
 
-// Make it readable
-function formatDateTime(dateString) {
-    const date = new Date(dateString);
-    let hours = date.getHours();
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12;
-    hours = hours ? hours.toString().padStart(2, '0') : '12'; 
-    
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    
-    return `${month}/${day} at ${hours}:${minutes} ${ampm}`;
+function findEntry(id) {
+    return timeEntries.find(e => e.id === id);
 }
 
-// Add click listeners
-const timeDiv = document.getElementById('time-div');
-const timeContent = document.getElementById('time-content');
-const timeDescription = document.getElementById('time-description');
-const timeDescriptionText = document.getElementById('time-description-text');
-const timeDescriptionContainer = document.getElementById('time-description-container');
-const allTimeComponents = document.getElementById('all-time-components');
-
-let activeBlock = null;
-
-function updateDurationS() {
-    const duration = document.getElementById('duration').textContent;
-    const timeDurationS = document.getElementById('duration-s');
-    if (duration==='1.00') {
-        timeDurationS.textContent = '';
-    }
-    else {
-        timeDurationS.textContent = 's';
-    }
+function isDirty() {
+    if (!draft) return false;
+    const entry = findEntry(draft.id);
+    if (!entry) return false;
+    if (entry.isNew) return true;
+    return draft.taskId != entry.taskId
+        || draft.description !== entry.description
+        || draft.start !== entry.start
+        || draft.end !== entry.end;
 }
 
-function updateTimeDescription(block) {
-    const duration = document.getElementById('duration');
-    const blockDuration = block.dataset.duration; 
-    const hours = (blockDuration / 60 / 60).toFixed(2);
-    duration.textContent = hours;
-
-    timeDescription.style.backgroundColor = block.style.backgroundColor;
-
-    const timeDescriptionTaskName = document.getElementById('time-description-task-name'); 
-    timeDescriptionTaskName.textContent = block.dataset.taskName;
-
-    const startTimeInput = document.getElementById('start-time-input');
-    startTimeInput.value = block.dataset.startTime;
-
-    const endTimeInput = document.getElementById('end-time-input');
-    endTimeInput.value = block.dataset.endTime;
-
-    timeDescriptionText.value = block.dataset.description;
-    updateDurationS();
+function sortedEntries() {
+    return timeEntries.slice().sort((a, b) => new Date(viewOf(b).start) - new Date(viewOf(a).start));
 }
 
-function openTimeDescription(block) {
-    let timeDescriptionHeight = timeDescription.offsetHeight;
-    const timeBlocks = document.querySelectorAll('.time-block');
-        timeBlocks.forEach(function(b) {
-            b.style.opacity = "0.3";
-            b.style.borderRadius = '5px';
-        });
+function renderTimes() {
+    renderTimeStats();
+    entriesContainer.innerHTML = '';
+    entriesContainer.classList.toggle('has-open', openEntryId !== null);
 
-    // If click on new time block
-    if (activeBlock !== block) {
-            if (activeBlock) {
-                if (activeBlock.dataset.id === "-1") {
-                    blockToRemove = activeBlock;
-                    blockToRemove.style.width = '0px';
-                    timeDiv.removeChild(blockToRemove);
-                    resizeTimeBlocks();            
-                }
-                timeDescriptionContainer.style.height = '0px';
-                timeDescriptionContainer.style.opacity = '0.7';
-                block.style.opacity = "1";
-                activeBlock = block;
-                timeDiv.style.borderRadius = '7px 7px 0 0';
-                block.style.borderRadius = '5px 5px 0 0';
-                updateTimeDescription(block);
-                timeDescriptionHeight = timeDescription.offsetHeight;
-                timeDescriptionContainer.style.height = `${timeDescriptionHeight}px`;
-                setTimeout(() => timeDescriptionContainer.style.opacity = '1', 100);
-
-            } else {
-                addTimeBlockButton.removeEventListener('click', createTimeBlock);
-                addTimeBlockButton.style.width = '0px';
-                addTimeBlockButton.style.paddingRight = '0px';
-
-                block.style.opacity = "1";
-                activeBlock = block;
-                timeDiv.style.borderRadius = '7px 7px 0 0';
-                block.style.borderRadius = '5px 5px 0 0';
-                updateTimeDescription(block);
-                timeDescriptionHeight = timeDescription.offsetHeight;
-                timeDescriptionContainer.style.height = `${timeDescriptionHeight}px`;
-            }
-    } 
-    // If click on active block
-    else {
-        closeTimeDescription() 
-    }
-    updateDurationS();
-}
-
-function closeTimeDescription() {
-
-    if (activeBlock && activeBlock.dataset.id === "-1") {
-        blockToRemove = activeBlock;
-        blockToRemove.style.width = '0px';
-        timeDiv.removeChild(blockToRemove);
-        resizeTimeBlocks();
+    const entries = sortedEntries();
+    if (!entries.length) {
+        entriesContainer.innerHTML = '<p class="empty-state">No time logged this month. Add an entry, or start the timer above.</p>';
+        return;
     }
 
-    const timeBlocks = document.querySelectorAll('.time-block');
-    addTimeBlockButton.addEventListener('click', createTimeBlock);
-    addTimeBlockButton.style.width = '20px';
-    addTimeBlockButton.style.paddingRight = '7px';
-
-    timeDescriptionHeight = timeDescription.offsetHeight;
-    timeBlocks.forEach(function(b) {
-        b.style.opacity = "1";
-        b.style.borderRadius = '5px';
+    const groups = [];
+    entries.forEach(entry => {
+        const key = viewOf(entry).start.slice(0, 10);
+        let group = groups.find(g => g.key === key);
+        if (!group) {
+            group = { key: key, items: [] };
+            groups.push(group);
+        }
+        group.items.push(entry);
     });
-    timeDescriptionContainer.style.height = '0px';
-    timeDiv.style.borderRadius = '7px';
-    activeBlock = null;
+    groups.sort((a, b) => b.key.localeCompare(a.key));
 
-    if (timeDiv.childElementCount===1) {
-        timeDiv.style.border = '2px dashed var(--text-color)';
+    groups.forEach(group => {
+        const date = new Date(group.key + 'T00:00');
+        const total = group.items.reduce((sum, e) => sum + durationSeconds(viewOf(e)), 0);
+
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'date-group';
+
+        const head = document.createElement('div');
+        head.className = 'date-head';
+        head.innerHTML =
+            `<h3>${dayNames[date.getDay()]}, ${monthNames[date.getMonth()]} ${date.getDate()}${getDaySuffix(date.getDate())}</h3>` +
+            (sameDay(date, new Date()) ? '<span class="today-pill">today</span>' : '') +
+            `<span class="day-total">${hoursOf(total)} h</span>`;
+        groupDiv.appendChild(head);
+
+        group.items.forEach(entry => groupDiv.appendChild(buildEntryCard(entry)));
+        entriesContainer.appendChild(groupDiv);
+    });
+
+    const openShell = document.querySelector('.entry-wrap.open .editor-shell');
+    if (openShell && openShell.firstElementChild) {
+        openShell.style.height = openShell.firstElementChild.offsetHeight + 'px';
     }
 }
-document.getElementById('project-space').addEventListener('click', function(event) {
-    if (!allTimeComponents.contains(event.target)) {
-        closeTimeDescription();
+
+function renderTimeStats() {
+    const now = new Date();
+    const weekStart = startOfWeek(now);
+    const weekEnd = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+    let month = 0, week = 0, todayTotal = 0;
+    timeEntries.forEach(entry => {
+        const view = viewOf(entry);
+        const seconds = durationSeconds(view);
+        const start = new Date(view.start);
+        month += seconds;
+        if (start >= weekStart && start < weekEnd) week += seconds;
+        if (sameDay(start, now)) todayTotal += seconds;
+    });
+
+    document.getElementById('stat-month').textContent = hoursOf(month);
+    document.getElementById('stat-week').textContent = hoursOf(week);
+    document.getElementById('stat-today').textContent = hoursOf(todayTotal);
+}
+
+function cardInner(view) {
+    return `
+        <div class="body">
+            <div class="task">${escapeHtml(taskNameFor(view.taskId, view.taskName))}</div>
+            <div class="desc${view.description ? '' : ' empty'}">${escapeHtml(view.description || 'No description')}</div>
+        </div>
+        <div class="range">${formatClockTime(view.start)} &ndash; ${formatClockTime(view.end)}</div>
+        <div class="dur">${hoursOf(durationSeconds(view))} h</div>`;
+}
+
+function taskOptions(selectedId) {
+    return currentTasks
+        .map(task => `<option value="${task.id}"${task.id == selectedId ? ' selected' : ''}>${escapeHtml(task.name)}</option>`)
+        .join('');
+}
+
+function buildEntryCard(entry) {
+    const view = viewOf(entry);
+    const accent = colorForTask(view.taskId);
+    const isOpen = openEntryId === entry.id;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'entry-wrap' + (isOpen ? ' open' : '') + (entry.isNew ? ' pending' : '');
+    wrap.dataset.id = entry.id;
+    wrap.style.setProperty('--accent', accent);
+    wrap.style.setProperty('--on-accent', inkOn(accent));
+
+    const card = document.createElement('div');
+    card.className = 'entry';
+    card.innerHTML = cardInner(view);
+    card.addEventListener('click', () => isOpen ? closeCard() : openCard(entry.id));
+    wrap.appendChild(card);
+
+    const shell = document.createElement('div');
+    shell.className = 'editor-shell';
+    if (isOpen) shell.appendChild(buildEditor(entry));
+    wrap.appendChild(shell);
+
+    return wrap;
+}
+
+function buildEditor(entry) {
+    const editor = document.createElement('div');
+    editor.className = 'editor';
+    editor.innerHTML = `
+        <input id="time-description-text" class="desc-input" autocomplete="off" placeholder="What did you work on?" value="${escapeHtml(draft.description)}">
+        <div class="fields">
+            <div>
+                <label>Task</label>
+                <select id="task-select">${taskOptions(draft.taskId)}</select>
+            </div>
+            <div>
+                <label>Start</label>
+                <input class="datetime-input" type="datetime-local" id="start-time-input" value="${draft.start}">
+            </div>
+            <div>
+                <label>End</label>
+                <input class="datetime-input" type="datetime-local" id="end-time-input" value="${draft.end}">
+            </div>
+            <span class="live-duration" id="duration"></span>
+            <span class="spacer"></span>
+            <button class="icon-button" id="delete-time-block-button" title="Delete Time Block"><i class="fa-solid fa-trash"></i></button>
+            <button class="icon-button" id="commit-time-block-button" title="Commit Changes"><i class="fa-solid fa-check"></i></button>
+        </div>`;
+    editor.addEventListener('click', event => event.stopPropagation());
+
+    const descInput = editor.querySelector('#time-description-text');
+    const taskSelect = editor.querySelector('#task-select');
+    const startTimeInput = editor.querySelector('#start-time-input');
+    const endTimeInput = editor.querySelector('#end-time-input');
+    const commitButton = editor.querySelector('#commit-time-block-button');
+
+    function touched(field) {
+        const stored = findEntry(entry.id);
+        return stored && !stored.isNew && draft[field] != stored[field];
     }
+
+    // The card is the live preview of the draft; nothing is saved until commit
+    function refresh() {
+        const wrap = editor.closest('.entry-wrap');
+        const accent = colorForTask(draft.taskId);
+        wrap.style.setProperty('--accent', accent);
+        wrap.style.setProperty('--on-accent', inkOn(accent));
+        wrap.querySelector('.entry').innerHTML = cardInner(Object.assign({}, findEntry(entry.id), draft));
+
+        descInput.classList.toggle('changed', touched('description'));
+        taskSelect.classList.toggle('changed', touched('taskId'));
+        startTimeInput.classList.toggle('changed', touched('start'));
+        endTimeInput.classList.toggle('changed', touched('end'));
+
+        const seconds = durationSeconds(draft);
+        const hours = hoursOf(seconds);
+        editor.querySelector('#duration').textContent =
+            seconds > 0 ? `${hours} hour${s(hours)}` : 'End is before start';
+        commitButton.classList.toggle('visible', isDirty() && seconds > 0);
+
+        renderTimeStats();
+    }
+
+    descInput.addEventListener('input', () => { draft.description = descInput.value; refresh(); });
+    descInput.addEventListener('keydown', event => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            commitTimeBlock();
+        }
+    });
+    taskSelect.addEventListener('change', () => { draft.taskId = parseInt(taskSelect.value, 10); refresh(); });
+    startTimeInput.addEventListener('change', () => { draft.start = startTimeInput.value; refresh(); });
+    endTimeInput.addEventListener('change', () => { draft.end = endTimeInput.value; refresh(); });
+    commitButton.addEventListener('click', commitTimeBlock);
+    editor.querySelector('#delete-time-block-button').addEventListener('click', () => deleteTimeBlock(entry.id));
+
+    setTimeout(refresh, 0);
+    return editor;
+}
+
+function openCard(id) {
+    if (openEntryId !== null && !closeCard()) return;
+    const entry = findEntry(id);
+    if (!entry) return;
+
+    draft = {
+        id: id,
+        taskId: entry.taskId,
+        description: entry.description,
+        start: entry.start,
+        end: entry.end
+    };
+    openEntryId = id;
+    renderTimes();
+
+    const wrap = document.querySelector('.entry-wrap.open');
+    const shell = wrap && wrap.querySelector('.editor-shell');
+    if (shell) {
+        const editor = shell.firstElementChild;
+        shell.style.height = '0px';
+        requestAnimationFrame(() => { shell.style.height = editor.offsetHeight + 'px'; });
+        setTimeout(() => wrap.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 260);
+    }
+}
+
+// Returns false and nudges the check when there is something unsaved
+function closeCard() {
+    if (openEntryId === null) return true;
+    if (isDirty()) {
+        const button = document.querySelector('.entry-wrap.open #commit-time-block-button');
+        if (button) {
+            button.classList.remove('nudge');
+            void button.offsetWidth;
+            button.classList.add('nudge');
+        }
+        return false;
+    }
+    collapseOpenCard();
+    return true;
+}
+
+function collapseOpenCard(then) {
+    const wrap = document.querySelector('.entry-wrap.open');
+    openEntryId = null;
+    draft = null;
+    if (!wrap) {
+        renderTimes();
+        if (then) then();
+        return;
+    }
+    const shell = wrap.querySelector('.editor-shell');
+    shell.style.height = shell.firstElementChild.offsetHeight + 'px';
+    requestAnimationFrame(() => {
+        wrap.classList.remove('open');
+        wrap.querySelector('.entry').style.borderRadius = '7px';
+        shell.style.height = '0px';
+        entriesContainer.classList.remove('has-open');
+    });
+    setTimeout(() => {
+        renderTimes();
+        if (then) then();
+    }, 240);
+}
+
+function discardDraft() {
+    if (openEntryId === null) return;
+    const entry = findEntry(openEntryId);
+    if (entry && entry.isNew) {
+        const id = entry.id;
+        collapseOpenCard(() => {
+            const index = timeEntries.findIndex(e => e.id === id);
+            if (index > -1) timeEntries.splice(index, 1);
+            renderTimes();
+        });
+        return;
+    }
+    collapseOpenCard();
+}
+
+// Create a new, uncommitted entry
+function createTimeBlock(start, end) {
+    if (openEntryId !== null && !closeCard()) return;
+    if (!currentTasks.length) return;
+
+    const now = new Date();
+    const endTime = end || now;
+    const startTime = start || new Date(endTime.getTime() - 60 * 60 * 1000);
+
+    const entry = {
+        id: `new-${Date.now()}`,
+        taskId: globalTaskId || currentTasks[0].id,
+        taskName: taskNameFor(globalTaskId),
+        start: convertUTCToLocalForInput(startTime.toISOString().slice(0, 16)),
+        end: convertUTCToLocalForInput(endTime.toISOString().slice(0, 16)),
+        description: '',
+        isNew: true
+    };
+    timeEntries.push(entry);
+    openCard(entry.id);
+
+    const input = document.querySelector('.entry-wrap.open .desc-input');
+    if (input) input.focus();
+}
+addTimeBlockButton.addEventListener('click', () => createTimeBlock());
+
+// Commit time block edit
+function commitTimeBlock() {
+    if (!draft) return;
+    const entry = findEntry(draft.id);
+    if (!entry) return;
+
+    const startTime = new Date(draft.start);
+    const endTime = new Date(draft.end);
+    const duration = Math.round((endTime - startTime) / 1000);
+    if (!(duration > 0)) return;
+
+    const previousTaskId = entry.taskId;
+    const wasNew = !!entry.isNew;
+
+    entry.taskId = draft.taskId;
+    entry.description = draft.description;
+    entry.start = draft.start;
+    entry.end = draft.end;
+    delete entry.isNew;
+    globalTaskId = entry.taskId;
+    renderTimerTasks();
+
+    const payload = {
+        projectId: globalProjectId,
+        taskId: entry.taskId,
+        timeId: wasNew ? '-1' : entry.id,
+        start: startTime,
+        end: endTime,
+        duration: duration,
+        description: entry.description
+    };
+
+    fetch('/time', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.time_id) entry.id = data.time_id;
+        localStorage.removeItem(`time_cache_${globalProjectId}`);
+        localStorage.removeItem('days_cache');
+        calculateTaskTotalTime(entry.taskId, true);
+        if (previousTaskId !== entry.taskId) calculateTaskTotalTime(previousTaskId, true);
+        setTimeout(populateDays, 500);
+    })
+    .catch(error => console.error('There has been a problem with your fetch operation:', error));
+
+    collapseOpenCard();
+}
+
+// Delete time block
+function deleteTimeBlock(id) {
+    const entry = findEntry(id);
+    if (!entry) return;
+    const taskId = entry.taskId;
+    const wasNew = !!entry.isNew;
+
+    collapseOpenCard(() => {
+        const index = timeEntries.findIndex(e => e.id === id);
+        if (index > -1) timeEntries.splice(index, 1);
+        renderTimes();
+
+        if (wasNew) return;
+
+        fetch('/time', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                timeId: id,
+                taskId: taskId,
+                projectId: globalProjectId,
+                isVisible: false
+            })
+        })
+        .then(response => response.json())
+        .then(() => {
+            localStorage.removeItem(`time_cache_${globalProjectId}`);
+            localStorage.removeItem('days_cache');
+            calculateTaskTotalTime(taskId, true);
+            setTimeout(populateDays, 500);
+        });
+    });
+}
+
+// Escape discards, clicking away keeps unsaved work on screen
+document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && openEntryId !== null) discardDraft();
 });
+document.addEventListener('click', event => {
+    if (openEntryId === null) return;
+    if (event.target.closest('.entry-wrap') || event.target.closest('#add-a-time-block')) return;
+    if (event.target.closest('#timer')) return;
+    closeCard();
+});
+
+// Calculate task total time from the entries on screen
+function calculateTaskTotalTime(taskId, changed) {
+    if (!taskId) return;
+    let totalSeconds = 0;
+    timeEntries.forEach(entry => {
+        if (entry.taskId == taskId) totalSeconds += durationSeconds(entry);
+    });
+
+    const taskItem = document.querySelector(`[data-taskid="${taskId}"]`);
+    if (taskItem) taskItem.dataset.totalSeconds = totalSeconds;
+
+    if (changed) {
+        fetch('/tasks', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ taskId: taskId, totalSeconds: Math.round(totalSeconds) })
+        });
+        localStorage.removeItem(`tasks_cache_${globalProjectId}`);
+    }
+}
+
+/* ============================================================
+   Timer
+   ============================================================ */
+
+let timerStartDateTime = null;
+let timerIntervalId = null;
+
+function renderTimerTasks() {
+    const select = document.getElementById('timer-task');
+    select.innerHTML = taskOptions(globalTaskId);
+}
+
+document.getElementById('timer-task').addEventListener('change', function() {
+    globalTaskId = parseInt(this.value, 10);
+});
+
+function toggleClock() {
+    const timer = document.getElementById('timer');
+    const toggleIcon = document.getElementById('toggle-icon');
+    const clock = document.getElementById('clock');
+
+    if (!timerStartDateTime) {
+        if (openEntryId !== null && !closeCard()) return;
+        timerStartDateTime = new Date();
+        toggleIcon.className = 'fa-solid fa-stop';
+        timer.classList.add('running');
+        document.getElementById('toggle-button').title = 'Stop and save';
+        timerIntervalId = setInterval(() => {
+            const seconds = Math.floor((new Date() - timerStartDateTime) / 1000);
+            clock.textContent = `${pad(Math.floor(seconds / 3600))}:${pad(Math.floor(seconds / 60) % 60)}:${pad(seconds % 60)}`;
+        }, 1000);
+    } else {
+        const start = timerStartDateTime;
+        const end = new Date();
+        clearInterval(timerIntervalId);
+        timerIntervalId = null;
+        timerStartDateTime = null;
+        toggleIcon.className = 'fa-solid fa-play';
+        timer.classList.remove('running');
+        document.getElementById('toggle-button').title = 'Start timing';
+        clock.textContent = '00:00:00';
+        createTimeBlock(start, end);
+    }
+}
+document.getElementById('toggle-button').addEventListener('click', toggleClock);
+
+// Stop the clock and keep the entry on screen if the tab is closing
+window.addEventListener('beforeunload', function() {
+    if (timerStartDateTime) toggleClock();
+});
+
+/* ============================================================
+   Days
+   ============================================================ */
+
+const dayBlock = document.getElementById('day-block');
+const dayInfo = document.getElementById('day-info');
+
+function showDayInfo(html) {
+    dayInfo.innerHTML = html;
+    dayBlock.classList.add('info-open');
+}
+function clearDayInfo() {
+    dayBlock.classList.remove('info-open');
+}
+document.addEventListener('mouseover', function(event) {
+    if (!document.getElementById('day-table').contains(event.target)) clearDayInfo();
+});
+document.addEventListener('touchstart', function(event) {
+    if (!document.getElementById('day-table').contains(event.target)) clearDayInfo();
+}, { passive: true });
+
+function populateDays() {
+    const monthSelect = document.getElementById('month-select');
+    const yearSelect = document.getElementById('year-select');
+    const dayTable = document.getElementById('day-table');
+
+    if (!monthSelect.options.length) {
+        monthNames.forEach((month, index) => {
+            const option = document.createElement('option');
+            option.value = index;
+            option.textContent = month;
+            monthSelect.appendChild(option);
+        });
+        const thisYear = today.getFullYear();
+        for (let year = thisYear - 3; year <= thisYear + 1; year++) {
+            const option = document.createElement('option');
+            option.value = year;
+            option.textContent = year;
+            yearSelect.appendChild(option);
+        }
+        const { selectedMonth, selectedYear } = getMonthYear();
+        monthSelect.value = selectedMonth;
+        yearSelect.value = selectedYear;
+
+        [monthSelect, yearSelect].forEach(select => {
+            select.addEventListener('change', function() {
+                if (openEntryId !== null && !closeCard()) {
+                    // put the month back until the open entry is dealt with
+                    const { selectedMonth, selectedYear } = getMonthYear();
+                    monthSelect.value = selectedMonth;
+                    yearSelect.value = selectedYear;
+                    return;
+                }
+                setMonthYear();
+                localStorage.removeItem(`time_cache_${globalProjectId}`);
+                localStorage.removeItem('days_cache');
+                openEntryId = null;
+                draft = null;
+                getTime(globalProjectId);
+                populateDays();
+            });
+        });
+    }
+
+    const selectedMonth = parseInt(monthSelect.value, 10);
+    const selectedYear = parseInt(yearSelect.value, 10);
+    const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+
+    function displayDayData(data) {
+        dayTable.innerHTML = '';
+
+        let maxDuration = 0;
+        for (const dayNumber in data) {
+            if (data[dayNumber].duration > maxDuration) maxDuration = data[dayNumber].duration;
+        }
+
+        // hours per week, so the panel can show the day next to its week
+        const weeklyTotals = {};
+        for (let day = 1; day <= daysInMonth; day++) {
+            const key = startOfWeek(new Date(selectedYear, selectedMonth, day)).getTime();
+            const hours = (data[day] && parseFloat(data[day].hours)) || 0;
+            weeklyTotals[key] = (weeklyTotals[key] || 0) + hours;
+        }
+
+        for (let day = 1; day <= daysInMonth; day++) {
+            const squareDate = new Date(selectedYear, selectedMonth, day);
+            const weekTotal = weeklyTotals[startOfWeek(squareDate).getTime()] || 0;
+            const dayHours = (data[day] && data[day].hours) ? data[day].hours : '0.00';
+
+            const daySquare = document.createElement('div');
+            daySquare.classList.add('day-square');
+            if (data[day] && maxDuration) {
+                daySquare.style.opacity = (0.2 + 0.8 * (data[day].duration / maxDuration)).toFixed(2);
+            }
+
+            const info = `${dayNames[squareDate.getDay()]}, ${monthNames[selectedMonth].slice(0, 3)} ${day}${getDaySuffix(day)}` +
+                `<br><b>${dayHours} hour${s(dayHours)}</b>` +
+                `<span class="dim">, ${weekTotal.toFixed(2)} for the week</span>`;
+
+            daySquare.addEventListener('mouseover', () => showDayInfo(info));
+            daySquare.addEventListener('touchstart', () => showDayInfo(info), { passive: true });
+            dayTable.appendChild(daySquare);
+        }
+    }
+
+    const cachedDays = localStorage.getItem('days_cache');
+    if (cachedDays) {
+        console.log('days read from client-side cache');
+        displayDayData(JSON.parse(cachedDays));
+    } else {
+        fetch(`/days?tz_name=${localTz}&month=${selectedMonth}&year=${selectedYear}`)
+        .then(response => response.json())
+        .then(data => {
+            localStorage.setItem('days_cache', JSON.stringify(data));
+            displayDayData(data);
+        });
+    }
+}
+
+/* ============================================================
+   Projects and tasks
+   ============================================================ */
+
 // POST to /projects endpoint and append list
 function addProject() {
     const projectUlElement = document.getElementById('project-list-ul');
@@ -796,192 +913,72 @@ function addProject() {
     const newProjectName = newProjectInput.value;
 
     if (newProjectName) {
-
-        // Create and insert the new list item before the input item
         const newListItem = document.createElement('li');
         newListItem.classList.add('task-or-project-li');
         const newLink = document.createElement('p');
-        newLink.style.opacity = '0.5';
         newLink.className = 'task-or-project';
         newLink.textContent = newProjectName;
-        newListItem.setAttribute('data-completed', false);
-
+        newLink.style.opacity = '0.5';
+        newLink.style.width = '170px';
         newListItem.appendChild(newLink);
         projectUlElement.insertBefore(newListItem, newProjectLi);
         newProjectInput.value = '';
 
-        // Construct payload
-        const payload = {
-            name: newProjectName,
-            user_id: globalUserId
-        };
-
-        // Send POST request to Flask API
         fetch('/projects', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-        }).then(response => response.json())
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: newProjectName, user_id: globalUserId })
+        })
+        .then(response => response.json())
         .then(data => {
-            if (data.message === "Project created") {
-                console.log('project created');
-                newLink.setAttribute('data-projectid',data.id)
-                addProjectClickListener(newLink, data.id, newProjectName);
-                addHoverListener(newLink, 'project', data.id);
-                localStorage.removeItem(`projects_cache_${globalUserId}`);
-            }
+            newLink.setAttribute('data-projectId', data.id);
+            addProjectClickListener(newLink, data.id, newProjectName);
+            addHoverListener(newLink, 'project', data.id);
+            localStorage.removeItem(`projects_cache_${globalUserId}`);
         });
     }
 }
 
 // POST to /tasks endpoint and append list
 function addTask(projectId) {
+    const taskUlElement = document.getElementById('task-list-ul');
     const newTaskLi = document.getElementById('new-task-li');
     const newTaskInput = document.getElementById('new-task-input');
     const newTaskName = newTaskInput.value;
-    const taskUlElement = document.getElementById('task-list-ul');
-    const logDiv = document.getElementById('log-div');
 
     if (newTaskName) {
-        const newListItem = document.createElement('li');
-        newListItem.classList.add('task-or-project-li');
-        const newLink = document.createElement('p');
-        newLink.className = 'task-or-project';
-        newLink.textContent = newTaskName;
-        newLink.style.opacity = '0.5';
-        newListItem.setAttribute('data-completed', false);
-
-        newListItem.appendChild(newLink);
-        taskUlElement.insertBefore(newListItem, newTaskLi);
-        newTaskInput.value = '';
-        newLink.setAttribute('data-total-Seconds', 0);
-        newLink.setAttribute('data-is-Completed','false');
-
-        // Construct payload
-        const payload = {
-            projectId: projectId,
-            taskName: newTaskName
-        };
-
-        // Send POST request to Flask API
         fetch('/tasks', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-        }).then(response => response.json())
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ projectId: projectId, taskName: newTaskName })
+        })
+        .then(response => response.json())
         .then(data => {
-            if (data.message === "Task created") {
-                // Create and insert the new list item before the input item
-                console.log('task created');
-                newLink.setAttribute('data-taskId', data.id);
-                addTaskClickListener(newLink, data.id, data.name);
-                addHoverListener(newLink, 'task', data.id);
-                localStorage.removeItem(`tasks_cache_${projectId}`);
-            }
+            newTaskInput.value = '';
+            if (newTaskLi && newTaskLi.parentNode) newTaskLi.parentNode.removeChild(newTaskLi);
+            localStorage.removeItem(`tasks_cache_${projectId}`);
+            populateTasks(projectId);
         });
     }
 }
 
-// POST to /logs endpoint and append list. PUT to /tasks
-function addLog(taskId, logType) {
-    const logItemsContainer = document.getElementById('log-items-container');
-    const tempId = Math.floor(Math.random() * 90000) + 10000;
-    const initialTaskId = taskId;
-    const logInput = document.getElementById('log-input');
-    const clock = document.getElementById('clock');
-    let logText;
-    let logEntry;
-    
-    logText = logInput.innerHTML;
-
-    // Build log entry
-    logEntry = makeLog(tempId, false, null, logText);
-    logItemsContainer.insertBefore(logEntry, logItemsContainer.childNodes[0]);
-    logInput.innerHTML = "";
-
-    // construct PUT payload
-    const putPayload = {
-        taskId: taskId,
-        totalSeconds: globalSeconds
-    };
-
-    // Send PUT request to Flask API
-    fetch('/tasks', {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(putPayload)
-    }).then(response => response.json())
-    .then(data => {
-        if (data.message === "Task updated") {
-            console.log("task updated")
-        }
-    });
-
-    if (taskId) {
-        // Construct POST payload
-        const postPayload = {
-            taskId: taskId,
-            description: logText,
-            createdAt: new Date()
-        };
-
-        // Send POST request to Flask API
-        fetch('/logs', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(postPayload)
-        }).then(response => response.json())
-        .then(data => {
-            if (data.message === "Log created") {
-                logEntry.setAttribute('data-logid',data.id);
-                localStorage.removeItem(`logs_cache_${taskId}`);
-            }
-        });
-
-    }
-}
-
-// Add a click listener to a project link
 function addProjectClickListener(newLink, projectId, projectName) {
     newLink.addEventListener('click', function() {
+        // don't drop unsaved edits on the way out
+        if (openEntryId !== null && !closeCard()) return;
+        if (timerStartDateTime) toggleClock();
 
-        // Stop clock if running
-        const toggleIcon = document.getElementById('toggle-icon');
-        if (toggleIcon.classList.contains('fa-hourglass-half')) {
-            toggleClock();
-        }
-
-        // Show tasks
-        if (projectId !== globalProjectId){
+        if (projectId !== globalProjectId) {
+            openEntryId = null;
+            draft = null;
             globalTaskId = undefined;
+            globalProjectId = projectId;
             populateTasks(projectId);
-            timeDescriptionContainer.style.height = '0px';
             getTime(projectId);
         }
-        
-        // Fade log if picking a new project
-        const logContent = document.getElementById('log-content');
-        const logDiv = document.getElementById('log-div');
-        if (globalProjectId !== projectId) {
-            //logContent.style.visibility = 'hidden';
-            logDiv.style.opacity = "1";
-        }
 
-        // Update global
-        globalProjectId = projectId;
+        document.getElementById('project-name').textContent = projectName;
 
-        // Update project name label
-        const projectNameLabel = document.getElementById('project-name');
-        projectNameLabel.textContent = projectName;
-        
         const allLinks = document.querySelectorAll('#project-list-ul li p');
         allLinks.forEach(link => {
             link.style.fontSize = '12pt';
@@ -990,128 +987,64 @@ function addProjectClickListener(newLink, projectId, projectName) {
         });
         newLink.style.fontWeight = 'bold';
         newLink.style.opacity = '1';
-
     });
 }
 
-// Add click event listener to task link
-function addTaskClickListener(newLink, taskId) {
-    newLink.addEventListener('click', function() {
-        calculateTaskTotalTime(taskId);
-
-        // Stop clock if running
-        const toggleIcon = document.getElementById('toggle-icon');
-        if (toggleIcon.classList.contains('fa-hourglass-half') && taskId !== globalTaskId) {
-            toggleClock();
-            updateClock();
-        }
-
-        if (taskId!==globalTaskId) {
-            // Show logs
-            populateLogs(taskId);
-            
-            // Update global
-            globalTaskId = taskId;
-        }
-
-        // Update bold
-        const allLinks = document.querySelectorAll('#task-list-ul li p');
-        allLinks.forEach(link => {
-            link.style.opacity = '0.5';
-            link.style.fontWeight = 'normal';
-        });
-        newLink.style.fontWeight = 'bold';
-        newLink.style.opacity = '1';
-
-    });
-}
-
-// Add unload listener
-window.addEventListener('beforeunload', function() {
-    const toggleIcon = document.getElementById('toggle-icon');
-    if (toggleIcon.classList.contains('fa-hourglass-half')) {
-        toggleClock();
-    }
-});
-
-// Add hover event listener to project link
+// Add hover event listener to project or task link
 function addHoverListener(newLink, elementType, elementId) {
     let hoverMenu;
     let timeoutId;
 
     function displayCustomHoverMenu(e) {
-        console.log(newLink);
         e.preventDefault();
-        // Remove existing hover menus
         const existingMenu = document.querySelector('.custom-hover-menu');
-        if (existingMenu) {
-            existingMenu.remove();
-        }
+        if (existingMenu) existingMenu.remove();
 
-        // Create custom hover menu
         hoverMenu = document.createElement('ul');
         hoverMenu.className = 'custom-hover-menu';
 
-        // Rename option with FontAwesome icon
+        // Rename
         const renameOption = document.createElement('li');
         const renameIcon = document.createElement('i');
-        renameIcon.className = 'fa fa-pencil-alt'; 
+        renameIcon.className = 'fa fa-pencil-alt';
         renameOption.appendChild(renameIcon);
 
         renameOption.addEventListener('click', function() {
-            // Hide hover menu
             hoverMenu.remove();
 
-            // Create an input element
             const inputElement = document.createElement('input');
             inputElement.classList.add('rename-input');
             inputElement.type = 'text';
-            inputElement.value = newLink.textContent;
+            inputElement.value = newLink.textContent.trim();
 
-            // Replace the link with the input element
             newLink.parentNode.replaceChild(inputElement, newLink);
-
-            // Focus the input and select its content
             inputElement.focus();
             inputElement.select();
 
-            // Revert changes if the user clicks away
             const blurHandler = function() {
-                if (inputElement.parentNode) {
-                    inputElement.parentNode.replaceChild(newLink, inputElement);
-                }
+                if (inputElement.parentNode) inputElement.parentNode.replaceChild(newLink, inputElement);
             };
             inputElement.addEventListener('blur', blurHandler);
 
-            // Listen for Enter key press
-            inputElement.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
+            inputElement.addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
                     inputElement.removeEventListener('blur', blurHandler);
-                    
-                    if (elementType==='project') {
-                        // Run renameProject function
-                        projectId = newLink.getAttribute('data-projectId');
-                        renameProject(projectId, inputElement.value);
-                    }
-                    else {
-                        // Run renameTask function
-                        taskId = newLink.getAttribute('data-taskId');
-                        renameTask(taskId, inputElement.value);
+
+                    if (elementType === 'project') {
+                        renameProject(newLink.getAttribute('data-projectId'), inputElement.value);
+                        newLink.textContent = inputElement.value;
+                    } else {
+                        renameTask(newLink.getAttribute('data-taskId'), inputElement.value);
+                        const swatch = newLink.querySelector('.task-swatch');
+                        newLink.innerHTML = (swatch ? swatch.outerHTML : '') + `<span>${escapeHtml(inputElement.value)}</span>`;
                     }
 
-                    // Replace the input back with the link
-                    if (inputElement.parentNode) {
-                        inputElement.parentNode.replaceChild(newLink, inputElement);
-                    }
-
-                    // Update the link text
-                    newLink.textContent = inputElement.value;
-                    
+                    if (inputElement.parentNode) inputElement.parentNode.replaceChild(newLink, inputElement);
                 }
             });
         });
 
-        // Complete option with FontAwesome icon
+        // Complete
         const completeOption = document.createElement('li');
         const completeIcon = document.createElement('i');
         let isCompleted = true;
@@ -1119,895 +1052,215 @@ function addHoverListener(newLink, elementType, elementId) {
         if (newLink.style.textDecoration === 'line-through') {
             completeIcon.className = 'fa fa-undo';
             isCompleted = false;
-        }
-        else {
+        } else {
             completeIcon.className = 'fa fa-check';
         }
-        
+
         completeOption.appendChild(completeIcon);
-        completeOption.addEventListener('click', function() {
-
+        completeOption.addEventListener('click', function(event) {
             if (completeIcon.className === 'fa fa-check') {
-                // Confetti
-                const x = event.clientX;
-                const y = event.clientY;
-                createConfetti(x, y);
+                createConfetti(event.clientX, event.clientY);
             }
 
-            if (elementType==='project'){
+            if (elementType === 'project') {
                 completeProject(elementId, isCompleted);
+            } else {
+                completeTask(elementId, isCompleted);
             }
-            else {
-                const taskCheckbox = document.getElementById('task-checkbox');
-                const taskLabel = document.getElementById('task-name');
-                completeTask(taskCheckbox, taskLabel, isCompleted, elementId);
-            }
-            
-            // Remove the hover menu
-            if (hoverMenu && hoverMenu.parentNode) {
-                hoverMenu.parentNode.removeChild(hoverMenu);
-            }
-        })
-        
-        // Delete option with FontAwesome icon
-        let deleteConfirmed = false;  
+
+            if (hoverMenu && hoverMenu.parentNode) hoverMenu.parentNode.removeChild(hoverMenu);
+        });
+
+        // Delete
+        let deleteConfirmed = false;
         const deleteOption = document.createElement('li');
         const deleteIcon = document.createElement('i');
-        deleteIcon.className = 'fa fa-trash';  // FontAwesome class for trash/delete icon
+        deleteIcon.className = 'fa fa-trash';
         deleteOption.appendChild(deleteIcon);
 
         deleteOption.addEventListener('click', function() {
             if (!deleteConfirmed) {
-                // First click: Ask for confirmation
-                deleteIcon.className = 'fa fa-question';  // Change to a 'confirm' icon
+                deleteIcon.className = 'fa fa-question';
                 deleteConfirmed = true;
             } else {
-                // Second click: Proceed with deletion
-                if (elementType==='project') {
+                if (elementType === 'project') {
                     deleteProject(elementId);
-                    const taskList = document.getElementById('task-list-ul');
-                    taskList.innerHTML = "";
-                }
-                else {
+                    document.getElementById('task-list-ul').innerHTML = "";
+                } else {
                     deleteTask(elementId);
                 }
-
-                // Remove the hover menu
-                if (hoverMenu && hoverMenu.parentNode) {
-                    hoverMenu.parentNode.removeChild(hoverMenu);
-                }
-
-                deleteConfirmed = false;  // Reset flag
+                if (hoverMenu && hoverMenu.parentNode) hoverMenu.parentNode.removeChild(hoverMenu);
+                deleteConfirmed = false;
             }
         });
 
-        // Append options to hover menu
         hoverMenu.appendChild(completeOption);
         hoverMenu.appendChild(renameOption);
         hoverMenu.appendChild(deleteOption);
-
-        // Append hover menu to document
         document.body.appendChild(hoverMenu);
 
-        // Position the hover menu to the right of the list item
         const rect = newLink.getBoundingClientRect();
         hoverMenu.style.top = (rect.top + window.scrollY) + 'px';
         hoverMenu.style.left = (rect.right + window.scrollX) + 'px';
 
-
-        // Clear any existing timeout
-        if (timeoutId) {
-            clearTimeout(timeoutId);
-        }
+        if (timeoutId) clearTimeout(timeoutId);
 
         hoverMenu.addEventListener('mouseleave', function() {
-            // Set a timeout to fade out the menu after 1 second
             timeoutId = setTimeout(() => {
                 hoverMenu.classList.add('fade-out');
-                setTimeout(() => {
-                    hoverMenu.remove();
-                }, 300);  // Remove after the transition completes
+                setTimeout(() => hoverMenu.remove(), 300);
             }, 300);
         });
 
         hoverMenu.addEventListener('mouseenter', function() {
-            // Clear the timeout and fade-out class if the mouse re-enters the menu
-            if (timeoutId) {
-                clearTimeout(timeoutId);
-            }
+            if (timeoutId) clearTimeout(timeoutId);
             hoverMenu.classList.remove('fade-out');
         });
-
-    };
+    }
 
     newLink.addEventListener('contextmenu', displayCustomHoverMenu);
-    
-    let lastTapTime = 0; 
+
+    let lastTapTime = 0;
     newLink.addEventListener('touchend', function(e) {
-        const currentTime = new Date().getTime(); 
+        const currentTime = new Date().getTime();
         const tapInterval = currentTime - lastTapTime;
-        if (tapInterval < 300 && tapInterval > 0) { 
-            displayCustomHoverMenu(e); 
-            e.preventDefault(); 
+        if (tapInterval < 300 && tapInterval > 0) {
+            displayCustomHoverMenu(e);
+            e.preventDefault();
         }
-        lastTapTime = currentTime; 
+        lastTapTime = currentTime;
     });
 
-    newLink.addEventListener('mouseleave', function(e) {
+    newLink.addEventListener('mouseleave', function() {
         if (hoverMenu && !hoverMenu.matches(':hover')) {
             hoverMenu.classList.add('fade-out');
-            timeoutId = setTimeout(() => {
-                hoverMenu.remove();
-            }, 300);
+            timeoutId = setTimeout(() => hoverMenu.remove(), 300);
         }
     });
 }
 
-// Update clock
-let currentRotation = 0;
-let blockSeconds;
-let clockStartTime = null;
-let blockStartTime = null;
-function updateClock(countUp) {
-
-    if (countUp === true && clockStartTime === null) {
-        clockStartTime = new Date().getTime() - (globalSeconds * 1000);
-        blockStartTime = new Date().getTime();
+// Mark a task complete
+function completeTask(taskId, isCompleted) {
+    const taskLink = document.querySelector(`[data-taskid="${taskId}"]`);
+    if (taskLink) {
+        taskLink.style.textDecoration = isCompleted ? 'line-through' : '';
+        const listItem = taskLink.closest('li');
+        if (listItem) listItem.setAttribute('data-completed', isCompleted);
     }
-
-    if (clockStartTime !== null) {
-        const currentTime = new Date().getTime();
-        globalSeconds = Math.floor((currentTime - clockStartTime) / 1000);
-        
-        if (blockStartTime !== null) {
-            blockSeconds = Math.floor((currentTime - blockStartTime) / 1000);
-        }
-    }
-
-    const hrs = String(Math.floor(globalSeconds / 3600)).padStart(2, '0');
-    const mins = String(Math.floor((globalSeconds % 3600) / 60)).padStart(2, '0');
-    const secs = String(globalSeconds % 60).padStart(2, '0');
-    clock.textContent = `${hrs}:${mins}:${secs}`;
-
-    if (countUp === true) {
-        currentRotation = 180;
-
-        const block_hrs = String(Math.floor(blockSeconds / 3600)).padStart(2, '0');
-        const block_mins = String(Math.floor((blockSeconds % 3600) / 60)).padStart(2, '0');
-        const block_secs = String(blockSeconds % 60).padStart(2, '0');
-        clock.textContent = `${hrs}:${mins}:${secs} (${block_hrs}:${block_mins}:${block_secs})`;
-    } else {
-        clock.textContent = `${hrs}:${mins}:${secs}`;
-    }
-}
-
-// Handle clock edit
-function makeEditable() {
-    // Convert current time to editable format
-    let currentText = this.innerText;
-    let input = document.createElement('input');
-    input.value = currentText;
-    input.className = 'rename-input darkmode';
-    this.replaceWith(input);
-    
-    // Focus and select the input content
-    input.focus();
-    input.select();
-
-    // Add event listener for blur and key events
-    input.addEventListener('blur', processEdit);
-    input.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            processEdit.call(this, e);
-        }
-    });
-}
-function processEdit(e) {
-    updateDurationS();
-    this.removeEventListener('blur', processEdit);
-    this.removeEventListener('keydown', processEdit);
-    let value = e.target.value;
-    let newClock = document.createElement('p');
-    newClock.id = 'clock';
-    newClock.addEventListener('click', makeEditable);
-    if (isValidTime(value)) {
-        let seconds = convertToSeconds(value);
-        globalSeconds = seconds;
-        newClock.textContent = value;
-        e.target.replaceWith(newClock);
-        addLog(globalTaskId, 'Edit');
-    }
-}
-function isValidTime(time) {
-    let regex = /^([0-9]{2}\.){2}[0-9]{2}$/;
-    return regex.test(time);
-}
-function convertToSeconds(time) {
-    let [hours, minutes, seconds] = time.split('.').map(Number);
-    return hours * 3600 + minutes * 60 + seconds;
-}
-
-
-// Play pause toggle
-let timerDuration = 0;
-let timerStartDateTime;
-let toggleClock = (function() {
-    const button = document.querySelector('.button-common');
-    const toggleIcon = document.getElementById('toggle-icon');
-    const clockDiv = document.getElementById('clock-div');
-
-    let intervalId = null;
-
-    return function() {
-        if (toggleIcon.classList.contains('fa-hourglass-end')) {
-                clockDiv.classList.add('fade-in-animation');
-                timerDuration = 0;
-                timerStartDateTime = new Date();
-                updateClock(true);
-                button.style.transform = `rotate(180deg)`;
-                toggleIcon.classList.remove('fa-hourglass-end');
-                toggleIcon.classList.add('fa-hourglass-half');
-                intervalId = setInterval(() => {
-                    timerDuration++; 
-                    updateClock(true);
-                }, 1000);
-            } else {
-                clockDiv.classList.remove('fade-in-animation');
-                clockStartTime = null;
-                toggleIcon.classList.remove('fa-hourglass-half');
-                toggleIcon.classList.add('fa-hourglass-end');
-                clearInterval(intervalId);
-                button.style.transform = `rotate(${currentRotation-180}deg)`;
-                currentRotation = 0;
-                timerEndDateTime = new Date();
-                timerDuration = Math.floor((timerEndDateTime - timerStartDateTime) / 1000);
-
-                newBlock = document.createElement('div');
-                newBlock.className = 'time-block';
-                newBlock.dataset.startTime = convertUTCToLocalForInput(timerStartDateTime.toISOString().slice(0,16));
-                newBlock.dataset.endTime = convertUTCToLocalForInput(timerEndDateTime.toISOString().slice(0,16));
-                newBlock.dataset.duration = timerDuration;
-                newBlock.dataset.taskId = globalTaskId;
-                newBlock.dataset.taskName = document.getElementById('task-name').textContent;
-                newBlock.dataset.description = "";
-                newBlock.addEventListener('click', () => openTimeDescription(newBlock));
-                timeDiv.insertBefore(newBlock, addTimeBlockButton);
-                resizeTimeBlocks();
-
-                // POST time block
-                const payload = {
-                    projectId: globalProjectId,
-                    taskId: globalTaskId,
-                    start: timerStartDateTime,
-                    end: timerEndDateTime,
-                    duration: timerDuration,
-                    description: ""
-                };
-
-                // Send POST request to Flask API
-                fetch('/time', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.message === "Time block created") {
-                        console.log("time block updated")
-                        newBlock.dataset.id = data.id;
-                    }
-                    localStorage.removeItem(`time_cache_${globalProjectId}`);
-                });
-                calculateTaskTotalTime(globalTaskId, changed=true);
-            }
-        };
-})();
-document.getElementById('clock').addEventListener('click', toggleClock);
-
-// Create a new time block on click
-addTimeBlockButton = document.getElementById('add-a-time-block');
-function createTimeBlock() {
-    timeDiv.style.border = '';
-    newBlock = document.createElement('div');
-    newBlock.className = 'time-block';
-    newBlock.dataset.duration = 3600;
-    timerStartDateTime = new Date();
-    timerEndDateTime = new Date();
-    timerStartDateTime.setSeconds(timerEndDateTime.getSeconds() - parseInt(newBlock.dataset.duration));
-    newBlock.dataset.startTime = convertUTCToLocalForInput(timerStartDateTime.toISOString().slice(0,16));
-    newBlock.dataset.endTime = convertUTCToLocalForInput(timerEndDateTime.toISOString().slice(0,16));
-    newBlock.dataset.duration = 3600;
-    newBlock.dataset.id = -1;
-    newBlock.dataset.taskId = globalTaskId;
-    newBlock.dataset.projectId = globalProjectId;
-    newBlock.dataset.description = '';
-    newBlock.dataset.taskName = document.getElementById('task-name').textContent;
-    newBlock.addEventListener('click', () => openTimeDescription(newBlock));
-    timeDiv.insertBefore(newBlock, addTimeBlockButton);
-    openTimeDescription(newBlock);
-    resizeTimeBlocks();
-
-    newBlock.style.backgroundColor = 'transparent';
-    newBlock.style.border = `2px dashed ${dayColors[todaysDayOfWeek]}`;
-    showCommitTimeButton(endTimeInput);
-}
-addTimeBlockButton.addEventListener('click', createTimeBlock);
-
-// Resize time blocks
-function resizeTimeBlocks() {
-    const timeDivDiv = document.getElementById('time-div-div');
-    const timeBlocks = document.querySelectorAll(".time-block");
-    
-    // get time bounds 
-    const today = new Date();
-    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const startOfWeek = new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        today.getDate() - today.getDay()
-    );    
-    startOfWeek.setHours(0, 0, 0, 0);
-
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 7);
-
-    let totalDuration = 0;
-    let totalDurationToday = 0;
-    let totalDurationThisWeek = 0;
-    let smallestDuration = Infinity;
-    
-    timeBlocks.forEach(block => {
-        const duration = parseInt(block.dataset.duration, 10);
-        totalDuration += duration;
-    
-        if (duration < smallestDuration) {
-            smallestDuration = duration;
-        }
-    
-        const startTime = new Date(block.dataset.startTime);
-        if (startTime >= startOfToday && startTime < new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000)) {
-            totalDurationToday += duration;
-        }    
-        if (startTime >= startOfWeek && startTime < endOfWeek) {
-            totalDurationThisWeek += duration;
-        }
-    });
-
-    timeDiv.style.width = '100%';
-    let minDenominator = 100;
-    if (smallestDuration < totalDuration/minDenominator) {
-        let widthFraction = smallestDuration / totalDuration;
-        let divWidth = (timeDivDiv.offsetWidth * ((1/minDenominator)/widthFraction)) + 'px';
-        timeDiv.style.width = divWidth;
-    }
-
-    const hoursLogged = document.getElementById('hours-logged');
-    const hoursRounded = (totalDuration / 60 / 60).toFixed(2);
-    hoursLogged.textContent = `${hoursRounded} hour${s(hoursRounded)} this month, ${(totalDurationThisWeek / 60 / 60).toFixed(2)} this week, ${(totalDurationToday / 60 / 60).toFixed(2)} today`;
-
-    timeBlocks.forEach(block => {
-        let duration = parseInt(block.dataset.duration, 10);
-        let widthPercentage = (duration / totalDuration);
-        block.style.width = widthPercentage * divWidth + 'px';
-    });
-}
-
-document.addEventListener("DOMContentLoaded", function() {
-    // Toggle on click
-    const toggleButton = document.getElementById('toggle-button');
-    toggleButton.addEventListener('click', function() {
-        toggleClock();
-    })
-
-    // Add log upon enter
-    const logInput = document.getElementById('log-input');
-    logInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            if (!e.shiftKey) {
-                e.preventDefault();
-                addLog(globalTaskId, logType='Comment');
-            }
-        }
-    });
-
-    // Function to update the height of inputElement
-    function updateInputHeight(input) {
-        input.style.height = input.scrollHeight + 'px !important';
-    }
-    logInput.addEventListener('input', () => updateInputHeight(logInput));
-    updateInputHeight(logInput);
-
-
-    // Mark task as completed or not yet completed when taskbox is checked
-    const taskCheckbox = document.getElementById('task-checkbox');
-    const taskLabel = document.getElementById('task-name');
-
-    taskCheckbox.addEventListener('click', function(event) {
-        const isCompleted = taskCheckbox.checked ? true : false;
-        completeTask(taskCheckbox, taskLabel, isCompleted);
-
-        if (isCompleted === true) {
-            // Confetti
-            const x = event.clientX;
-            const y = event.clientY;
-            createConfetti(x, y);
-        }
-
-        const toggleIcon = document.getElementById('toggle-icon');
-        if (toggleIcon.classList.contains('fa-hourglass-half')){
-            toggleClock();
-        }
-    });
-});
-
-// Complete task
-function completeTask(taskCheckbox, taskLabel, isCompleted, taskId) {
-    const selectedTask = document.querySelector(`p[data-taskId="${taskId}"]`);
-    const listItem = selectedTask.closest('li');
-
-    if (isCompleted) {
-        selectedTask.style.textDecoration = 'line-through';
-        taskLabel.style.textDecoration = 'line-through';
-        taskCheckbox.checked = true;
-        listItem.setAttribute('data-completed',true);
-        listItem.style.height = '0px'
-        listItem.style.height = '0px';
-        listItem.style.overflow = 'hidden';
-        listItem.style.margin = 'auto';
-    }
-    else {
-        selectedTask.style.textDecoration = '';
-        taskLabel.style.textDecoration = '';
-        taskCheckbox.checked = false;
-        listItem.setAttribute('data-completed',false);
-        listItem.style.height = 'auto';
-        listItem.style.overflow = 'visible';
-        listItem.style.marginBottom = '5px';
-    }
-
-    //calculateListHeight();
 
     fetch(`/tasks`, {
         method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            taskId: globalTaskId,
-            isCompleted: isCompleted,
-            totalSeconds: globalSeconds
-        })
-        })
-        .catch(error => {
-        console.error(error);
-    });
-
-    localStorage.removeItem(`tasks_cache_${globalProjectId}`);
-
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskId: taskId, isCompleted: isCompleted })
+    })
+    .then(response => response.json())
+    .then(() => localStorage.removeItem(`tasks_cache_${globalProjectId}`))
+    .catch(error => console.error('There has been a problem with your fetch operation:', error));
 }
 
-// Complete project
+// Mark a project complete
 function completeProject(projectId, isCompleted) {
-    const selectedProject = document.querySelector(`p[data-projectId="${projectId}"]`);
-    const listItem = selectedProject.closest('li');
-    
-    if (isCompleted) {
-        selectedProject.style.textDecoration = 'line-through';
-        listItem.setAttribute('data-completed',true);
-        listItem.style.height = '0px'
-        listItem.style.height = '0px';
-        listItem.style.overflow = 'hidden';
-        listItem.style.margin = 'auto';
-    }
-    else {
-        selectedProject.style.textDecoration = '';
-        listItem.setAttribute('data-completed',false);
-        listItem.style.height = 'auto';
-        listItem.style.overflow = 'visible';
-        listItem.style.marginBottom = '5px';
+    const projectLink = document.querySelector(`[data-projectid="${projectId}"]`);
+    if (projectLink) {
+        projectLink.style.textDecoration = isCompleted ? 'line-through' : '';
+        const listItem = projectLink.closest('li');
+        if (listItem) listItem.setAttribute('data-completed', isCompleted);
     }
 
-    //calculateListHeight();
-
     fetch(`/projects`, {
         method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            projectId: projectId,
-            isCompleted: isCompleted
-        })
-        })
-        .then(response => response.json())
-        .then(data => {
-            //populateProjects();
-            localStorage.removeItem(`projects_cache_${globalUserId}`);
-        })
-        .catch(error => {
-        console.error(error); // Handle errors
-    }); 
-}
-
-// Rename project
-function renameProject(projectId, newName){
-    localStorage.removeItem(`projects_cache_${globalUserId}`);
-
-    fetch(`/projects`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            projectId: projectId,
-            name: newName
-        })
-        })
-        .then(response => response.json())
-        .then(data => {
-            populateProjects();
-        })
-        .catch(error => {
-            console.error(error); 
-    });
-}
-
-// Delete project
-function deleteProject(projectId){
-    localStorage.removeItem(`projects_cache_${globalUserId}`);
-    fetch(`/projects`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            projectId: projectId,
-            isVisible: false
-        })
-        })
-        .then(response => response.json())
-        .then(data => {
-            populateProjects();
-        })
-        .catch(error => {
-        console.error(error); // Handle errors
-    });
-}
-
-// Rename task
-function renameTask(taskId, newName){
-    localStorage.removeItem(`tasks_cache_${globalProjectId}`);
-    fetch(`/tasks`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            taskId: taskId,
-            name: newName,
-            totalSeconds: globalSeconds
-        })
-        })
-        .then(response => response.json())
-        .then(data => {
-            const taskLabel = document.getElementById('task-name');
-            taskLabel.textContent = newName;
-        })
-        .catch(error => {
-        console.error(error); // Handle errors
-    });
-}
-
-// Delete task
-function deleteTask(taskId){
-    localStorage.removeItem(`tasks_cache_${globalProjectId}`);
-    fetch(`/tasks`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            taskId: taskId,
-            isVisible: false,
-            totalSeconds: globalSeconds
-        })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.message === "Task updated") {
-                const logDiv = document.getElementById('log-div');
-                const logContent = document.getElementById('log-content');
-                globalTaskId=undefined;
-                populateTasks(globalProjectId);
-            }
-        })
-        .catch(error => {
-        console.error(error); // Handle errors
-    });
-}
-
-// Delete log
-function deleteLog(logItem) {
-    localStorage.removeItem(`logs_cache_${globalTaskId}`);
-    const logItemsContainer = document.getElementById('log-items-container');
-    const pinnedLogsContainer = document.getElementById('pinned-logs-container');
-
-    const logId = logItem.getAttribute('data-logId');
-    const isPinned = logItem.getAttribute('data-isPinned');
-
-    logItem.style.opacity = '0';
-
-    if (isPinned === 'true') {
-        setTimeout(() => pinnedLogsContainer.removeChild(logItem), 250);
-    } else {
-        setTimeout(() => logItemsContainer.removeChild(logItem), 250);
-    }    
-
-    fetch(`logs`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            taskId: globalTaskId,
-            projectId: globalProjectId,
-            logId: logId,
-            delete: true
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId: projectId, isCompleted: isCompleted })
     })
     .then(response => response.json())
-    .then(data => {
-        if (data.message === "Log deleted") {
-            console.log('log deleted');
-        }
-    });
+    .then(() => localStorage.removeItem(`projects_cache_${globalUserId}`))
+    .catch(error => console.error('There has been a problem with your fetch operation:', error));
 }
 
-// Pin log
-function pinLog(logItem) {
-    localStorage.removeItem(`logs_cache_${globalTaskId}`);
-
-    const logItemsContainer = document.getElementById('log-items-container');
-    const pinnedLogsContainer = document.getElementById('pinned-logs-container');
-
-    const logId = logItem.getAttribute('data-logId');
-    const isPinned = logItem.getAttribute('data-isPinned');
-
-    if (logItem) {
-        if (isPinned === 'true') {
-
-            // Unpin if pinned
-            hiddenLogItem = logItemsContainer.querySelector(`[data-logId="${logId}"]`);
-            hiddenLogItem.style.height = 'auto';
-            hiddenLogItem.style.padding = '15px';
-            hiddenLogItem.style.display = 'block';
-
-            // Make sure the text content is updated
-            const hiddenDescription = hiddenLogItem.querySelector('.log-description');
-            const pinnedDescription = logItem.querySelector('.log-description');
-            hiddenDescription.innerHTML = pinnedDescription.innerHTML;
-            pinnedLogsContainer.removeChild(logItem);
-        } else {
-            // Pin if not pinned
-            let clonedLogItem = logItem.cloneNode(true);
-            
-            // Make buttons dark
-            const logOptionButtons = clonedLogItem.querySelectorAll('.log-option-button');
-            logOptionButtons.forEach(button => {
-                button.classList.add('dark')
-            });
-
-            // Hide item in regular log
-            logItem.style.height = '0px';
-            logItem.style.padding = '0px';
-            logItem.style.overflow = 'hidden';
-            logItem.style.display = 'none';
-
-            // Create item in pinned log
-            clonedLogItem.style.opacity = '1'; 
-            clonedLogItem.style.background = 'var(--text-color)';
-            clonedLogItem.style.color = '#161616';
-            pinnedLogsContainer.appendChild(clonedLogItem);
-            clonedLogItem.setAttribute('data-isPinned', 'true');
-
-            const pinOption = clonedLogItem.querySelector('#pin-option-button');
-            const editOption = clonedLogItem.querySelector('#edit-option-button');
-            const deleteOption = clonedLogItem.querySelector('#delete-option-button');
-
-            const logOptions = clonedLogItem.querySelector('.log-options-div');
-            logOptions.style.minWidth = '20px';
-            logOptions.style.minHeight = '15px';
-            pinOption.style.minWidth = '15px';
-
-            addLogPinClickListener(pinOption, clonedLogItem);
-            addLogEditClickListener(editOption, clonedLogItem);
-            addLogDeleteClickListener(deleteOption, clonedLogItem);
-
-        }
-    }
-
-    // Update log
-    fetch(`logs`, {
+function renameProject(projectId, newName) {
+    fetch(`/projects`, {
         method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            projectId: globalProjectId,
-            taskId: globalTaskId,
-            logId: logId,
-            isPinned: isPinned !== 'true'
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId: projectId, name: newName })
     })
     .then(response => response.json())
-    .then(data => {
-        if (data.message === "Log updated") {
-            console.log('log updated');
-        }
-    });
+    .then(() => {
+        localStorage.removeItem(`projects_cache_${globalUserId}`);
+        if (projectId == globalProjectId) document.getElementById('project-name').textContent = newName;
+    })
+    .catch(error => console.error('There has been a problem with your fetch operation:', error));
 }
 
-function editLog(logItem) {
-    const logDescription = logItem.querySelector('.log-description');
-    const logOptions = logItem.querySelector('.log-options-div');
-    const inputElement = document.createElement('div');
-    inputElement.style.height = logDescription.scrollHeight + 'px';
-    inputElement.classList.add('log-edit-area');
-    inputElement.classList.add('dark');
-    inputElement.contentEditable = "true";
-
-    logItem.style.border = '2px dashed var(--text-color)';
-    logItem.style.background = 'transparent';
-    
-    var originalPadding = parseInt(logItem.style.padding, 10);
-    logItem.style.padding = originalPadding - 2 + 'px';
-
-    const description = logDescription.innerHTML;
-    inputElement.innerHTML = description;
-    logOptions.style.display = 'none';
-
-    // Replace the description with the input element
-    logDescription.parentNode.replaceChild(inputElement, logDescription);
-
-    // Focus the input and select its content
-    inputElement.focus();
-    //inputElement.select();
-
-
-    // Function to revert changes
-    function revertEdit() {
-        if (inputElement.parentNode) {
-            inputElement.parentNode.replaceChild(logDescription, inputElement);
-            inputElement.removeEventListener('keydown', escHandler); 
-            logOptions.style.display = 'flex';
-            
-            logItem.style.border = 'none';
-            logItem.style.background = 'var(--text-color)';
-            logItem.style.padding = originalPadding + 'px';
-
+function deleteProject(projectId) {
+    fetch(`/projects`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId: projectId, isVisible: false })
+    })
+    .then(response => response.json())
+    .then(() => {
+        localStorage.removeItem(`projects_cache_${globalUserId}`);
+        const link = document.querySelector(`[data-projectid="${projectId}"]`);
+        if (link) link.closest('li').remove();
+        if (projectId == globalProjectId) {
+            globalProjectId = undefined;
+            globalTaskId = undefined;
+            timeEntries = [];
+            renderTimes();
+            populateProjects();
         }
-    }
-
-    // Function to handle escape key
-    function escHandler(event) {
-        if (event.key === 'Escape') {
-            revertEdit();
-        }
-    }
-
-    // Add log upon enter
-    function enterHandler(e) {
-        if (e.key === 'Enter') {
-            if (!e.shiftKey) {
-                e.preventDefault();
-                commitLogEdit();
-            }
-        }
-    };
-    inputElement.addEventListener('keypress', enterHandler);
-
-    // Function to update the height of inputElement
-    function updateInputHeight(input) {
-        input.style.height = 'auto';
-        input.style.height = input.scrollHeight + 'px !important';
-    }
-    inputElement.addEventListener('keypress', () => setTimeout(updateInputHeight(inputElement),5));
-    updateInputHeight(inputElement);
-
-    // Add event listener for the escape key
-    inputElement.addEventListener('keydown', escHandler);
-
-    // Function to commit changes
-    function commitLogEdit() {
-        const newDescription = inputElement.innerHTML;
-        logDescription.innerHTML = newDescription;
-
-        if (inputElement.parentNode) {
-            inputElement.parentNode.replaceChild(logDescription, inputElement);
-            inputElement.removeEventListener('keydown', enterHandler); 
-            logOptions.style.display = 'flex';
-            
-            logItem.style.border = 'none';
-            logItem.style.background = 'var(--text-color)';
-            logItem.style.padding = originalPadding + 'px';
-
-            // Update log
-            fetch(`logs`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    taskId: globalTaskId,
-                    projectId: globalProjectId,
-                    logId: logItem.getAttribute('data-logId'),
-                    newDescription: newDescription
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.message === "Log updated") {
-                    console.log('log updated');
-                    localStorage.removeItem(`logs_cache_${globalTaskId}`);
-                }
-            });
-        }
-    }
+    })
+    .catch(error => console.error('There has been a problem with your fetch operation:', error));
 }
 
-// Add click listeners to export buttons
-//const userExport = document.getElementById('users-csv');
-//userExport.addEventListener('click', function() {
-//    exportCsv('auth',globalUserId);
-//})
-const projectExport = document.getElementById('project-csv');
-projectExport.addEventListener('click', function() {
-    exportCsv('user_id',globalUserId);
-})
-const taskExport = document.getElementById('task-csv');
-taskExport.addEventListener('click', function() {
-    exportCsv('project_id',globalProjectId);
-})
-const logExport = document.getElementById('log-csv');
-logExport.addEventListener('click', function() {
-    exportCsv('time',globalProjectId);
-})
-const timeExport = document.getElementById('time-csv');
-timeExport.addEventListener('click', function() {
-    exportCsv('days',globalProjectId);
-})
+function renameTask(taskId, newName) {
+    fetch(`/tasks`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskId: taskId, name: newName })
+    })
+    .then(response => response.json())
+    .then(() => {
+        localStorage.removeItem(`tasks_cache_${globalProjectId}`);
+        const task = currentTasks.find(t => t.id == taskId);
+        if (task) task.name = newName;
+        renderTimerTasks();
+        renderTimes();
+    })
+    .catch(error => console.error('There has been a problem with your fetch operation:', error));
+}
 
+function deleteTask(taskId) {
+    fetch(`/tasks`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskId: taskId, isVisible: false })
+    })
+    .then(response => response.json())
+    .then(() => {
+        localStorage.removeItem(`tasks_cache_${globalProjectId}`);
+        populateTasks(globalProjectId);
+    })
+    .catch(error => console.error('There has been a problem with your fetch operation:', error));
+}
 
-// Ping export backend
+/* ============================================================
+   Chrome: export, colour, darkmode, confetti, list toggles
+   ============================================================ */
+
 function exportCsv(arg, id) {
-    // Generate filename based on arg
     const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hour = String(now.getHours()).padStart(2, '0');
-    const minute = String(now.getMinutes()).padStart(2, '0');
-
-    let prefix = 'anolog_';
+    const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}`;
 
     let dataType = '';
-    if (arg === 'user_id') {
-        dataType = 'projects';
-    } else if (arg === 'project_id') {
-        dataType = 'tasks';
-    } else if (arg === 'time') {
-        dataType = 'time';
-    } else if (arg === 'days') {
-        dataType = 'days';
-    }
-
+    if (arg === 'user_id') dataType = 'projects';
+    else if (arg === 'project_id') dataType = 'tasks';
+    else if (arg === 'time') dataType = 'time';
+    else if (arg === 'days') dataType = 'days';
 
     const { selectedMonth, selectedYear } = getMonthYear();
-    const filename = `${prefix}${dataType}_${year}${month}${day}${hour}${minute}`;
+    const filename = `anolog_${dataType}_${stamp}`;
 
-    // Fetch CSV data and trigger download
     fetch(`/export_csv?${arg}=${id}&month=${selectedMonth}&year=${selectedYear}`)
     .then(response => response.blob())
     .then(blob => {
@@ -2015,12 +1268,7 @@ function exportCsv(arg, id) {
         const a = document.createElement('a');
         a.style.display = 'none';
         a.href = url;
-        if (dataType == "time") {
-            a.download = `${filename}.xlsx`; 
-        }
-        else {
-            a.download = `${filename}.csv`; 
-        }
+        a.download = dataType === 'time' ? `${filename}.xlsx` : `${filename}.csv`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -2028,65 +1276,34 @@ function exportCsv(arg, id) {
     .catch(error => console.error('Error:', error));
 }
 
+document.getElementById('export-button').addEventListener('click', function() {
+    exportCsv('time', globalProjectId);
+});
+document.getElementById('project-csv').addEventListener('click', function() {
+    exportCsv('user_id', globalUserId);
+});
+document.getElementById('task-csv').addEventListener('click', function() {
+    exportCsv('project_id', globalProjectId);
+});
+document.getElementById('log-csv').addEventListener('click', function() {
+    exportCsv('time', globalProjectId);
+});
+document.getElementById('time-csv').addEventListener('click', function() {
+    exportCsv('days', globalProjectId);
+});
+
 // Collapse left menu
 document.querySelector('.toggle').addEventListener('click', function() {
-    const listContainer = document.querySelector('.list-container')
+    const listContainer = document.querySelector('.list-container');
     const menuButton = document.getElementById('menu-button');
     if (menuButton.className === "fa-solid fa-bars") {
         listContainer.classList.remove('list-collapsed');
         menuButton.className = "fa-solid fa-square-minus";
-        setTimeout(resizeTimeBlocks,150);
-    }
-    else {          
+    } else {
         listContainer.classList.add('list-collapsed');
         void listContainer.offsetWidth;
         menuButton.className = "fa-solid fa-bars";
-        setTimeout(resizeTimeBlocks,150);
     }
-});
-
-// Open export menu
-const exportButton = document.getElementById('export-button');
-exportButton.addEventListener('click', function() {
-    exportCsv('time',globalProjectId);
-})
-
-const dropdownMenu = document.getElementById('dropdown-menu');
-function addBorderRadius() {
-    exportButton.style.borderRadius = '10px 10px 0 0';
-    exportButton.style.width = '80px';
-}
-function removeBorderRadius() {
-    exportButton.style.borderRadius = '10px';  
-    exportButton.style.width = '44px';
-}
-//exportButton.addEventListener('mouseover', addBorderRadius);
-//exportButton.addEventListener('mouseout', removeBorderRadius);
-//dropdownMenu.addEventListener('mouseover', addBorderRadius);
-//dropdownMenu.addEventListener('mouseout', removeBorderRadius);
-
-// Collapse menu only on mobile
-const listContainer = document.querySelector('.list-container');
-const menuButton = document.getElementById('menu-button');
-function setClassForScreenSize() {
-    if (window.innerWidth >= 769) {
-        resizeTimeBlocks();
-    } else {
-        resizeTimeBlocks();
-    }
-}
-
-let blockResizeTimeout;
-let listResizeTimeout;
-let dayResizeTimeout;
-window.addEventListener('resize', () => {
-
-    clearTimeout(blockResizeTimeout);
-    clearTimeout(listResizeTimeout);
-    blockResizeTimeout = setTimeout(resizeTimeBlocks, 100);
-    //listResizeTimeout = setTimeout(calculateListHeight, 100);
-    dayResizeTimeout = setTimeout(resizeDays, 200);
-    setClassForScreenSize();
 });
 
 // Pick color
@@ -2098,18 +1315,13 @@ document.addEventListener('input', function(event) {
         document.documentElement.style.setProperty('--primary-color', event.target.value);
     }
 });
-
-// Update user's color field
 document.addEventListener('change', function(event) {
     if (event.target.id === 'color-picker') {
         document.documentElement.style.setProperty('--primary-color', event.target.value);
-        // Send PUT to /user endpoint
         fetch('/user', {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({userId: globalUserId, color: event.target.value }),
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: globalUserId, color: event.target.value })
         });
     }
 });
@@ -2119,87 +1331,66 @@ function createConfetti(x, y) {
     const confettiCount = 40;
     const colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
 
-        for(let i = 0; i < confettiCount; i++) {
-            const confetti = document.createElement('div');
-            const randomColor = colors[Math.floor(Math.random() * colors.length)];
-            confetti.style.backgroundColor = randomColor;
-            confetti.className = 'confetti';
-            confetti.style.left = `${x}px`;
-            confetti.style.top = `${y}px`;
-            document.body.appendChild(confetti);
+    for (let i = 0; i < confettiCount; i++) {
+        const confetti = document.createElement('div');
+        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        confetti.className = 'confetti';
+        confetti.style.left = `${x}px`;
+        confetti.style.top = `${y}px`;
+        document.body.appendChild(confetti);
 
-            // Randomize initial position and rotation
-            confetti.style.setProperty('--initial-x', `${Math.random() * 30 - 15}px`);
-            confetti.style.setProperty('--initial-y', `${Math.random() * 30 - 15}px`);
-            confetti.style.setProperty('--rotation', `${Math.random() * 360}deg`);
-            confetti.style.setProperty('--speed', `${Math.random() * .1 + 0.5}s`);
+        confetti.style.setProperty('--initial-x', `${Math.random() * 30 - 15}px`);
+        confetti.style.setProperty('--initial-y', `${Math.random() * 30 - 15}px`);
+        confetti.style.setProperty('--rotation', `${Math.random() * 360}deg`);
+        confetti.style.setProperty('--speed', `${Math.random() * .1 + 0.5}s`);
 
-            // Remove after animation completes
-            confetti.addEventListener('animationend', function() {
+        confetti.addEventListener('animationend', function() {
             confetti.remove();
-            });
-        }
+        });
+    }
 }
 
-// Logout 
+// Logout
 document.getElementById('logout-button').addEventListener('click', function() {
-                    window.location.href = '/logout';
-                });
+    window.location.href = '/logout';
+});
 
 // Toggle darkmode
-function toggleDarkmode(initialToggle) {
-    const logo = document.querySelector('.logo');
+function toggleDarkmode() {
     const title = document.querySelector('h1');
     const darkmodeIcon = document.querySelector('#darkmode-icon');
 
-    if (initialToggle) {
-        darkmode = !darkmode;
-    }
-
     if (darkmode) {
-        // Make lightmode
         darkmode = false;
         document.body.style.backgroundColor = "var(--text-color)";
         darkmodeIcon.className = "fa-regular fa-moon";
         darkmodeIcon.style.fontSize = "14pt";
         title.style.color = "var(--card-color)";
-    }
-    else {
-        // Make darkmode
+    } else {
         darkmode = true;
         document.body.style.backgroundColor = "#000000";
         darkmodeIcon.className = "fa-solid fa-moon";
         darkmodeIcon.style.fontSize = "14pt";
-        title.style.color =  "var(--text-color)";
+        title.style.color = "var(--text-color)";
     }
 
     if (!firstLoad) {
-    // Send PUT to /user endpoint
         fetch('/user', {
             method: 'PUT',
-            headers: {
-                    'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({userId: globalUserId, darkmode: darkmode }),
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: globalUserId, darkmode: darkmode })
         });
     }
     firstLoad = false;
 }
-const darkmodeButton = document.querySelector('.darkmode-button');
-darkmodeButton.addEventListener('click', function() {
-    toggleDarkmode();
-})
-toggleDarkmode(initialToggle=true);
+document.querySelector('.darkmode-button').addEventListener('click', toggleDarkmode);
+toggleDarkmode();
 
 // Toggle show completed
 function toggleShowCompleted(type) {
-    let completed = document.querySelectorAll(`#${type}-list-ul li[data-completed=true]`);
-    if (type === 'task') {
-        showCompleted = showCompletedTasks;
-    }
-    else {
-        showCompleted = showCompletedProjects;
-    }
+    const completed = document.querySelectorAll(`#${type}-list-ul li[data-completed=true]`);
+    const showCompleted = (type === 'task') ? showCompletedTasks : showCompletedProjects;
+
     completed.forEach(item => {
         if (showCompleted) {
             item.style.height = '0px';
@@ -2211,43 +1402,32 @@ function toggleShowCompleted(type) {
             item.style.marginBottom = '5px';
         }
     });
-    if (type === 'task') {
-        showCompletedTasks = !showCompletedTasks;
-    }
-    else {
-        showCompletedProjects = !showCompletedProjects;
-    }
 
+    if (type === 'task') showCompletedTasks = !showCompletedTasks;
+    else showCompletedProjects = !showCompletedProjects;
 }
+
 const showCompletedTaskToggle = document.getElementById('toggle-completed-tasks');
 showCompletedTaskToggle.addEventListener('click', function() {
     toggleShowCompleted('task');
-    if (showCompletedTasks) {
-        showCompletedTaskToggle.className = 'toggle-completed fa-solid fa-eye';
-        showCompletedTaskToggle.title = "Hide Completed Tasks";
-    } else {
-        showCompletedTaskToggle.className = 'toggle-completed fa-solid fa-eye-slash';
-        showCompletedTaskToggle.title = "Hide Completed Tasks";
-    }
+    showCompletedTaskToggle.className = showCompletedTasks
+        ? 'toggle-completed fa-solid fa-eye'
+        : 'toggle-completed fa-solid fa-eye-slash';
+    showCompletedTaskToggle.title = showCompletedTasks ? "Hide Completed Tasks" : "Show Completed Tasks";
 });
+
 const showCompletedProjectToggle = document.getElementById('toggle-completed-projects');
 showCompletedProjectToggle.addEventListener('click', function() {
     toggleShowCompleted('project');
-    if (showCompletedProjects) {
-        showCompletedProjectToggle.className = 'toggle-completed fa-solid fa-eye';
-        showCompletedProjectToggle.title = "Hide Completed Projects";
-    } else {
-        showCompletedProjectToggle.className = 'toggle-completed fa-solid fa-eye-slash';
-        showCompletedProjectToggle.title = "Hide Completed Projects";
-    }
+    showCompletedProjectToggle.className = showCompletedProjects
+        ? 'toggle-completed fa-solid fa-eye'
+        : 'toggle-completed fa-solid fa-eye-slash';
+    showCompletedProjectToggle.title = showCompletedProjects ? "Hide Completed Projects" : "Show Completed Projects";
 });
 
 // Add a task or project
 function addNewItem(type) {
-    //calculateListHeight();
-    const projectUlElement = document.getElementById('project-list-ul');
-    const taskUlElement = document.getElementById('task-list-ul');
-    const targetUl = type === 'project' ? projectUlElement : taskUlElement;
+    const targetUl = document.getElementById(type === 'project' ? 'project-list-ul' : 'task-list-ul');
 
     const newLi = document.createElement('li');
     newLi.classList.add('task-or-project-li');
@@ -2262,18 +1442,16 @@ function addNewItem(type) {
             if (type === 'project') {
                 addProject();
                 newInput.blur();
-            } else if (type === 'task') {
+            } else {
                 addTask(globalProjectId);
                 newInput.blur();
             }
             newInput.focus();
         }
-        //calculateListHeight();
     });
 
-    // Remove the input when it loses focus
     newInput.addEventListener('blur', function() {
-        targetUl.removeChild(newLi);
+        if (newLi.parentNode) targetUl.removeChild(newLi);
     });
 
     newLi.appendChild(newInput);
@@ -2283,209 +1461,11 @@ function addNewItem(type) {
 
 document.querySelectorAll('.add-button').forEach(button => {
     button.addEventListener('click', function() {
-        if (this.id === 'add-a-task') {
-            addNewItem('task');
-        } else if (this.id === 'add-a-project') {
-            addNewItem('project');
-        }
+        if (this.id === 'add-a-task') addNewItem('task');
+        else if (this.id === 'add-a-project') addNewItem('project');
     });
 });
-
-// Keep list container correct size
-const listDiv = document.querySelector('.list-div');
-function calculateListHeight() {
-    let listHeight = listDiv.offsetHeight;
-    var totalHeight = listHeight + 50;
-    
-    listContainer.style.height = totalHeight + 'px';
-    if (window.innerWidth >= 769) {
-        //listContainer.style.width = 270 + 'px';
-    }
-    else {
-        //listContainer.style.width = 'auto';
-    }
-}
-listContainer.addEventListener('click', function() {
-    //calculateListHeight();
-});
-//calculateListHeight();
-
-// Update duration text
-const startTimeInput = document.getElementById('start-time-input');
-const endTimeInput = document.getElementById('end-time-input');
-const durationText = document.getElementById('duration');
-
-function updateDurationText() {
-    const startTime = new Date(startTimeInput.value);
-    const endTime = new Date(endTimeInput.value);
-    const differenceInMilliseconds = endTime - startTime;
-    const hoursFromInput = differenceInMilliseconds / (1000 * 60 * 60);
-    if (!isNaN(startTime.getTime()) && !isNaN(endTime.getTime()) && hoursFromInput>0) {
-        durationText.textContent = hoursFromInput.toFixed(2); 
-    } else {
-        hideCommitTimeButton();
-    }
-    updateDurationS();
-}
-
-// Commit time block edit
-function commitTimeBlock(block) {
-    const startTime = new Date(startTimeInput.value);
-    const endTime = new Date(endTimeInput.value);
-    const differenceInMilliseconds = endTime - startTime;
-    const duration = (differenceInMilliseconds / 1000).toFixed(0);
-    const description = timeDescriptionText.value;
-    
-    block.dataset.startTime = convertUTCToLocalForInput(startTime.toISOString().slice(0,16));
-    block.dataset.endTime = convertUTCToLocalForInput(endTime.toISOString().slice(0,16));
-    block.dataset.duration = duration;
-    block.style.border = '0px';
-    block.style.backgroundColor = dayColors[todaysDayOfWeek];
-    block.dataset.description = description;
-    
-    // construct task PUT payload
-    const putPayload = {
-        projectId: globalProjectId,
-        taskId: globalTaskId,
-        timeId: block.dataset.id,
-        start: startTime,
-        end: endTime,
-        duration: duration,
-        description: description
-    };
-
-    // Send PUT request to Flask API
-    fetch('/time', {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(putPayload)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.message === "Time block updated") {
-            console.log("time block updated")
-            block.dataset.id = data.time_id;
-            calculateTaskTotalTime(block.dataset.taskId, changed=true);
-            localStorage.removeItem(`time_cache_${globalProjectId}`);
-            localStorage.removeItem('days_cache');
-            setTimeout(populateDays, 500);
-            resizeTimeBlocks();
-        }
-    });
-}
-
-// Allow user to commit
-const commitTimeBlockButton = document.getElementById('commit-time-block-button');
-function showCommitTimeButton(startOrEndInput) {
-    startOrEndInput.style.backgroundColor = 'yellow';
-    commitTimeBlockButton.style.display = 'inline';
-    updateDurationText();
-}
-function hideCommitTimeButton() {
-    const startOrEndInputs = document.querySelectorAll('.datetime-input');
-    startOrEndInputs.forEach(function(startOrEndInput) {
-        startOrEndInput.style.backgroundColor = 'transparent';
-    });
-    commitTimeBlockButton.style.display = 'none';
-    timeDescriptionText.style.background = 'none';
-}
-
-// Ask to save and highlight changes upon edit
-startTimeInput.addEventListener('change', function(e) {
-    showCommitTimeButton(startTimeInput);
-});    
-endTimeInput.addEventListener('change', function(e) {
-    showCommitTimeButton(endTimeInput);
-}); 
-timeDescriptionText.addEventListener('change', function(e) {
-    showCommitTimeButton(timeDescriptionText);
-});  
-
-// Commit and update stylings upon save
-commitTimeBlockButton.addEventListener('click', () => {
-    commitTimeBlock(activeBlock);
-    hideCommitTimeButton();
-});
-
-// Calculate task total time
-function calculateTaskTotalTime(taskId, changed) {
-    const blocks = document.querySelectorAll('.time-block');
-    let totalSeconds = 0;
-    
-    blocks.forEach(block => {
-        if (block.dataset.taskId == taskId) {
-            totalSeconds += parseInt(block.dataset.duration, 10);
-        }
-    });
-
-    globalSeconds = totalSeconds;
-    updateClock();
-
-    const taskItem = document.querySelector(`[data-taskid="${taskId}"]`);
-    taskItem.dataset.totalSeconds = globalSeconds;
-
-    if (changed) {
-        // construct PUT payload
-        const putPayload = {
-            taskId: taskId,
-            totalSeconds: globalSeconds
-        };
-
-        // Send PUT request to Flask API
-        fetch('/tasks', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(putPayload)
-        })
-    }
-}
-
-// Delete time block
-function deleteActiveTimeBlock() {
-    const putPayload = {
-        timeId: activeBlock.dataset.id,
-        taskId: activeBlock.dataset.taskId,
-        projectId: activeBlock.dataset.projectId,
-        isVisible: false
-    };
-
-    // Send PUT request to Flask API
-    fetch('/time', {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(putPayload)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.message === "Time block updated") {
-            console.log("time block updated")
-            taskId = putPayload.taskId;
-
-            const timeBlocks = document.querySelectorAll('.time-block');
-            timeDiv.removeChild(activeBlock);
-            resizeTimeBlocks();
-            timeBlocks.forEach(function(b) {
-                b.style.opacity = "1";
-                b.style.borderRadius = '5px';
-            });
-            timeDescriptionContainer.style.height = '0px';
-            timeDiv.style.borderRadius = '7px';
-            activeBlock = null;
-            calculateTaskTotalTime(taskId, changed=true);  
-            closeTimeDescription();              
-        }
-        localStorage.removeItem(`time_cache_${globalProjectId}`);
-    });
-}
-const deleteActiveTimeBlockButton = document.getElementById('delete-time-block-button');
-deleteActiveTimeBlockButton.addEventListener('click',deleteActiveTimeBlock);
-
 
 // Load
+populateDays();
 populateProjects();

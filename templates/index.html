@@ -27,15 +27,16 @@
             <button title="Logout" class="logout-button" id="logout-button"><i class="fa-solid fa-right-from-bracket"></i></button>
         </div>
     </header>
-    <div class="day-div">
-        <select id="month-select"></select>
-        <select id="year-select"></select>
-        <div id="day-table">
+
+    <div class="day-block" id="day-block">
+        <div class="day-div">
+            <select id="month-select"></select>
+            <select id="year-select"></select>
+            <div id="day-table"></div>
         </div>
+        <div id="day-info"></div>
     </div>
-    <div id="day-info">
-    </div>
-    
+
     <div class="content-div">
         <div id='list-container' class="list-container">
             <div class="toggle" style="display:none">
@@ -43,95 +44,54 @@
             </div>
             <div class="list-div">
                 <div id="project-list-container">
-                    <h2 class="header">Projects 
+                    <h2 class="header">Projects
                         <i id="toggle-completed-projects" title="Show Completed Projects" class="toggle-completed fa-solid fa-eye-slash"></i>
                         <i id="add-a-project" title="Add a Project" class="add-button fa-solid fa-plus"></i>
                     </h2>
-                    <ul id="project-list-ul">
-                    </ul>
+                    <ul id="project-list-ul"></ul>
                 </div>
 
                 <div id="task-list-container">
-                    <h2 class="header">Tasks 
+                    <h2 class="header">Tasks
                         <i id="toggle-completed-tasks" title="Show Completed Tasks" class="toggle-completed fa-solid fa-eye-slash"></i>
-                        <i id="add-a-task" title="Add a Task" class="add-button fa-solid fa-plus"></i></h2>
-                    <ul id="task-list-ul">
-                    </ul>
+                        <i id="add-a-task" title="Add a Task" class="add-button fa-solid fa-plus"></i>
+                    </h2>
+                    <ul id="task-list-ul"></ul>
                 </div>
-
             </div>
         </div>
 
-        <div id="log-div">
-
-            <div id="project-space">
-                <div id="project-content">
+        <div id="time-column">
+            <div id="summary">
+                <div id="summary-content">
                     <h3 id="project-name"></h3>
-                    <p id="hours-logged" style="margin:0; font-size:12pt;"></p>
-                </div>
-                <div id="all-time-components" style="width:60%;">
-                    <div id="time-content" style="overflow-x: scroll;width:100%">
-                        <div id="time-div-div" style="display: flex; width: auto; align-items: center;">
-                            <div id="time-div">
-                                <i id="add-a-time-block" title="Add a Time Block" class="add-button fa-solid fa-plus" style="color: var(--primary-color);"></i>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="time-description-container">
-                        <div id="time-description">
-                            <h4 style="margin-bottom: 5px; margin-top: 18px;">
-                                <span id="duration"></span>
-                                hour<span id="duration-s"></span> on 
-                                <span id="time-description-task-name"></span>
-                                <i id="delete-time-block-button" title="Delete Time Block" class="fa-solid fa-trash"></i>
-                            </h4>
-                            <input id="time-description-text" autocomplete="off" placeholder="Add a description..."></input><br>
-                            <input class='datetime-input' type="datetime-local" id="start-time-input"> to <input class='datetime-input' type="datetime-local" id="end-time-input"><i id="commit-time-block-button" title="Commit Changes" class="fa-solid fa-check"></i>
-                        </div>
+                    <div class="stats">
+                        <div class="stat"><b id="stat-month">0.00</b><span>this month</span></div>
+                        <div class="stat"><b id="stat-week">0.00</b><span>this week</span></div>
+                        <div class="stat"><b id="stat-today">0.00</b><span>today</span></div>
                     </div>
                 </div>
-
-        </div>
-            <div class="log-space">
-                <div id="log-content">
-                    <div id="time">
-                        <input type="checkbox" id="task-checkbox">
-                        <label for="task-checkbox" id="task-name"></label>
-                        
-                        <h4 id="task-name"></h4>
-
-                        <div id="clock-div">                        
-                            <button id="toggle-button" class="button-common">
-                            <i id="toggle-icon" class="fa-solid fa-hourglass-end"></i>
-                          </button>
-                          <p id="clock">00:00:00</p>
-                        </div>
-
-                    </div>
-                    <div id="log-input" contenteditable="true" type="text" autocomplete="off" placeholder="Add a log..."></div>
-                    <div id="pinned-logs-container">
-                        <!--Pinned logs go here -->
-                    </div>
-                    <div id="log-items-container">
-                        <!-- Log items go here -->
-                    </div>
+                <div class="timer" id="timer">
+                    <select id="timer-task" title="Task being timed"></select>
+                    <p id="clock">00:00:00</p>
+                    <button id="toggle-button" title="Start timing">
+                        <i id="toggle-icon" class="fa-solid fa-play"></i>
+                    </button>
                 </div>
             </div>
-        </div>
-        <div id="side-div">
-            <div id="logout-div">
-                <h2>Account</h2>
-                <button class="logout-button" id="logout-button"><i class="fa-solid fa-right-from-bracket"></i></button>
-            </div>
-            <div id="export-div">
-                <h2>Export</h2>
-                <button class="export-button" id="project-csv">Projects</button>
-                <button class="export-button" id="task-csv">Tasks</button>
-                <button class="export-button" id="log-csv">Time</button>
-                <button class="export-button" id="time-csv">Days</button>
+
+            <div id="entries-card">
+                <div class="entries-head">
+                    <h2>Time</h2>
+                    <button class="add-entry" id="add-a-time-block">
+                        <i class="fa-solid fa-plus"></i> Add time entry
+                    </button>
+                </div>
+                <div id="entries"></div>
             </div>
         </div>
     </div>
+
 <style>
     :root {
         --primary-color: {{primary_color}};
