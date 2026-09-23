@@ -169,6 +169,7 @@ function populateTasks(projectId) {
             newTaskListItem.appendChild(newTaskLink);
             taskUlElement.appendChild(newTaskListItem);
             addHoverListener(newTaskLink, 'task', task.id);
+            addTaskClickListener(newTaskLink, task.id);
 
             if (task.is_completed === true) {
                 newTaskLink.style.textDecoration = 'line-through';
@@ -202,12 +203,22 @@ function populateTasks(projectId) {
     }
 }
 
+// Clicking a task opens a new, uncommitted entry already set to it
+function addTaskClickListener(taskLink, taskId) {
+    taskLink.addEventListener('click', function(event) {
+        // the swatch is a colour picker, not a shortcut to a new entry
+        if (event.target.closest('.task-swatch')) return;
+        createTimeBlock(null, null, taskId);
+    });
+}
+
 // Clicking a swatch opens the browser colour picker. Dragging previews live on the
 // entry cards; the value is only saved when the picker commits.
 function addColorPickerListener(taskLink, taskId) {
     const input = taskLink.querySelector('.task-color-input');
     if (!input) return;
 
+    taskLink.querySelector('.task-swatch').addEventListener('click', e => e.stopPropagation());
     input.addEventListener('input', () => applyTaskColor(taskId, input.value));
     input.addEventListener('change', () => {
         applyTaskColor(taskId, input.value);
@@ -648,9 +659,14 @@ function discardDraft() {
 }
 
 // Create a new, uncommitted entry
-function createTimeBlock(start, end) {
+function createTimeBlock(start, end, taskId) {
     if (openEntryId !== null && !closeCard()) return;
     if (!currentTasks.length) return;
+
+    if (taskId) {
+        globalTaskId = taskId;
+        renderTimerTasks();
+    }
 
     const now = new Date();
     const endTime = end || now;
@@ -766,6 +782,7 @@ document.addEventListener('click', event => {
     if (openEntryId === null) return;
     if (event.target.closest('.entry-wrap') || event.target.closest('#add-a-time-block')) return;
     if (event.target.closest('#timer')) return;
+    if (event.target.closest('#task-list-ul')) return;
     closeCard();
 });
 
