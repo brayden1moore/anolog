@@ -83,6 +83,7 @@ function populateProjects() {
                     globalProjectId = project.id;
                     populateTasks(globalProjectId);
                     getTime(globalProjectId);
+                    loadBudgets();
                     first = false;
                 }
                 const newListItem = document.createElement('li');
@@ -187,6 +188,7 @@ function populateTasks(projectId) {
         }
         renderTimerTasks();
         renderTimes();
+        renderBudgets();
     }
 
     let cachedTasks = localStorage.getItem(`tasks_cache_${projectId}`);
@@ -342,7 +344,9 @@ function getTime(projectId) {
             start: convertUTCToLocalForInput(time.start),
             end: convertUTCToLocalForInput(time.end),
             // the API sends the placeholder string when description is null
-            description: (time.description === 'Add a description...') ? '' : (time.description || '')
+            description: (time.description === 'Add a description...') ? '' : (time.description || ''),
+            scopeId: time.scope_id || null,
+            bucketId: time.bucket_id || null
         }));
         renderTimes();
     }
@@ -387,7 +391,8 @@ function isDirty() {
     return draft.taskId != entry.taskId
         || draft.description !== entry.description
         || draft.start !== entry.start
-        || draft.end !== entry.end;
+        || draft.end !== entry.end
+        || targetOf(draft) !== targetOf(entry);
 }
 
 function sortedEntries() {
@@ -465,7 +470,7 @@ function renderTimeStats() {
 function cardInner(view) {
     return `
         <div class="body">
-            <div class="task">${escapeHtml(taskNameFor(view.taskId, view.taskName))}</div>
+            <div class="task">${escapeHtml(taskNameFor(view.taskId, view.taskName))}${budgetLabelHtml(view)}</div>
             <div class="desc${view.description ? '' : ' empty'}">${escapeHtml(view.description || 'No description')}</div>
         </div>
         <div class="range">${formatClockTime(view.start)} &ndash; ${formatClockTime(view.end)}</div>
@@ -514,6 +519,10 @@ function buildEditor(entry) {
                 <label>Task</label>
                 <select id="task-select">${taskOptions(draft.taskId)}</select>
             </div>
+            <div class="budget-field"${budgetOptions(draft.taskId, targetOf(draft)) ? '' : ' hidden'}>
+                <label>Bucket</label>
+                <select id="bucket-select">${budgetOptions(draft.taskId, targetOf(draft))}</select>
+            </div>
             <div>
                 <label>Start</label>
                 <input class="datetime-input" type="datetime-local" id="start-time-input" value="${draft.start}">
@@ -531,6 +540,8 @@ function buildEditor(entry) {
 
     const descInput = editor.querySelector('#time-description-text');
     const taskSelect = editor.querySelector('#task-select');
+    const bucketSelect = editor.querySelector('#bucket-select');
+    const bucketField = editor.querySelector('.budget-field');
     const startTimeInput = editor.querySelector('#start-time-input');
     const endTimeInput = editor.querySelector('#end-time-input');
     const commitButton = editor.querySelector('#commit-time-block-button');
@@ -550,6 +561,8 @@ function buildEditor(entry) {
 
         descInput.classList.toggle('changed', touched('description'));
         taskSelect.classList.toggle('changed', touched('taskId'));
+        const storedEntry = findEntry(entry.id);
+        bucketSelect.classList.toggle('changed', !!storedEntry && !storedEntry.isNew && targetOf(draft) !== targetOf(storedEntry));
         startTimeInput.classList.toggle('changed', touched('start'));
         endTimeInput.classList.toggle('changed', touched('end'));
 
@@ -569,7 +582,16 @@ function buildEditor(entry) {
             commitTimeBlock();
         }
     });
-    taskSelect.addEventListener('change', () => { draft.taskId = parseInt(taskSelect.value, 10); refresh(); });
+    taskSelect.addEventListener('change', () => {
+        draft.taskId = parseInt(taskSelect.value, 10);
+        // a bucket belongs to one client, so moving the entry picks that client's default
+        setTarget(draft, defaultTargetFor(draft.taskId));
+        const options = budgetOptions(draft.taskId, targetOf(draft));
+        bucketSelect.innerHTML = options;
+        bucketField.hidden = !options;
+        refresh();
+    });
+    bucketSelect.addEventListener('change', () => { setTarget(draft, bucketSelect.value); refresh(); });
     startTimeInput.addEventListener('change', () => { draft.start = startTimeInput.value; refresh(); });
     endTimeInput.addEventListener('change', () => { draft.end = endTimeInput.value; refresh(); });
     commitButton.addEventListener('click', commitTimeBlock);
@@ -589,7 +611,9 @@ function openCard(id) {
         taskId: entry.taskId,
         description: entry.description,
         start: entry.start,
-        end: entry.end
+        end: entry.end,
+        scopeId: entry.scopeId || null,
+        bucketId: entry.bucketId || null
     };
     openEntryId = id;
     renderTimes();
@@ -659,7 +683,7 @@ function discardDraft() {
 }
 
 // Create a new, uncommitted entry
-function createTimeBlock(start, end, taskId) {
+function createTimeBlock(start, end, taskId, target) {
     if (openEntryId !== null && !closeCard()) return;
     if (!currentTasks.length) return;
 
@@ -679,8 +703,11 @@ function createTimeBlock(start, end, taskId) {
         start: convertUTCToLocalForInput(startTime.toISOString().slice(0, 16)),
         end: convertUTCToLocalForInput(endTime.toISOString().slice(0, 16)),
         description: '',
+        scopeId: null,
+        bucketId: null,
         isNew: true
     };
+    setTarget(entry, target !== undefined ? target : defaultTargetFor(entry.taskId));
     timeEntries.push(entry);
     openCard(entry.id);
 
@@ -707,6 +734,9 @@ function commitTimeBlock() {
     entry.description = draft.description;
     entry.start = draft.start;
     entry.end = draft.end;
+    entry.scopeId = draft.scopeId || null;
+    entry.bucketId = draft.bucketId || null;
+    lastTargetByTask[entry.taskId] = targetOf(entry);
     delete entry.isNew;
     globalTaskId = entry.taskId;
     renderTimerTasks();
@@ -718,7 +748,9 @@ function commitTimeBlock() {
         start: startTime,
         end: endTime,
         duration: duration,
-        description: entry.description
+        description: entry.description,
+        scopeId: entry.scopeId,
+        bucketId: entry.bucketId
     };
 
     fetch('/time', {
@@ -733,6 +765,7 @@ function commitTimeBlock() {
         localStorage.removeItem('days_cache');
         calculateTaskTotalTime(entry.taskId, true);
         if (previousTaskId !== entry.taskId) calculateTaskTotalTime(previousTaskId, true);
+        loadBudgets();
         setTimeout(populateDays, 500);
     })
     .catch(error => console.error('There has been a problem with your fetch operation:', error));
@@ -769,6 +802,7 @@ function deleteTimeBlock(id) {
             localStorage.removeItem(`time_cache_${globalProjectId}`);
             localStorage.removeItem('days_cache');
             calculateTaskTotalTime(taskId, true);
+            loadBudgets();
             setTimeout(populateDays, 500);
         });
     });
@@ -783,6 +817,7 @@ document.addEventListener('click', event => {
     if (event.target.closest('.entry-wrap') || event.target.closest('#add-a-time-block')) return;
     if (event.target.closest('#timer')) return;
     if (event.target.closest('#task-list-ul')) return;
+    if (event.target.closest('#budget-card')) return;
     closeCard();
 });
 
@@ -806,6 +841,473 @@ function calculateTaskTotalTime(taskId, changed) {
         localStorage.removeItem(`tasks_cache_${globalProjectId}`);
     }
 }
+
+
+/* ============================================================
+   Budgets: client (task) -> scope -> bucket, each with a low-high hour range
+   ============================================================ */
+
+let scopes = [];                // from /scopes for the current project
+let expandedScopes = {};        // scopeId -> bool; open by default unless completed
+let editingScope = null;        // the scope being created or edited, or null
+let lastTargetByTask = {};      // the bucket last used per client, to preselect next time
+let budgetRequest = 0;
+
+const budgetCard = document.getElementById('budget-card');
+const budgetList = document.getElementById('budget-list');
+
+function targetOf(item) {
+    if (!item) return '';
+    if (item.bucketId) return `b:${item.bucketId}`;
+    if (item.scopeId) return `s:${item.scopeId}`;
+    return '';
+}
+
+function setTarget(item, target) {
+    item.scopeId = null;
+    item.bucketId = null;
+    if (!target) return;
+    const [kind, raw] = String(target).split(':');
+    const id = parseInt(raw, 10);
+    if (kind === 'b') {
+        const scope = scopes.find(sc => sc.buckets.some(b => b.id === id));
+        if (scope) { item.bucketId = id; item.scopeId = scope.id; }
+    } else if (kind === 's') {
+        if (scopes.some(sc => sc.id === id)) item.scopeId = id;
+    }
+}
+
+function activeScopesFor(taskId, keepScopeId) {
+    return scopes.filter(sc => sc.task_id == taskId && (!sc.is_completed || sc.id == keepScopeId));
+}
+
+function targetIsValid(taskId, target) {
+    if (!target) return true;
+    const probe = {};
+    setTarget(probe, target);
+    if (!probe.scopeId) return false;
+    const scope = scopes.find(sc => sc.id === probe.scopeId);
+    return !!scope && scope.task_id == taskId && !scope.is_completed;
+}
+
+// Last bucket used for this client; or the only scope, when it has no buckets
+function defaultTargetFor(taskId) {
+    const last = lastTargetByTask[taskId];
+    if (last !== undefined && targetIsValid(taskId, last)) return last;
+    const active = activeScopesFor(taskId);
+    if (active.length === 1 && !active[0].buckets.length) return `s:${active[0].id}`;
+    return '';
+}
+
+// <option>s for the entry editor; empty string when the client has no scopes
+function budgetOptions(taskId, selected) {
+    const probe = {};
+    setTarget(probe, selected);
+    const list = activeScopesFor(taskId, probe.scopeId);
+    if (!list.length) return '';
+    const opt = (value, label) =>
+        `<option value="${value}"${value === selected ? ' selected' : ''}>${escapeHtml(label)}</option>`;
+    let html = opt('', 'No budget');
+    list.forEach(sc => {
+        if (!sc.buckets.length) {
+            html += opt(`s:${sc.id}`, sc.name);
+        } else {
+            html += `<optgroup label="${escapeHtml(sc.name)}">` +
+                sc.buckets.map(b => opt(`b:${b.id}`, b.name)).join('') +
+                opt(`s:${sc.id}`, `${sc.name} (general)`) +
+                `</optgroup>`;
+        }
+    });
+    return html;
+}
+
+function budgetLabelHtml(view) {
+    if (!view.scopeId) return '';
+    const scope = scopes.find(sc => sc.id == view.scopeId);
+    if (!scope) return '';
+    const bucket = view.bucketId ? scope.buckets.find(b => b.id == view.bucketId) : null;
+    const label = bucket ? bucket.name : scope.name;
+    return `<span class="entry-bucket" title="${escapeHtml(scope.name)}${bucket ? ' › ' + escapeHtml(bucket.name) : ''}">${escapeHtml(label)}</span>`;
+}
+
+function num(n) {
+    return String(+(+n).toFixed(2));
+}
+
+// "10-16", "10–16", "10 to 16 h", "12" -> {low, high}; blank -> nulls; nonsense -> null
+function parseRange(text) {
+    const t = String(text === null || text === undefined ? '' : text)
+        .replace(/\b(hours?|hrs?|h)\b\.?/gi, '').replace(/[~≈]/g, '').trim();
+    if (!t) return { low: null, high: null };
+    let m = t.match(/^(\d+(?:\.\d+)?)\s*(?:-|–|—|to)\s*(\d+(?:\.\d+)?)$/i);
+    if (m) {
+        const a = parseFloat(m[1]), b = parseFloat(m[2]);
+        return { low: Math.min(a, b), high: Math.max(a, b) };
+    }
+    m = t.match(/^(\d+(?:\.\d+)?)$/);
+    if (m) return { low: parseFloat(m[1]), high: parseFloat(m[1]) };
+    m = t.match(/^(\d+(?:\.\d+)?)\s*\+$/);
+    if (m) return { low: parseFloat(m[1]), high: null };
+    return null;
+}
+
+function formatRange(low, high) {
+    const hasLow = low !== null && low !== undefined;
+    const hasHigh = high !== null && high !== undefined;
+    if (!hasLow && !hasHigh) return '';
+    if (hasLow && hasHigh) return low === high ? num(low) : `${num(low)}–${num(high)}`;
+    return hasLow ? `${num(low)}+` : `≤ ${num(high)}`;
+}
+
+// A scope's own range, or the sum of its buckets' ranges when it has none
+function scopeRange(scope) {
+    if (scope.low !== null || scope.high !== null) return { low: scope.low, high: scope.high, own: true };
+    const withLow = scope.buckets.filter(b => b.low !== null);
+    const withHigh = scope.buckets.filter(b => b.high !== null);
+    return {
+        low: withLow.length ? withLow.reduce((t, b) => t + b.low, 0) : null,
+        high: withHigh.length ? withHigh.reduce((t, b) => t + b.high, 0) : null,
+        own: false
+    };
+}
+
+const pct = v => `${Math.max(0, Math.min(100, v * 100)).toFixed(2)}%`;
+
+// Track scaled to the larger of the budget and what's been used. The band is the
+// low-high range, the fill is hours used, and anything past the top turns red.
+function budgetBar(usedHours, low, high, fallbackScale) {
+    const cap = high !== null ? high : low;
+    if (cap === null) {
+        const scale = Math.max(fallbackScale || 0, usedHours, 0.0001);
+        return `<div class="bbar unbounded"><div class="bbar-fill" style="width:${pct(usedHours / scale)}"></div></div>`;
+    }
+    const scale = Math.max(cap, usedHours, 0.0001);
+    const over = high !== null && usedHours > high;
+    const bandLeft = low !== null ? low / scale : 0;
+    let html = '<div class="bbar">';
+    if (high !== null && low !== null && high > low) {
+        html += `<div class="bbar-band" style="left:${pct(bandLeft)};width:${pct((high - low) / scale)}"></div>`;
+    }
+    html += `<div class="bbar-fill" style="width:${pct(Math.min(usedHours, cap) / scale)}"></div>`;
+    if (over) html += `<div class="bbar-over" style="left:${pct(high / scale)};width:${pct((usedHours - high) / scale)}"></div>`;
+    if (low !== null) html += `<i class="bbar-tick" style="left:${pct(low / scale)}"></i>`;
+    if (high !== null && high !== low) html += `<i class="bbar-tick" style="left:${pct(high / scale)}"></i>`;
+    return html + '</div>';
+}
+
+function overFlag(usedHours, high) {
+    if (high === null || usedHours <= high) return '';
+    return `<span class="over-flag" title="Over the high estimate"><i class="fa-solid fa-flag"></i> +${num(usedHours - high)} h</span>`;
+}
+
+function budgetNums(usedHours, low, high) {
+    const range = formatRange(low, high);
+    return `<span class="bnums"><b>${num(usedHours)}</b>${range ? ` <span>/ ${range}</span>` : ''} h</span>`;
+}
+
+function loadBudgets() {
+    if (globalProjectId === undefined) return;
+    const projectId = globalProjectId;
+    const request = ++budgetRequest;
+    const { selectedMonth, selectedYear } = getMonthYear();
+    fetch(`/scopes?project_id=${projectId}&tz_name=${localTz}&month=${selectedMonth}&year=${selectedYear}`)
+    .then(response => {
+        if (!response.ok) throw new Error('Could not load budgets');
+        return response.json();
+    })
+    .then(data => {
+        if (request !== budgetRequest || projectId !== globalProjectId) return;
+        scopes = data;
+        renderBudgets();
+        renderTimes();   // entry cards show their bucket names
+    })
+    .catch(error => console.error(error));
+}
+
+function renderBudgets() {
+    const note = document.getElementById('budget-head-note');
+    budgetList.innerHTML = '';
+
+    if (editingScope) {
+        budgetCard.classList.remove('collapsed-empty');
+        note.textContent = '';
+        budgetList.appendChild(buildScopeEditor());
+        return;
+    }
+
+    budgetCard.classList.toggle('collapsed-empty', !scopes.length);
+    if (!scopes.length) {
+        note.textContent = 'Track hours against an estimate for a client';
+        return;
+    }
+    const { selectedMonth } = getMonthYear();
+    const monthSeconds = scopes.reduce((t, sc) => t + sc.month_seconds, 0);
+    note.textContent = `${hoursOf(monthSeconds)} h logged to scopes in ${monthNames[selectedMonth]}`;
+
+    scopes.forEach(scope => budgetList.appendChild(buildScopeBlock(scope)));
+}
+
+function buildScopeBlock(scope) {
+    const used = scope.seconds / 3600;
+    const range = scopeRange(scope);
+    const open = expandedScopes[scope.id] !== undefined ? expandedScopes[scope.id] : !scope.is_completed;
+    const color = colorForTask(scope.task_id);
+
+    const block = document.createElement('div');
+    block.className = 'scope' + (open ? ' open' : '') + (scope.is_completed ? ' completed' : '');
+    block.style.setProperty('--accent', color);
+
+    const rows = scope.buckets.map(b => ({
+        target: `b:${b.id}`, name: b.name, used: b.seconds / 3600, month: b.month_seconds / 3600, low: b.low, high: b.high
+    }));
+    if (!scope.buckets.length) {
+        rows.push({ target: `s:${scope.id}`, name: 'General', used: used, month: scope.month_seconds / 3600, low: null, high: null, general: true });
+    } else if (scope.unbucketed_seconds > 0) {
+        rows.push({ target: `s:${scope.id}`, name: 'No bucket', used: scope.unbucketed_seconds / 3600,
+                    month: scope.unbucketed_month_seconds / 3600, low: null, high: null, loose: true });
+    }
+    const largestUsed = rows.reduce((m, r) => Math.max(m, r.used), 0);
+
+    block.innerHTML = `
+        <div class="scope-head" title="${open ? 'Collapse' : 'Expand'}">
+            <i class="fa-solid fa-chevron-right chev"></i>
+            <span class="scope-swatch"></span>
+            <span class="scope-title"><span class="scope-client">${escapeHtml(scope.task_name)}</span><span class="scope-name">${escapeHtml(scope.name)}</span></span>
+            ${scope.is_completed ? '<span class="scope-done">done</span>' : ''}
+            ${overFlag(used, range.high)}
+            <span class="scope-month">${num(scope.month_seconds / 3600)} h this month</span>
+            ${budgetNums(used, range.low, range.high)}
+            <button class="icon-button scope-edit" title="Edit scope and buckets"><i class="fa-solid fa-pen"></i></button>
+        </div>
+        ${budgetBar(used, range.low, range.high, used)}
+        <div class="bucket-list">
+            ${rows.map(r => `
+                <div class="bucket-row${r.loose ? ' loose' : ''}" data-target="${r.target}" title="Log time to ${escapeHtml(r.name)} · ${num(r.month)} h this month">
+                    <span class="bucket-name">${escapeHtml(r.name)}</span>
+                    ${budgetBar(r.used, r.low, r.high, largestUsed)}
+                    <span class="flag-slot">${overFlag(r.used, r.high)}</span>
+                    ${budgetNums(r.used, r.low, r.high)}
+                </div>`).join('')}
+        </div>`;
+
+    block.querySelector('.scope-head').addEventListener('click', event => {
+        if (event.target.closest('.scope-edit')) return;
+        expandedScopes[scope.id] = !open;
+        renderBudgets();
+    });
+    block.querySelector('.scope-edit').addEventListener('click', () => startEditingScope(scope));
+    block.querySelectorAll('.bucket-row').forEach(row => {
+        row.addEventListener('click', () => {
+            if (scope.is_completed) return;
+            createTimeBlock(null, null, scope.task_id, row.dataset.target);
+        });
+    });
+    return block;
+}
+
+/* ---------- scope editor ---------- */
+
+function startEditingScope(scope) {
+    if (scope) {
+        editingScope = {
+            id: scope.id,
+            taskId: scope.task_id,
+            name: scope.name,
+            range: formatRange(scope.low, scope.high),
+            isCompleted: scope.is_completed,
+            buckets: scope.buckets.map(b => ({ id: b.id, name: b.name, range: formatRange(b.low, b.high) }))
+        };
+    } else {
+        const firstOpen = currentTasks.find(t => !t.is_completed) || currentTasks[0];
+        if (!firstOpen) return;
+        editingScope = { id: null, taskId: globalTaskId || firstOpen.id, name: '', range: '', isCompleted: false, buckets: [] };
+    }
+    renderBudgets();
+    const first = budgetList.querySelector(scope ? '.bucket-edit-name' : '#scope-name-input');
+    if (first) first.focus();
+}
+
+// Paste rows from an estimate: "Name<TAB>10–16", "Name | 12", "Name 3-6 hours"
+function parseBucketLines(text) {
+    const out = [];
+    String(text).split(/\r?\n/).forEach(line => {
+        let t = line.replace(/\*\*/g, '').replace(/^\s*[-*•\d.)]+\s+(?=\D)/, '').trim();
+        if (!t || /^(total|task\b.*hours$)/i.test(t)) return;
+        const m = t.match(/^(.*?)[\s\t|:,]*?(\d+(?:\.\d+)?\s*(?:-|–|—|to)\s*\d+(?:\.\d+)?|\d+(?:\.\d+)?)\s*(?:hours?|hrs?|h)?\.?\s*$/i);
+        if (m && m[1].replace(/[\s|:,\t–—-]+$/, '').trim()) {
+            out.push({ id: null, name: m[1].replace(/[\s|:,\t–—-]+$/, '').trim(), range: m[2].replace(/\s+/g, '') });
+        } else {
+            out.push({ id: null, name: t.replace(/[|\t]+/g, ' ').trim(), range: '' });
+        }
+    });
+    return out;
+}
+
+function buildScopeEditor() {
+    const es = editingScope;
+    const wrap = document.createElement('div');
+    wrap.className = 'scope-editor';
+    wrap.style.setProperty('--accent', colorForTask(es.taskId));
+
+    const clientOptions = currentTasks
+        .filter(t => !t.is_completed || t.id == es.taskId)
+        .map(t => `<option value="${t.id}"${t.id == es.taskId ? ' selected' : ''}>${escapeHtml(t.name)}</option>`).join('');
+
+    const bucketSum = (() => {
+        let low = 0, high = 0, any = false;
+        es.buckets.forEach(b => {
+            const r = parseRange(b.range);
+            if (r && (r.low !== null || r.high !== null)) { any = true; low += r.low || 0; high += (r.high !== null ? r.high : r.low) || 0; }
+        });
+        return any ? formatRange(low, high) : '';
+    })();
+
+    wrap.innerHTML = `
+        <div class="se-row">
+            <div><label>Client</label><select id="scope-task-select">${clientOptions}</select></div>
+            <div class="grow"><label>Scope</label><input id="scope-name-input" placeholder="e.g. Underwriting Integration" value="${escapeHtml(es.name)}"></div>
+            <div><label>Total hours</label><input id="scope-range-input" class="range-input" placeholder="${bucketSum ? 'sum: ' + bucketSum : 'e.g. 95–164'}" value="${escapeHtml(es.range)}"></div>
+        </div>
+        <div class="se-buckets-head">
+            <label>Buckets</label>
+            <span class="se-hint">Leave hours blank to track without a limit${bucketSum ? ` · buckets add up to ${bucketSum} h` : ''}</span>
+        </div>
+        <div class="se-buckets">
+            ${es.buckets.map((b, i) => `
+                <div class="se-bucket" data-index="${i}">
+                    <input class="bucket-edit-name" placeholder="Bucket name" value="${escapeHtml(b.name)}">
+                    <input class="bucket-edit-range range-input" placeholder="hours" value="${escapeHtml(b.range)}">
+                    <button class="icon-button bucket-remove" title="Remove bucket"><i class="fa-solid fa-xmark"></i></button>
+                </div>`).join('')}
+        </div>
+        <div class="se-actions-row">
+            <button class="add-entry" id="add-bucket-button"><i class="fa-solid fa-plus"></i> Bucket</button>
+            <button class="add-entry" id="paste-toggle"><i class="fa-solid fa-paste"></i> Paste from estimate</button>
+        </div>
+        <div class="se-paste" hidden>
+            <textarea id="bucket-paste" rows="6" placeholder="One bucket per line, hours at the end:\nDiscovery sessions, org review\t10–16\nData model\t12–20\nProject management 5-8"></textarea>
+            <button class="add-entry" id="bucket-paste-add">Add these lines</button>
+        </div>
+        <div class="se-footer">
+            ${es.id ? `<button class="text-button" id="scope-complete">${es.isCompleted ? 'Reopen' : 'Mark complete'}</button>
+                       <button class="text-button danger" id="scope-delete">Delete</button>` : ''}
+            <span class="spacer"></span>
+            <span class="se-error" id="scope-error"></span>
+            <button class="text-button" id="scope-cancel">Cancel</button>
+            <button class="solid-button" id="scope-save">${es.id ? 'Save' : 'Create scope'}</button>
+        </div>`;
+
+    const $ = sel => wrap.querySelector(sel);
+    $('#scope-task-select').addEventListener('change', e => {
+        es.taskId = parseInt(e.target.value, 10);
+        wrap.style.setProperty('--accent', colorForTask(es.taskId));
+    });
+    $('#scope-name-input').addEventListener('input', e => { es.name = e.target.value; });
+    $('#scope-range-input').addEventListener('input', e => { es.range = e.target.value; });
+    wrap.querySelectorAll('.se-bucket').forEach(row => {
+        const b = es.buckets[parseInt(row.dataset.index, 10)];
+        row.querySelector('.bucket-edit-name').addEventListener('input', e => { b.name = e.target.value; });
+        row.querySelector('.bucket-edit-range').addEventListener('input', e => { b.range = e.target.value; });
+        row.querySelector('.bucket-edit-range').addEventListener('change', () => renderBudgets());
+        row.querySelector('.bucket-remove').addEventListener('click', () => {
+            es.buckets.splice(parseInt(row.dataset.index, 10), 1);
+            renderBudgets();
+        });
+    });
+    $('#add-bucket-button').addEventListener('click', () => {
+        es.buckets.push({ id: null, name: '', range: '' });
+        renderBudgets();
+        const names = budgetList.querySelectorAll('.bucket-edit-name');
+        if (names.length) names[names.length - 1].focus();
+    });
+    $('#paste-toggle').addEventListener('click', () => {
+        const box = $('.se-paste');
+        box.hidden = !box.hidden;
+        if (!box.hidden) $('#bucket-paste').focus();
+    });
+    $('#bucket-paste-add').addEventListener('click', () => {
+        const added = parseBucketLines($('#bucket-paste').value);
+        if (!added.length) return;
+        // drop the blank placeholder rows before appending
+        es.buckets = es.buckets.filter(b => b.name.trim() || b.range.trim()).concat(added);
+        renderBudgets();
+    });
+    $('#scope-cancel').addEventListener('click', () => { editingScope = null; renderBudgets(); });
+    $('#scope-save').addEventListener('click', saveScope);
+    wrap.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); saveScope(); }
+        if (e.key === 'Escape') { e.stopPropagation(); editingScope = null; renderBudgets(); }
+    });
+
+    if (es.id) {
+        $('#scope-complete').addEventListener('click', () => {
+            sendScope('PUT', { scopeId: es.id, isCompleted: !es.isCompleted });
+        });
+        let armed = false;
+        $('#scope-delete').addEventListener('click', e => {
+            if (!armed) {
+                armed = true;
+                e.target.textContent = 'Delete? Time stays logged';
+                return;
+            }
+            sendScope('PUT', { scopeId: es.id, isVisible: false });
+        });
+    }
+    return wrap;
+}
+
+function saveScope() {
+    const es = editingScope;
+    const error = document.getElementById('scope-error');
+    const fail = message => { if (error) error.textContent = message; };
+
+    if (!es.name.trim()) return fail('Give the scope a name');
+    const total = parseRange(es.range);
+    if (!total) return fail(`Couldn't read "${es.range}" as hours, try 95–164`);
+
+    const buckets = [];
+    for (const b of es.buckets) {
+        if (!b.name.trim() && !b.range.trim()) continue;
+        if (!b.name.trim()) return fail('Every bucket needs a name');
+        const r = parseRange(b.range);
+        if (!r) return fail(`Couldn't read "${b.range}" for ${b.name}`);
+        buckets.push({ id: b.id, name: b.name.trim(), low: r.low, high: r.high });
+    }
+
+    const body = { taskId: es.taskId, name: es.name.trim(), low: total.low, high: total.high, buckets: buckets };
+    if (es.id) body.scopeId = es.id;
+    sendScope(es.id ? 'PUT' : 'POST', body);
+}
+
+function sendScope(method, body) {
+    fetch('/scopes', {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Scope not saved');
+        return response.json();
+    })
+    .then(data => {
+        if (method === 'POST' && data.id) expandedScopes[data.id] = true;
+        if (body.isCompleted !== undefined) expandedScopes[body.scopeId] = !body.isCompleted;
+        editingScope = null;
+        loadBudgets();
+    })
+    .catch(error => {
+        const el = document.getElementById('scope-error');
+        if (el) el.textContent = 'Could not save, try again';
+        console.error(error);
+    });
+}
+
+document.getElementById('add-a-scope').addEventListener('click', () => startEditingScope(null));
+document.getElementById('export-budget-button').addEventListener('click', () => {
+    if (globalProjectId === undefined) return;
+    const { selectedMonth, selectedYear } = getMonthYear();
+    window.location.href = `/export_budget?project_id=${globalProjectId}&tz_name=${localTz}&month=${selectedMonth}&year=${selectedYear}`;
+});
 
 /* ============================================================
    Timer
@@ -921,6 +1423,7 @@ function populateDays() {
                 openEntryId = null;
                 draft = null;
                 getTime(globalProjectId);
+                loadBudgets();
                 populateDays();
             });
         });
@@ -1053,8 +1556,10 @@ function addProjectClickListener(newLink, projectId, projectName) {
             draft = null;
             globalTaskId = undefined;
             globalProjectId = projectId;
+            editingScope = null;
             populateTasks(projectId);
             getTime(projectId);
+            loadBudgets();
         }
 
         document.getElementById('project-name').textContent = projectName;
@@ -1306,6 +1811,7 @@ function renameTask(taskId, newName) {
         if (task) task.name = newName;
         renderTimerTasks();
         renderTimes();
+        loadBudgets();
     })
     .catch(error => console.error('There has been a problem with your fetch operation:', error));
 }

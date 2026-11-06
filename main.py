@@ -2,7 +2,7 @@ from urllib import response
 from flask_mail import Mail, Message
 from flask import session as Uploadvvvion
 from flask import Flask, request, jsonify, render_template, Response, redirect, url_for, abort
-from build_db import User, Project, Task, Log, Time, engine
+from build_db import User, Project, Task, Log, Time, Scope, Bucket, engine
 from sqlalchemy.orm import relationship, sessionmaker, scoped_session
 from sqlalchemy import desc, func, String, Numeric, cast, extract
 from datetime import datetime, timedelta
@@ -292,7 +292,7 @@ def list_time():
             next_month = local_tz.localize(datetime(year, month + 1, 1))
             
         query_results = (
-            session.query(Time.id, Task.id, Task.name, Time.start, Time.end, Time.duration, Time.description)
+            session.query(Time.id, Task.id, Task.name, Time.start, Time.end, Time.duration, Time.description, Time.scope_id, Time.bucket_id)
             .join(Task, Time.task_id == Task.id)
             .filter(
                 Time.project_id == project_id,
@@ -314,9 +314,11 @@ def list_time():
                 'start': start.strftime('%Y-%m-%dT%H:%M'), 
                 'end': end.strftime('%Y-%m-%dT%H:%M'), 
                 'duration': duration,
-                'description': description or ''
+                'description': description or '',
+                'scope_id': scope_id,
+                'bucket_id': bucket_id
             }
-            for time_id, task_id, task_name, start, end, duration, description in query_results
+            for time_id, task_id, task_name, start, end, duration, description, scope_id, bucket_id in query_results
         ]
 
         return time_json
@@ -470,7 +472,9 @@ def create_time():
         duration = data['duration']
         description = None if data['description'] == 'undefined' else data['description']
 
-        new_time = Time(user_id=current_user.id, project_id=project_id, task_id=task_id, start=start, end=end, duration=duration, description=description)
+        scope_id, bucket_id = resolve_budget_target(session, task_id, data.get('scopeId'), data.get('bucketId'))
+        new_time = Time(user_id=current_user.id, project_id=project_id, task_id=task_id, start=start, end=end, duration=duration, description=description,
+                        scope_id=scope_id, bucket_id=bucket_id)
         session.add(new_time)
 
         project = session.query(Project).filter(Project.id == project_id).first()
@@ -606,7 +610,9 @@ def update_time():
         is_visible = data.get('isVisible')
 
         if time_id == '-1':
-            time = Time(user_id=current_user.id, project_id=project_id, task_id=task_id, start=start, end=end, duration=duration, description=description)
+            scope_id, bucket_id = resolve_budget_target(session, task_id, data.get('scopeId'), data.get('bucketId'))
+            time = Time(user_id=current_user.id, project_id=project_id, task_id=task_id, start=start, end=end, duration=duration, description=description,
+                        scope_id=scope_id, bucket_id=bucket_id)
             session.add(time)
             session.commit()
 
@@ -635,6 +641,13 @@ def update_time():
                 time.end = end
                 time.duration = duration
                 time.description = description
+                if 'scopeId' in data or 'bucketId' in data:
+                    time.scope_id, time.bucket_id = resolve_budget_target(session, time.task_id, data.get('scopeId'), data.get('bucketId'))
+                elif time.scope_id is not None:
+                    # moved to another client: a budget from the old one no longer applies
+                    scope = session.query(Scope).filter(Scope.id == time.scope_id).first()
+                    if scope is None or scope.task_id != time.task_id:
+                        time.scope_id, time.bucket_id = None, None
 
             project = session.query(Project).filter(Project.id == project_id).first()
             if project:
@@ -676,6 +689,321 @@ def update_user():
         session.commit()
         return jsonify({"message": "User updated"}), 200
     
+    finally:
+        Session.remove()
+
+
+## Budgets
+# Project (firm) -> Task (client) -> Scope (engagement, low-high hours) -> Bucket (line item, low-high hours)
+
+def to_hours(value):
+    if value is None or value == '':
+        return None
+    try:
+        hours = float(value)
+    except (TypeError, ValueError):
+        return None
+    return hours if hours >= 0 else None
+
+def owned_task(session, task_id):
+    return (session.query(Task).join(Project, Task.project_id == Project.id)
+            .filter(Task.id == task_id, Project.user_id == current_user.id).first())
+
+def owned_scope(session, scope_id):
+    return (session.query(Scope).join(Task, Scope.task_id == Task.id).join(Project, Task.project_id == Project.id)
+            .filter(Scope.id == scope_id, Project.user_id == current_user.id).first())
+
+def resolve_budget_target(session, task_id, scope_id, bucket_id):
+    """A bucket implies its scope. Anything that doesn't belong to the entry's task is dropped."""
+    try:
+        task_id = int(task_id)
+    except (TypeError, ValueError):
+        return None, None
+    if bucket_id not in (None, ''):
+        row = (session.query(Bucket, Scope).join(Scope, Bucket.scope_id == Scope.id)
+               .filter(Bucket.id == bucket_id, Bucket.is_visible == True).first())
+        if row and row[1].task_id == task_id:
+            return row[1].id, row[0].id
+    if scope_id not in (None, ''):
+        scope = session.query(Scope).filter(Scope.id == scope_id).first()
+        if scope and scope.task_id == task_id:
+            return scope.id, None
+    return None, None
+
+def month_bounds(local_tz, month, year):
+    """month is 1-12"""
+    start = local_tz.localize(datetime(year, month, 1))
+    end = local_tz.localize(datetime(year + 1, 1, 1) if month == 12 else datetime(year, month + 1, 1))
+    return start, end
+
+def safe_tz(name):
+    try:
+        return pytz.timezone(name or 'UTC')
+    except Exception:
+        return pytz.UTC
+
+def project_scopes(session, project_id):
+    return (session.query(Scope, Task)
+            .join(Task, Scope.task_id == Task.id).join(Project, Task.project_id == Project.id)
+            .filter(Project.id == project_id, Project.user_id == current_user.id,
+                    Scope.is_visible == True, Task.is_visible == True)
+            .order_by(Scope.is_completed.asc(), Task.name.asc(), Scope.sort_order.asc(), Scope.id.asc())
+            .all())
+
+def scope_buckets(session, scope_ids):
+    if not scope_ids:
+        return []
+    return (session.query(Bucket).filter(Bucket.scope_id.in_(scope_ids), Bucket.is_visible == True)
+            .order_by(Bucket.sort_order.asc(), Bucket.id.asc()).all())
+
+def budget_time_filter(query, scope_ids):
+    return query.filter(Time.scope_id.in_(scope_ids), Time.is_visible == True,
+                        Time.end != None, Time.duration > 0)
+
+def scope_json(scope, task, buckets, totals, month_totals):
+    """totals: {(scope_id, bucket_id): seconds}. Time in a deleted bucket counts as unbucketed."""
+    live = {b.id for b in buckets}
+    def pick(source):
+        per_bucket, loose = {}, 0
+        for (sid, bid), secs in source.items():
+            if sid != scope.id:
+                continue
+            if bid in live:
+                per_bucket[bid] = per_bucket.get(bid, 0) + secs
+            else:
+                loose += secs
+        return per_bucket, loose
+    all_b, all_loose = pick(totals)
+    mon_b, mon_loose = pick(month_totals)
+    return {
+        'id': scope.id,
+        'task_id': task.id,
+        'task_name': task.name,
+        'task_color': task.color,
+        'name': scope.name,
+        'low': scope.low_hours,
+        'high': scope.high_hours,
+        'is_completed': bool(scope.is_completed),
+        'seconds': sum(all_b.values()) + all_loose,
+        'month_seconds': sum(mon_b.values()) + mon_loose,
+        'unbucketed_seconds': all_loose,
+        'unbucketed_month_seconds': mon_loose,
+        'buckets': [{
+            'id': b.id,
+            'name': b.name,
+            'low': b.low_hours,
+            'high': b.high_hours,
+            'seconds': all_b.get(b.id, 0),
+            'month_seconds': mon_b.get(b.id, 0),
+        } for b in buckets],
+    }
+
+def collect_budgets(session, project_id, local_tz, month, year):
+    rows = project_scopes(session, project_id)
+    scope_ids = [scope.id for scope, _ in rows]
+    buckets = scope_buckets(session, scope_ids)
+    totals, month_totals = {}, {}
+    if scope_ids:
+        q = session.query(Time.scope_id, Time.bucket_id, func.sum(Time.duration)).group_by(Time.scope_id, Time.bucket_id)
+        for sid, bid, secs in budget_time_filter(q, scope_ids).all():
+            totals[(sid, bid)] = int(secs or 0)
+        start, end = month_bounds(local_tz, month, year)
+        q = (session.query(Time.scope_id, Time.bucket_id, func.sum(Time.duration))
+             .filter(Time.start >= start, Time.start < end).group_by(Time.scope_id, Time.bucket_id))
+        for sid, bid, secs in budget_time_filter(q, scope_ids).all():
+            month_totals[(sid, bid)] = int(secs or 0)
+    return rows, buckets, [
+        scope_json(scope, task, [b for b in buckets if b.scope_id == scope.id], totals, month_totals)
+        for scope, task in rows
+    ]
+
+def sync_buckets(session, scope, items):
+    """Make the scope's buckets match the list: update by id, add new ones, hide the rest."""
+    existing = {b.id: b for b in session.query(Bucket).filter(Bucket.scope_id == scope.id, Bucket.is_visible == True).all()}
+    kept = set()
+    for order, item in enumerate(items or []):
+        name = (item.get('name') or '').strip()
+        if not name:
+            continue
+        bucket = existing.get(item.get('id')) if item.get('id') is not None else None
+        if bucket is None:
+            bucket = Bucket(scope_id=scope.id)
+            session.add(bucket)
+        bucket.name = name
+        bucket.low_hours = to_hours(item.get('low'))
+        bucket.high_hours = to_hours(item.get('high'))
+        bucket.sort_order = order
+        if bucket.id is not None:
+            kept.add(bucket.id)
+    for bucket_id, bucket in existing.items():
+        if bucket_id not in kept:
+            bucket.is_visible = False
+
+# List scopes, buckets and hours used for every client in a project
+@app.route('/scopes', methods=['GET'])
+@login_required
+def list_scopes():
+    session = Session()
+    try:
+        project_id = request.args.get('project_id')
+        local_tz = safe_tz(request.args.get('tz_name'))
+        month = int(request.args.get('month', datetime.now().month - 1)) + 1
+        year = int(request.args.get('year', datetime.now().year))
+        _, _, scopes = collect_budgets(session, project_id, local_tz, month, year)
+        return jsonify(scopes)
+    finally:
+        Session.remove()
+
+# Create a scope, optionally with its buckets
+@app.route('/scopes', methods=['POST'])
+@login_required
+def create_scope():
+    session = Session()
+    try:
+        data = request.json or {}
+        task = owned_task(session, data.get('taskId'))
+        if task is None:
+            return jsonify({"message": "Task not found"}), 404
+        name = (data.get('name') or '').strip() or 'New scope'
+        scope = Scope(task_id=task.id, name=name,
+                      low_hours=to_hours(data.get('low')), high_hours=to_hours(data.get('high')))
+        session.add(scope)
+        session.flush()
+        sync_buckets(session, scope, data.get('buckets'))
+        session.commit()
+        return jsonify({"message": "Scope created", "id": scope.id}), 201
+    finally:
+        Session.remove()
+
+# Update a scope; buckets are replaced with the list sent, if one is sent
+@app.route('/scopes', methods=['PUT'])
+@login_required
+def update_scope():
+    session = Session()
+    try:
+        data = request.json or {}
+        scope = owned_scope(session, data.get('scopeId'))
+        if scope is None:
+            return jsonify({"message": "Scope not found"}), 404
+        scope.updated_at = datetime.now()
+        if data.get('name'):
+            scope.name = data['name'].strip()
+        if 'taskId' in data and data['taskId'] != scope.task_id:
+            task = owned_task(session, data['taskId'])
+            if task is not None:
+                scope.task_id = task.id
+        if 'low' in data:
+            scope.low_hours = to_hours(data['low'])
+        if 'high' in data:
+            scope.high_hours = to_hours(data['high'])
+        if data.get('isCompleted') is not None:
+            scope.is_completed = bool(data['isCompleted'])
+        if data.get('isVisible') is not None:
+            scope.is_visible = bool(data['isVisible'])
+        if 'buckets' in data:
+            sync_buckets(session, scope, data['buckets'])
+        session.commit()
+        return jsonify({"message": "Scope updated"}), 200
+    finally:
+        Session.remove()
+
+# Budget report: summary, month-by-month, and the entries behind it
+@app.route('/export_budget', methods=['GET'])
+@login_required
+def export_budget():
+    session = Session()
+    try:
+        project_id = request.args.get('project_id')
+        local_tz = safe_tz(request.args.get('tz_name'))
+        month = int(request.args.get('month', datetime.now().month - 1)) + 1
+        year = int(request.args.get('year', datetime.now().year))
+        month_label = datetime(year, month, 1).strftime('%b %Y')
+
+        rows, buckets, scopes = collect_budgets(session, project_id, local_tz, month, year)
+        scope_ids = [scope.id for scope, _ in rows]
+        bucket_names = {b.id: b.name for b in buckets}
+        scope_by_id = {scope.id: (scope, task) for scope, task in rows}
+
+        def h(seconds):
+            return round((seconds or 0) / 3600, 2)
+
+        def status(used, low, high):
+            if high is not None and used > high:
+                return f'Over by {round(used - high, 2)}'
+            if low is not None and used >= low:
+                return 'Within range'
+            if low is None and high is None:
+                return 'No budget'
+            return 'Under'
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = 'Summary'
+        ws.append(['Client', 'Scope', 'Bucket', 'Low', 'High', 'Hours to date', f'Hours {month_label}',
+                   'Remaining (to low)', 'Remaining (to high)', 'Status'])
+        for sc in scopes:
+            rows_for_scope = [(b['name'], b['low'], b['high'], b['seconds'], b['month_seconds']) for b in sc['buckets']]
+            if sc['unbucketed_seconds'] and sc['buckets']:
+                rows_for_scope.append(('(no bucket)', None, None, sc['unbucketed_seconds'], sc['unbucketed_month_seconds']))
+            for name, low, high, secs, msecs in rows_for_scope:
+                used = h(secs)
+                ws.append([sc['task_name'], sc['name'], name, low, high, used, h(msecs),
+                           None if low is None else round(low - used, 2),
+                           None if high is None else round(high - used, 2),
+                           status(used, low, high)])
+            low = sc['low'] if sc['low'] is not None else (sum(b['low'] or 0 for b in sc['buckets']) if any(b['low'] is not None for b in sc['buckets']) else None)
+            high = sc['high'] if sc['high'] is not None else (sum(b['high'] or 0 for b in sc['buckets']) if any(b['high'] is not None for b in sc['buckets']) else None)
+            used = h(sc['seconds'])
+            ws.append([sc['task_name'], sc['name'], 'TOTAL', low, high, used, h(sc['month_seconds']),
+                       None if low is None else round(low - used, 2),
+                       None if high is None else round(high - used, 2),
+                       status(used, low, high)])
+            ws.append([])
+
+        entries = []
+        if scope_ids:
+            entries = budget_time_filter(session.query(Time), scope_ids).order_by(Time.start.asc()).all()
+
+        # Month-by-month hours per bucket
+        months = sorted({e.start.astimezone(local_tz).strftime('%Y-%m') for e in entries})
+        grid = {}
+        for e in entries:
+            key = (e.scope_id, e.bucket_id if e.bucket_id in bucket_names else None)
+            m = e.start.astimezone(local_tz).strftime('%Y-%m')
+            grid.setdefault(key, {})
+            grid[key][m] = grid[key].get(m, 0) + (e.duration or 0)
+        wm = wb.create_sheet('By month')
+        wm.append(['Client', 'Scope', 'Bucket'] + months + ['Total'])
+        for sc in scopes:
+            keys = [(sc['id'], b['id'], b['name']) for b in sc['buckets']] + [(sc['id'], None, '(no bucket)' if sc['buckets'] else 'General')]
+            for sid, bid, name in keys:
+                cells = grid.get((sid, bid), {})
+                if bid is None and not cells:
+                    continue
+                wm.append([sc['task_name'], sc['name'], name] + [h(cells.get(m, 0)) for m in months] + [h(sum(cells.values()))])
+
+        we = wb.create_sheet('Entries')
+        we.append(['Date', 'Start', 'End', 'Client', 'Scope', 'Bucket', 'Hours', 'Description'])
+        for e in entries:
+            scope, task = scope_by_id.get(e.scope_id, (None, None))
+            start = e.start.astimezone(local_tz)
+            end = e.end.astimezone(local_tz) if e.end else None
+            we.append([start.strftime('%Y-%m-%d'), start.strftime('%H:%M'), end.strftime('%H:%M') if end else '',
+                       task.name if task else '', scope.name if scope else '',
+                       bucket_names.get(e.bucket_id, ''), h(e.duration), e.description or ''])
+
+        for sheet in wb.worksheets:
+            for column in sheet.columns:
+                width = max((len(str(c.value)) for c in column if c.value is not None), default=8)
+                sheet.column_dimensions[column[0].column_letter].width = min(max(width + 2, 8), 60)
+
+        buffer = io.BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+        filename = f"anolog_budget_{datetime.now().strftime('%Y%m%d%H%M')}.xlsx"
+        return Response(buffer.getvalue(),
+                        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                        headers={"Content-disposition": f"attachment; filename={filename}"})
     finally:
         Session.remove()
 

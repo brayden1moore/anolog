@@ -1,4 +1,4 @@
-from sqlalchemy import text, Boolean, create_engine, Column, Integer, String, ForeignKey, DateTime, func
+from sqlalchemy import text, Float, Boolean, create_engine, Column, Integer, String, ForeignKey, DateTime, func
 from sqlalchemy.orm import relationship, sessionmaker, declarative_base, object_session
 from flask_login import UserMixin
 import json
@@ -68,6 +68,34 @@ class Time(Base):
     end = Column(DateTime(timezone=True))
     duration = Column(Integer, default=0)
     description = Column(String)
+    is_visible = Column(Boolean, default=True)
+    scope_id = Column(Integer, ForeignKey('scopes.id'))
+    bucket_id = Column(Integer, ForeignKey('buckets.id'))
+
+# A budgeted engagement for one client (task), e.g. "Underwriting Integration"
+class Scope(Base):
+    __tablename__ = 'scopes'
+    id = Column(Integer, primary_key=True)
+    task_id = Column(Integer, ForeignKey('tasks.id'))
+    name = Column(String)
+    low_hours = Column(Float)
+    high_hours = Column(Float)
+    sort_order = Column(Integer, default=0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now())
+    is_completed = Column(Boolean, default=False)
+    is_visible = Column(Boolean, default=True)
+
+# A line item inside a scope, e.g. "Data model, 12-20 hours". Low/high may be blank.
+class Bucket(Base):
+    __tablename__ = 'buckets'
+    id = Column(Integer, primary_key=True)
+    scope_id = Column(Integer, ForeignKey('scopes.id'))
+    name = Column(String)
+    low_hours = Column(Float)
+    high_hours = Column(Float)
+    sort_order = Column(Integer, default=0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
     is_visible = Column(Boolean, default=True)
 
 username = 'doadmin'

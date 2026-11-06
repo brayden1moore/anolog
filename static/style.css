@@ -1266,3 +1266,414 @@ input[type="datetime-local"] {
         animation-duration: 0.01ms !important;
     }
 }
+/* ============================================================
+   Budgets: scopes and buckets
+   ============================================================ */
+#budget-card {
+    background-color: var(--card-color);
+    border: var(--border-color) solid 2px;
+    border-radius: 10px;
+    color: var(--text-color);
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);
+    padding: 18px 28px 20px;
+    margin-bottom: 22px;
+}
+#budget-card.collapsed-empty {
+    padding-top: 12px;
+    padding-bottom: 12px;
+}
+.budget-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.budget-head h2 {
+    font-size: 12pt;
+    margin: 0;
+}
+.budget-head .spacer,
+.se-footer .spacer {
+    flex: 1;
+}
+.budget-head-note {
+    font-size: 9pt;
+    color: var(--muted);
+}
+.budget-head .add-entry {
+    padding: 5px 11px;
+}
+#budget-card.collapsed-empty #export-budget-button {
+    display: none;
+}
+#budget-list:not(:empty) {
+    margin-top: 12px;
+    border-top: 1px solid var(--faint);
+}
+
+.scope {
+    padding: 12px 0 10px;
+    border-bottom: 1px solid var(--faint);
+}
+.scope:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+.scope.completed {
+    opacity: 0.55;
+}
+.scope-head {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    cursor: pointer;
+    min-height: 26px;
+}
+.scope-head .chev {
+    font-size: 9px;
+    width: 10px;
+    color: var(--muted);
+    transition: transform 0.2s var(--ease);
+}
+.scope.open .scope-head .chev {
+    transform: rotate(90deg);
+}
+.scope-swatch {
+    width: 9px;
+    height: 9px;
+    border-radius: 3px;
+    flex: none;
+    background-color: var(--accent);
+}
+.scope-title {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.scope-client {
+    font-size: 9.5pt;
+    color: var(--muted);
+    margin-right: 7px;
+}
+.scope-name {
+    font-size: 11pt;
+    font-weight: 600;
+}
+.scope-done {
+    font-size: 8pt;
+    padding: 1px 7px;
+    border-radius: 20px;
+    border: 1px solid var(--faint);
+    color: var(--muted);
+}
+.scope-month {
+    font-size: 9pt;
+    color: var(--muted);
+    white-space: nowrap;
+}
+.bnums {
+    font-size: 9.5pt;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: var(--muted);
+    min-width: 96px;
+    text-align: right;
+}
+.bnums b {
+    color: var(--text-color);
+    font-weight: 650;
+}
+.bnums span {
+    color: var(--muted);
+}
+.scope-edit {
+    font-size: 10px;
+    opacity: 0;
+}
+.scope-head:hover .scope-edit,
+.scope-edit:focus-visible {
+    opacity: 0.6;
+}
+.scope-edit:hover {
+    opacity: 1 !important;
+}
+.scope > .bbar {
+    margin: 9px 0 0 19px;
+    height: 8px;
+}
+
+/* bar: faint track, band for low-high, fill for hours used, red past the high */
+.bbar {
+    position: relative;
+    height: 6px;
+    border-radius: 4px;
+    background-color: var(--faint);
+    overflow: hidden;
+}
+.bbar-band {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(250, 230, 215, 0.14);
+}
+.bbar-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    border-radius: 4px 0 0 4px;
+    background-color: var(--accent);
+    transition: width 0.3s var(--ease);
+}
+.bbar.unbounded .bbar-fill {
+    opacity: 0.55;
+}
+.bbar-over {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background-color: #fd6d5d;
+    background-image: repeating-linear-gradient(135deg, transparent 0 3px, rgba(0, 0, 0, 0.18) 3px 5px);
+}
+.bbar-tick {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    margin-left: -1px;
+    background-color: var(--card-color);
+}
+.over-flag {
+    font-size: 8.5pt;
+    font-weight: 600;
+    white-space: nowrap;
+    color: #fd6d5d;
+}
+.over-flag i {
+    font-size: 8pt;
+}
+
+.bucket-list {
+    display: none;
+    margin: 8px 0 0 19px;
+}
+.scope.open .bucket-list {
+    display: block;
+}
+.bucket-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(60px, 1fr) 64px 104px;
+    align-items: center;
+    gap: 12px;
+    padding: 5px 8px;
+    margin: 0 -8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+.bucket-row:hover {
+    background-color: rgba(250, 230, 215, 0.06);
+}
+.scope.completed .bucket-row {
+    cursor: default;
+}
+.flag-slot {
+    text-align: right;
+}
+.bucket-name {
+    font-size: 10pt;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.bucket-row.loose .bucket-name {
+    font-style: italic;
+    color: var(--muted);
+}
+
+/* bucket name on an entry card */
+.entry .entry-bucket {
+    font-weight: 500;
+    font-size: 9pt;
+    margin-left: 9px;
+    padding: 1px 7px;
+    border-radius: 20px;
+    border: 1px solid currentColor;
+    opacity: 0.75;
+    white-space: nowrap;
+}
+.editor .budget-field[hidden] {
+    display: none;
+}
+#bucket-select {
+    margin-top: 9px;
+    max-width: 220px;
+}
+
+/* scope editor */
+.scope-editor {
+    padding-top: 14px;
+}
+.scope-editor label {
+    font-size: 8pt;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 4px;
+}
+.se-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 18px;
+}
+.se-row .grow {
+    flex: 1;
+    min-width: 180px;
+}
+.scope-editor input,
+.scope-editor select,
+.scope-editor textarea {
+    font-family: inherit;
+    font-size: 10pt;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--faint);
+    color: var(--text-color);
+    padding: 5px 2px;
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease;
+}
+.scope-editor input:focus,
+.scope-editor select:focus,
+.scope-editor textarea:focus {
+    border-bottom-color: var(--accent);
+}
+.scope-editor input::placeholder,
+.scope-editor textarea::placeholder {
+    color: var(--muted);
+    opacity: 0.7;
+}
+.scope-editor option {
+    background-color: var(--card-color);
+}
+.scope-editor .range-input {
+    width: 110px;
+    font-variant-numeric: tabular-nums;
+}
+.se-buckets-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-top: 18px;
+}
+.se-hint {
+    font-size: 8.5pt;
+    color: var(--muted);
+}
+.se-bucket {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 2px;
+}
+.se-bucket .bucket-edit-name {
+    flex: 1;
+}
+.se-bucket .bucket-remove {
+    font-size: 11px;
+}
+.se-actions-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+.se-actions-row .add-entry {
+    padding: 5px 11px;
+}
+.se-paste {
+    margin-top: 10px;
+}
+.se-paste textarea {
+    border: 1px dashed var(--faint);
+    border-radius: 6px;
+    padding: 8px;
+    resize: vertical;
+    margin-bottom: 8px;
+}
+.se-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 18px;
+}
+.se-error {
+    font-size: 9pt;
+    color: #fd6d5d;
+}
+.text-button,
+.solid-button {
+    font-family: inherit;
+    font-size: 10pt;
+    border-radius: 8px;
+    padding: 6px 13px;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+.text-button {
+    background: none;
+    border: 1px solid transparent;
+    color: var(--muted);
+}
+.text-button:hover {
+    color: var(--text-color);
+    border-color: var(--faint);
+}
+.text-button.danger:hover {
+    color: #fd6d5d;
+}
+.solid-button {
+    border: none;
+    background-color: var(--nugget);
+    color: #17140f;
+    font-weight: 600;
+}
+.solid-button:hover {
+    opacity: 0.85;
+}
+
+@media (max-width: 860px) {
+    #budget-card {
+        padding: 14px 18px 16px;
+    }
+    .scope-month {
+        display: none;
+    }
+    .bucket-row {
+        grid-template-columns: minmax(0, 1fr) auto auto;
+        row-gap: 5px;
+    }
+    .bucket-row .bnums {
+        min-width: 0;
+    }
+    .scope-head {
+        flex-wrap: wrap;
+    }
+    .scope-title {
+        white-space: normal;
+        flex-basis: calc(100% - 60px);
+    }
+    .scope-head .bnums {
+        margin-left: 19px;
+        text-align: left;
+        min-width: 0;
+    }
+    .bucket-row .bbar {
+        grid-column: 1 / -1;
+        grid-row: 2;
+    }
+    .budget-head-note {
+        display: none;
+    }
+}
