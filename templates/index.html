@@ -82,10 +82,10 @@
 
             <div id="budget-card" class="collapsed-empty">
                 <div class="budget-head">
-                    <h2>Budgets</h2>
+                    <h2>Scopes</h2>
                     <span class="budget-head-note" id="budget-head-note"></span>
                     <span class="spacer"></span>
-                    <button class="icon-button" id="export-budget-button" title="Export budget report (.xlsx)"><i class="fa-solid fa-file-arrow-down"></i></button>
+                    <button class="icon-button" id="export-budget-button" title="Export scope report (.xlsx)"><i class="fa-solid fa-file-arrow-down"></i></button>
                     <button class="add-entry" id="add-a-scope"><i class="fa-solid fa-plus"></i> Scope</button>
                 </div>
                 <div id="budget-list"></div>
@@ -94,6 +94,9 @@
             <div id="entries-card">
                 <div class="entries-head">
                     <h2>Time</h2>
+                    <select id="time-filter" title="Filter by scope or bucket" hidden></select>
+                    <span class="filter-total" id="filter-total"></span>
+                    <span class="spacer"></span>
                     <button class="add-entry" id="add-a-time-block">
                         <i class="fa-solid fa-plus"></i> Add time entry
                     </button>

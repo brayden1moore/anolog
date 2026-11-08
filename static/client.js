@@ -404,9 +404,12 @@ function renderTimes() {
     entriesContainer.innerHTML = '';
     entriesContainer.classList.toggle('has-open', openEntryId !== null);
 
-    const entries = sortedEntries();
+    const entries = sortedEntries().filter(matchesTimeFilter);
+    renderFilterTotal(entries);
     if (!entries.length) {
-        entriesContainer.innerHTML = '<p class="empty-state">No time logged this month. Add an entry, or start the timer above.</p>';
+        entriesContainer.innerHTML = timeFilter
+            ? '<p class="empty-state">Nothing logged to this scope or bucket this month.</p>'
+            : '<p class="empty-state">No time logged this month. Add an entry, or start the timer above.</p>';
         return;
     }
 
@@ -1025,6 +1028,7 @@ function loadBudgets() {
 }
 
 function renderBudgets() {
+    renderTimeFilterOptions();
     const note = document.getElementById('budget-head-note');
     budgetList.innerHTML = '';
 
@@ -1302,6 +1306,67 @@ function sendScope(method, body) {
     });
 }
 
+/* ---------- filter the time list by scope or bucket ---------- */
+
+let timeFilter = '';   // '' all, 'none' no scope, 's:ID' whole scope, 'b:ID' bucket, 'u:ID' scope with no bucket
+const timeFilterSelect = document.getElementById('time-filter');
+
+function matchesTimeFilter(entry) {
+    if (!timeFilter) return true;
+    if (entry.isNew || entry.id === openEntryId) return true;   // never hide the entry being edited
+    const view = viewOf(entry);
+    const [kind, raw] = timeFilter.split(':');
+    const id = parseInt(raw, 10);
+    if (kind === 'none') return !view.scopeId;
+    if (kind === 's') return view.scopeId == id;
+    if (kind === 'b') return view.bucketId == id;
+    if (kind === 'u') {
+        const scope = scopes.find(sc => sc.id === id);
+        const live = scope ? scope.buckets.map(b => b.id) : [];
+        return view.scopeId == id && !live.includes(view.bucketId);
+    }
+    return true;
+}
+
+function renderTimeFilterOptions() {
+    if (!scopes.length) {
+        timeFilterSelect.hidden = true;
+        timeFilter = '';
+        return;
+    }
+    const opt = (value, label) => `<option value="${value}">${escapeHtml(label)}</option>`;
+    const values = ['', 'none'];
+    let html = opt('', 'All time') + opt('none', 'Not in a scope');
+    scopes.forEach(sc => {
+        html += `<optgroup label="${escapeHtml(sc.task_name + ' · ' + sc.name)}">` + opt(`s:${sc.id}`, `All of ${sc.name}`);
+        values.push(`s:${sc.id}`);
+        sc.buckets.forEach(b => { html += opt(`b:${b.id}`, `${sc.name} › ${b.name}`); values.push(`b:${b.id}`); });
+        if (sc.buckets.length && sc.unbucketed_seconds > 0) {
+            html += opt(`u:${sc.id}`, `${sc.name} › No bucket`);
+            values.push(`u:${sc.id}`);
+        }
+        html += '</optgroup>';
+    });
+    if (!values.includes(timeFilter)) timeFilter = '';
+    timeFilterSelect.innerHTML = html;
+    timeFilterSelect.value = timeFilter;
+    timeFilterSelect.hidden = false;
+    timeFilterSelect.classList.toggle('active', !!timeFilter);
+}
+
+function renderFilterTotal(entries) {
+    const label = document.getElementById('filter-total');
+    if (!timeFilter) { label.textContent = ''; return; }
+    const seconds = entries.reduce((t, e) => t + durationSeconds(viewOf(e)), 0);
+    label.textContent = `${hoursOf(seconds)} h this month`;
+}
+
+timeFilterSelect.addEventListener('change', () => {
+    timeFilter = timeFilterSelect.value;
+    timeFilterSelect.classList.toggle('active', !!timeFilter);
+    renderTimes();
+});
+
 document.getElementById('add-a-scope').addEventListener('click', () => startEditingScope(null));
 document.getElementById('export-budget-button').addEventListener('click', () => {
     if (globalProjectId === undefined) return;
@@ -1557,6 +1622,7 @@ function addProjectClickListener(newLink, projectId, projectName) {
             globalTaskId = undefined;
             globalProjectId = projectId;
             editingScope = null;
+            timeFilter = '';
             populateTasks(projectId);
             getTime(projectId);
             loadBudgets();

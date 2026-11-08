@@ -1677,3 +1677,46 @@ input[type="datetime-local"] {
         display: none;
     }
 }
+
+/* time list filter */
+.entries-head .spacer {
+    flex: 1;
+}
+.entries-head {
+    gap: 12px;
+}
+#time-filter {
+    font-family: inherit;
+    font-size: 9.5pt;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--faint);
+    color: var(--muted);
+    padding: 4px 2px;
+    max-width: 240px;
+    cursor: pointer;
+    outline: none;
+}
+#time-filter[hidden] {
+    display: none;
+}
+#time-filter.active {
+    color: var(--text-color);
+    border-bottom-color: var(--text-color);
+}
+#time-filter option,
+#time-filter optgroup {
+    background-color: var(--card-color);
+    color: var(--text-color);
+}
+.filter-total {
+    font-size: 9pt;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+@media (max-width: 860px) {
+    .entries-head {
+        flex-wrap: wrap;
+    }
+}
