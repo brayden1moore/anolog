@@ -437,7 +437,7 @@ function renderTimes() {
         head.innerHTML =
             `<h3>${dayNames[date.getDay()]}, ${monthNames[date.getMonth()]} ${date.getDate()}${getDaySuffix(date.getDate())}</h3>` +
             (sameDay(date, new Date()) ? '<span class="today-pill">today</span>' : '') +
-            `<span class="day-total">${hoursOf(total)} h</span>`;
+            `<span class="day-total">${hoursOf(total)}</span>`;
         groupDiv.appendChild(head);
 
         group.items.forEach(entry => groupDiv.appendChild(buildEntryCard(entry)));
@@ -477,7 +477,7 @@ function cardInner(view) {
             <div class="desc${view.description ? '' : ' empty'}">${escapeHtml(view.description || 'No description')}</div>
         </div>
         <div class="range">${formatClockTime(view.start)} &ndash; ${formatClockTime(view.end)}</div>
-        <div class="dur">${hoursOf(durationSeconds(view))} h</div>`;
+        <div class="dur">${hoursOf(durationSeconds(view))}</div>`;
 }
 
 function taskOptions(selectedId) {

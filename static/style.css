@@ -1657,17 +1657,37 @@ input[type="datetime-local"] {
     .bucket-row .bnums {
         min-width: 0;
     }
+    /* one row: title on the left (client stacked above the name), numbers on the right */
     .scope-head {
-        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    .scope-head .chev,
+    .scope-swatch {
+        margin-top: 6px;
     }
     .scope-title {
         white-space: normal;
-        flex-basis: calc(100% - 60px);
+        line-height: 1.25;
+    }
+    .scope-client {
+        display: block;
+        font-size: 8.5pt;
+        margin: 0 0 1px;
     }
     .scope-head .bnums {
-        margin-left: 19px;
-        text-align: left;
         min-width: 0;
+        margin-top: 13px;
+    }
+    .scope-head .over-flag {
+        margin-top: 14px;
+    }
+    .scope-edit {
+        opacity: 0.45;
+        margin-top: 8px;
+    }
+    .scope > .bbar {
+        margin-top: 8px;
     }
     .bucket-row .bbar {
         grid-column: 1 / -1;
@@ -1717,6 +1737,30 @@ input[type="datetime-local"] {
 }
 @media (max-width: 860px) {
     .entries-head {
-        flex-wrap: wrap;
+        gap: 10px;
     }
+    #time-filter {
+        flex: 1;
+        min-width: 0;
+        max-width: none;
+    }
+    .entries-head .spacer,
+    .filter-total {
+        display: none;
+    }
+    .entries-head .add-entry {
+        flex: none;
+    }
+}
+
+/* long bucket names shrink to an ellipsis instead of overflowing the card */
+.entry .task {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+}
+.entry .entry-bucket {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
