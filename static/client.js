@@ -851,7 +851,7 @@ function calculateTaskTotalTime(taskId, changed) {
    ============================================================ */
 
 let scopes = [];                // from /scopes for the current project
-let expandedScopes = {};        // scopeId -> bool; open by default unless completed
+let expandedScopes = {};        // scopeId -> bool; collapsed by default
 let editingScope = null;        // the scope being created or edited, or null
 let lastTargetByTask = {};      // the bucket last used per client, to preselect next time
 let budgetRequest = 0;
@@ -1000,12 +1000,12 @@ function budgetBar(usedHours, low, high, fallbackScale) {
 
 function overFlag(usedHours, high) {
     if (high === null || usedHours <= high) return '';
-    return `<span class="over-flag" title="Over the high estimate"><i class="fa-solid fa-flag"></i> +${num(usedHours - high)} h</span>`;
+    return `<span class="over-flag" title="Over the high estimate"><i class="fa-solid fa-flag"></i> +${num(usedHours - high)}</span>`;
 }
 
 function budgetNums(usedHours, low, high) {
     const range = formatRange(low, high);
-    return `<span class="bnums"><b>${num(usedHours)}</b>${range ? ` <span>/ ${range}</span>` : ''} h</span>`;
+    return `<span class="bnums"><b>${num(usedHours)}</b>${range ? ` <span>/ ${range}</span>` : ''}</span>`;
 }
 
 function loadBudgets() {
@@ -1029,24 +1029,16 @@ function loadBudgets() {
 
 function renderBudgets() {
     renderTimeFilterOptions();
-    const note = document.getElementById('budget-head-note');
     budgetList.innerHTML = '';
 
     if (editingScope) {
         budgetCard.classList.remove('collapsed-empty');
-        note.textContent = '';
         budgetList.appendChild(buildScopeEditor());
         return;
     }
 
     budgetCard.classList.toggle('collapsed-empty', !scopes.length);
-    if (!scopes.length) {
-        note.textContent = 'Track hours against an estimate for a client';
-        return;
-    }
-    const { selectedMonth } = getMonthYear();
-    const monthSeconds = scopes.reduce((t, sc) => t + sc.month_seconds, 0);
-    note.textContent = `${hoursOf(monthSeconds)} h logged to scopes in ${monthNames[selectedMonth]}`;
+    if (!scopes.length) return;
 
     scopes.forEach(scope => budgetList.appendChild(buildScopeBlock(scope)));
 }
@@ -1054,7 +1046,7 @@ function renderBudgets() {
 function buildScopeBlock(scope) {
     const used = scope.seconds / 3600;
     const range = scopeRange(scope);
-    const open = expandedScopes[scope.id] !== undefined ? expandedScopes[scope.id] : !scope.is_completed;
+    const open = expandedScopes[scope.id] !== undefined ? expandedScopes[scope.id] : false;
     const color = colorForTask(scope.task_id);
 
     const block = document.createElement('div');
@@ -1079,14 +1071,14 @@ function buildScopeBlock(scope) {
             <span class="scope-title"><span class="scope-client">${escapeHtml(scope.task_name)}</span><span class="scope-name">${escapeHtml(scope.name)}</span></span>
             ${scope.is_completed ? '<span class="scope-done">done</span>' : ''}
             ${overFlag(used, range.high)}
-            <span class="scope-month">${num(scope.month_seconds / 3600)} h this month</span>
+            <span class="scope-month">${num(scope.month_seconds / 3600)} this month</span>
             ${budgetNums(used, range.low, range.high)}
             <button class="icon-button scope-edit" title="Edit scope and buckets"><i class="fa-solid fa-pen"></i></button>
         </div>
         ${budgetBar(used, range.low, range.high, used)}
         <div class="bucket-list">
             ${rows.map(r => `
-                <div class="bucket-row${r.loose ? ' loose' : ''}" data-target="${r.target}" title="Log time to ${escapeHtml(r.name)} · ${num(r.month)} h this month">
+                <div class="bucket-row${r.loose ? ' loose' : ''}" data-target="${r.target}" title="Log time to ${escapeHtml(r.name)} · ${num(r.month)} this month">
                     <span class="bucket-name">${escapeHtml(r.name)}</span>
                     ${budgetBar(r.used, r.low, r.high, largestUsed)}
                     <span class="flag-slot">${overFlag(r.used, r.high)}</span>
@@ -1358,7 +1350,7 @@ function renderFilterTotal(entries) {
     const label = document.getElementById('filter-total');
     if (!timeFilter) { label.textContent = ''; return; }
     const seconds = entries.reduce((t, e) => t + durationSeconds(viewOf(e)), 0);
-    label.textContent = `${hoursOf(seconds)} h this month`;
+    label.textContent = `${hoursOf(seconds)} this month`;
 }
 
 timeFilterSelect.addEventListener('change', () => {
