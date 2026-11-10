@@ -1071,18 +1071,42 @@ function loadBudgets() {
     .catch(error => console.error(error));
 }
 
+let scopesOpen = false;   // the whole card starts minimized to a count
+
+// A scope counts as over when its total or any of its buckets is past the high estimate
+function scopeIsOver(scope) {
+    if (scope.is_completed) return false;
+    const range = scopeRange(scope);
+    if (range.high !== null && scope.seconds / 3600 > range.high) return true;
+    return scope.buckets.some(b => b.high !== null && b.seconds / 3600 > b.high);
+}
+
+function renderBudgetHead() {
+    const active = scopes.filter(sc => !sc.is_completed).length;
+    const over = scopes.filter(scopeIsOver).length;
+    const open = scopesOpen || !!editingScope;
+    const toggle = document.getElementById('budget-toggle');
+    const overFlagEl = document.getElementById('scope-over');
+
+    budgetCard.classList.toggle('open', open);
+    toggle.setAttribute('aria-expanded', open);
+    toggle.title = open ? 'Hide scopes' : 'Show scopes';
+    document.getElementById('scope-count').textContent = scopes.length ? active : '';
+    overFlagEl.hidden = !over;
+    overFlagEl.innerHTML = `<i class="fa-solid fa-flag"></i> ${over} over`;
+}
+
 function renderBudgets() {
     renderTimeFilterOptions();
     budgetList.innerHTML = '';
+    budgetCard.classList.toggle('collapsed-empty', !scopes.length && !editingScope);
+    renderBudgetHead();
 
     if (editingScope) {
-        budgetCard.classList.remove('collapsed-empty');
         budgetList.appendChild(buildScopeEditor());
         return;
     }
-
-    budgetCard.classList.toggle('collapsed-empty', !scopes.length);
-    if (!scopes.length) return;
+    if (!scopes.length || !scopesOpen) return;
 
     scopes.forEach(scope => budgetList.appendChild(buildScopeBlock(scope)));
 }
@@ -1148,6 +1172,7 @@ function buildScopeBlock(scope) {
 /* ---------- scope editor ---------- */
 
 function startEditingScope(scope) {
+    scopesOpen = true;
     if (scope) {
         editingScope = {
             id: scope.id,
@@ -1401,6 +1426,12 @@ timeFilterSelect.addEventListener('change', () => {
     timeFilter = timeFilterSelect.value;
     timeFilterSelect.classList.toggle('active', !!timeFilter);
     renderTimes();
+});
+
+document.getElementById('budget-toggle').addEventListener('click', () => {
+    if (!scopes.length || editingScope) return;
+    scopesOpen = !scopesOpen;
+    renderBudgets();
 });
 
 document.getElementById('add-a-scope').addEventListener('click', () => startEditingScope(null));
