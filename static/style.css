@@ -1275,7 +1275,7 @@ input[type="datetime-local"] {
     border-radius: 10px;
     color: var(--text-color);
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 15px 0 rgba(0, 0, 0, 0.19);
-    padding: 18px 28px 20px;
+    padding: 22px 28px 24px;
     margin-bottom: 22px;
 }
 #budget-card.collapsed-empty {
@@ -1644,9 +1644,6 @@ input[type="datetime-local"] {
 }
 
 @media (max-width: 860px) {
-    #budget-card {
-        padding: 14px 18px 16px;
-    }
     .scope-month {
         display: none;
     }
@@ -1763,4 +1760,43 @@ input[type="datetime-local"] {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+/* this month's hours beside each project and task */
+#project-list-ul .task-or-project-li,
+#task-list-ul .task-or-project-li {
+    position: relative;
+    padding-right: 44px;
+}
+.li-hours {
+    position: absolute;
+    right: 0;
+    top: 3px;
+    font-size: 9pt;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
+}
+/* the task list has less left padding than the project list; this lines their totals up */
+#task-list-ul .task-or-project-li {
+    margin-right: 2px;
+}
+@media (max-width: 860px) {
+    /* narrow side-by-side columns: put the total on its own line under the name */
+    #project-list-ul .task-or-project-li,
+    #task-list-ul .task-or-project-li {
+        padding-right: 0;
+    }
+    .li-hours {
+        position: static;
+        display: block;
+        font-size: 8.5pt;
+        margin-top: 1px;
+    }
+    .li-hours:empty {
+        display: none;
+    }
+    #task-list-ul .li-hours {
+        padding-left: 18px;
+    }
 }

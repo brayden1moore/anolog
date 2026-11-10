@@ -121,6 +121,7 @@ function populateProjects() {
                 }
             }
         });
+        applyListHours();
     }
 
     let cachedProjects = localStorage.getItem(`projects_cache_${globalUserId}`);
@@ -189,6 +190,7 @@ function populateTasks(projectId) {
         renderTimerTasks();
         renderTimes();
         renderBudgets();
+        applyListHours();
     }
 
     let cachedTasks = localStorage.getItem(`tasks_cache_${projectId}`);
@@ -1008,7 +1010,49 @@ function budgetNums(usedHours, low, high) {
     return `<span class="bnums"><b>${num(usedHours)}</b>${range ? ` <span>/ ${range}</span>` : ''}</span>`;
 }
 
+/* ---------- this month's hours next to each project and task ---------- */
+
+let monthTotals = { projects: {}, tasks: {} };
+let monthTotalsRequest = 0;
+
+function loadMonthTotals() {
+    const request = ++monthTotalsRequest;
+    const { selectedMonth, selectedYear } = getMonthYear();
+    fetch(`/month_totals?tz_name=${localTz}&month=${selectedMonth}&year=${selectedYear}`)
+    .then(response => {
+        if (!response.ok) throw new Error('Could not load month totals');
+        return response.json();
+    })
+    .then(data => {
+        if (request !== monthTotalsRequest) return;
+        monthTotals = data;
+        applyListHours();
+    })
+    .catch(error => console.error(error));
+}
+
+// The total sits beside the link, not inside it, so renaming never picks it up
+function applyListHours() {
+    const paint = (selector, attr, totals) => {
+        document.querySelectorAll(selector).forEach(link => {
+            const li = link.closest('li');
+            if (!li) return;
+            let label = li.querySelector(':scope > .li-hours');
+            if (!label) {
+                label = document.createElement('span');
+                label.className = 'li-hours';
+                li.appendChild(label);
+            }
+            const seconds = totals[link.getAttribute(attr)] || 0;
+            label.textContent = seconds > 0 ? hoursOf(seconds) : '';
+        });
+    };
+    paint('#project-list-ul [data-projectid]', 'data-projectid', monthTotals.projects || {});
+    paint('#task-list-ul [data-taskid]', 'data-taskid', monthTotals.tasks || {});
+}
+
 function loadBudgets() {
+    loadMonthTotals();
     if (globalProjectId === undefined) return;
     const projectId = globalProjectId;
     const request = ++budgetRequest;

@@ -839,6 +839,30 @@ def sync_buckets(session, scope, items):
         if bucket_id not in kept:
             bucket.is_visible = False
 
+# Seconds logged per project and per task in a month, for the sidebar totals
+@app.route('/month_totals', methods=['GET'])
+@login_required
+def month_totals():
+    session = Session()
+    try:
+        local_tz = safe_tz(request.args.get('tz_name'))
+        month = int(request.args.get('month', datetime.now().month - 1)) + 1
+        year = int(request.args.get('year', datetime.now().year))
+        start, end = month_bounds(local_tz, month, year)
+        rows = (session.query(Time.project_id, Time.task_id, func.sum(Time.duration))
+                .filter(Time.user_id == current_user.id, Time.is_visible == True,
+                        Time.end != None, Time.duration > 0,
+                        Time.start >= start, Time.start < end)
+                .group_by(Time.project_id, Time.task_id).all())
+        projects, tasks = {}, {}
+        for project_id, task_id, seconds in rows:
+            seconds = int(seconds or 0)
+            projects[project_id] = projects.get(project_id, 0) + seconds
+            tasks[task_id] = tasks.get(task_id, 0) + seconds
+        return jsonify({'projects': projects, 'tasks': tasks})
+    finally:
+        Session.remove()
+
 # List scopes, buckets and hours used for every client in a project
 @app.route('/scopes', methods=['GET'])
 @login_required
