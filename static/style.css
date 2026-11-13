@@ -1299,9 +1299,6 @@ input[type="datetime-local"] {
     font-size: 9pt;
     color: var(--muted);
 }
-.budget-head .add-entry {
-    padding: 5px 11px;
-}
 #budget-card.collapsed-empty #export-budget-button {
     display: none;
 }
@@ -1845,4 +1842,101 @@ input[type="datetime-local"] {
 }
 #budget-card:not(.open) #budget-list {
     display: none;
+}
+
+/* pay: rate and take-home under the month stats */
+.pay-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 12px;
+    padding: 0;
+    background: none;
+    border: none;
+    font: inherit;
+    font-size: 9pt;
+    color: var(--muted);
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+.pay-toggle:hover {
+    color: var(--text-color);
+}
+.pay-toggle .chev {
+    font-size: 8px;
+    transition: transform 0.2s var(--ease);
+}
+#summary.pay-open .pay-toggle .chev {
+    transform: rotate(90deg);
+}
+.pay-panel {
+    margin-top: 12px;
+}
+.pay-panel[hidden] {
+    display: none;
+}
+.pay-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 22px;
+}
+.pay-label {
+    display: block;
+    font-size: 8pt;
+    color: var(--muted);
+    margin-bottom: 4px;
+}
+.pay-input {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 3px;
+    border-bottom: 1px solid var(--faint);
+    padding: 3px 2px;
+    transition: border-color 0.2s ease;
+}
+.pay-input:focus-within {
+    border-bottom-color: var(--text-color);
+}
+.pay-input input {
+    width: 64px;
+    font: inherit;
+    font-size: 11pt;
+    font-variant-numeric: tabular-nums;
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text-color);
+    padding: 0;
+}
+.pay-input input::placeholder {
+    color: var(--muted);
+    opacity: 0.6;
+}
+.pay-input .affix {
+    font-size: 9.5pt;
+    color: var(--muted);
+}
+.pay-breakdown {
+    margin-top: 12px;
+    font-size: 9.5pt;
+    color: var(--text-color);
+    font-variant-numeric: tabular-nums;
+}
+.pay-breakdown .dim {
+    color: var(--muted);
+}
+#stat-pay-wrap[hidden] {
+    display: none;
+}
+.stat span {
+    white-space: nowrap;
+}
+.pay-input input {
+    width: 52px;
+}
+@media (max-width: 860px) {
+    .stats {
+        flex-wrap: wrap;
+        gap: 12px 20px;
+    }
 }

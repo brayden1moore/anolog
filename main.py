@@ -229,7 +229,9 @@ def list_projects():
                     'name':project.name,
                     'user_id':project.user_id, 
                     'is_visible':project.is_visible, 
-                    'is_completed':project.is_completed
+                    'is_completed':project.is_completed,
+                    'hourly_rate':project.hourly_rate,
+                    'take_home_pct':project.take_home_pct
                 }
                 for project in projects
             ]
@@ -512,6 +514,11 @@ def update_project():
             project.is_visible = is_visible
         if is_completed is not None:
             project.is_completed = is_completed
+        if 'hourlyRate' in data:
+            project.hourly_rate = to_hours(data['hourlyRate'])
+        if 'takeHomePct' in data:
+            pct = to_hours(data['takeHomePct'])
+            project.take_home_pct = None if pct is None else min(pct, 100.0)
 
         session.commit()
         return jsonify({"message": "Project updated"}), 200

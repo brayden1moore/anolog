@@ -76,6 +76,8 @@ function populateProjects() {
 
     function displayProjectData(data) {
         ulElement.innerHTML = "";
+        projectsById = {};
+        data.forEach(project => { projectsById[project.id] = project; });
         let first = true;
         data.forEach(project => {
             if (project.is_visible !== false) {
@@ -470,6 +472,7 @@ function renderTimeStats() {
     document.getElementById('stat-month').textContent = hoursOf(month);
     document.getElementById('stat-week').textContent = hoursOf(week);
     document.getElementById('stat-today').textContent = hoursOf(todayTotal);
+    renderPay(month);
 }
 
 function cardInner(view) {
@@ -1009,6 +1012,93 @@ function budgetNums(usedHours, low, high) {
     const range = formatRange(low, high);
     return `<span class="bnums"><b>${num(usedHours)}</b>${range ? ` <span>/ ${range}</span>` : ''}</span>`;
 }
+
+/* ---------- pay: hourly rate and take-home share per project ---------- */
+
+let projectsById = {};
+let payOpen = false;
+const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+const payRateInput = document.getElementById('pay-rate');
+const payPctInput = document.getElementById('pay-pct');
+
+function parseAmount(text) {
+    const value = parseFloat(String(text).replace(/[$,%\s]/g, ''));
+    return isFinite(value) && value >= 0 ? value : null;
+}
+
+// Uses the same hours as "this month" above, so it follows the month dropdown
+function renderPay(monthSeconds) {
+    if (monthSeconds === undefined) monthSeconds = timeEntries.reduce((t, e) => t + durationSeconds(viewOf(e)), 0);
+    const project = projectsById[globalProjectId] || {};
+    const rate = project.hourly_rate;
+    const pct = project.take_home_pct === null || project.take_home_pct === undefined ? 100 : project.take_home_pct;
+    const hasRate = rate !== null && rate !== undefined && rate > 0;
+    const hours = monthSeconds / 3600;
+    const gross = hasRate ? hours * rate : 0;
+    const takeHome = gross * pct / 100;
+
+    document.getElementById('stat-pay-wrap').hidden = !hasRate;
+    document.getElementById('stat-pay').textContent = money.format(takeHome);
+    document.getElementById('pay-toggle-label').textContent = hasRate ? 'Pay' : 'Set pay rate';
+
+    // don't overwrite a field while it's being typed in
+    if (document.activeElement !== payRateInput) payRateInput.value = hasRate ? num(rate) : '';
+    if (document.activeElement !== payPctInput) {
+        payPctInput.value = project.take_home_pct === null || project.take_home_pct === undefined ? '' : num(project.take_home_pct);
+    }
+
+    const breakdown = document.getElementById('pay-breakdown');
+    if (!hasRate) {
+        breakdown.innerHTML = '<span class="dim">Add this firm\'s hourly rate to see the month\'s pay.</span>';
+    } else {
+        breakdown.innerHTML =
+            `${hoursOf(monthSeconds)} × ${money.format(rate)} = <b>${money.format(gross)}</b> gross` +
+            (pct < 100 ? `<span class="dim"> · </span><b>${money.format(takeHome)}</b> take home at ${num(pct)}%` : '');
+    }
+}
+
+function setPayOpen(open) {
+    payOpen = open;
+    document.getElementById('pay-panel').hidden = !open;
+    document.getElementById('pay-toggle').setAttribute('aria-expanded', open);
+    document.getElementById('summary').classList.toggle('pay-open', open);
+}
+
+document.getElementById('pay-toggle').addEventListener('click', () => {
+    setPayOpen(!payOpen);
+    if (payOpen && !payRateInput.value) payRateInput.focus();
+});
+
+function onPayInput() {
+    const project = projectsById[globalProjectId];
+    if (!project) return;
+    project.hourly_rate = parseAmount(payRateInput.value);
+    const pct = parseAmount(payPctInput.value);
+    project.take_home_pct = pct === null ? null : Math.min(pct, 100);
+    renderPay();
+}
+
+function savePay() {
+    const project = projectsById[globalProjectId];
+    if (!project) return;
+    fetch('/projects', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId: project.id, hourlyRate: project.hourly_rate, takeHomePct: project.take_home_pct })
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Pay rate not saved');
+        localStorage.removeItem(`projects_cache_${globalUserId}`);
+        renderPay();
+    })
+    .catch(error => console.error(error));
+}
+
+[payRateInput, payPctInput].forEach(input => {
+    input.addEventListener('input', onPayInput);
+    input.addEventListener('change', savePay);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
+});
 
 /* ---------- this month's hours next to each project and task ---------- */
 

@@ -35,7 +35,9 @@ class Project(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now())
     is_completed = Column(Boolean, default=False)
     is_visible = Column(Boolean, default=True)
-    
+    hourly_rate = Column(Float)        # what this firm pays per hour
+    take_home_pct = Column(Float)      # share of that you keep, 0-100
+
 class Task(Base):
     __tablename__ = 'tasks'
     id = Column(Integer, primary_key=True)
@@ -69,14 +71,14 @@ class Time(Base):
     duration = Column(Integer, default=0)
     description = Column(String)
     is_visible = Column(Boolean, default=True)
-    scope_id = Column(Integer, ForeignKey('scopes.id'))
+    scope_id = Column(Integer, ForeignKey('scopes.id'), index=True)
     bucket_id = Column(Integer, ForeignKey('buckets.id'))
 
 # A budgeted engagement for one client (task), e.g. "Underwriting Integration"
 class Scope(Base):
     __tablename__ = 'scopes'
     id = Column(Integer, primary_key=True)
-    task_id = Column(Integer, ForeignKey('tasks.id'))
+    task_id = Column(Integer, ForeignKey('tasks.id'), index=True)
     name = Column(String)
     low_hours = Column(Float)
     high_hours = Column(Float)
@@ -90,7 +92,7 @@ class Scope(Base):
 class Bucket(Base):
     __tablename__ = 'buckets'
     id = Column(Integer, primary_key=True)
-    scope_id = Column(Integer, ForeignKey('scopes.id'))
+    scope_id = Column(Integer, ForeignKey('scopes.id'), index=True)
     name = Column(String)
     low_hours = Column(Float)
     high_hours = Column(Float)
