@@ -1039,7 +1039,6 @@ function renderPay(monthSeconds) {
 
     document.getElementById('stat-pay-wrap').hidden = !hasRate;
     document.getElementById('stat-pay').textContent = money.format(takeHome);
-    document.getElementById('pay-toggle-label').textContent = hasRate ? 'Pay' : 'Set pay rate';
 
     // don't overwrite a field while it's being typed in
     if (document.activeElement !== payRateInput) payRateInput.value = hasRate ? num(rate) : '';
@@ -1052,10 +1051,17 @@ function renderPay(monthSeconds) {
         breakdown.innerHTML = '<span class="dim">Add this firm\'s hourly rate to see the month\'s pay.</span>';
     } else {
         breakdown.innerHTML =
-            `${hoursOf(monthSeconds)} × ${money.format(rate)} = <b>${money.format(gross)}</b> gross` +
-            (pct < 100 ? `<span class="dim"> · </span><b>${money.format(takeHome)}</b> take home at ${num(pct)}%` : '');
+            `${hoursOf(monthSeconds)} × ${money.format(rate)} = <b class="secret">${money.format(gross)}</b> gross` +
+            (pct < 100 ? `<span class="dim"> · </span><b class="secret">${money.format(takeHome)}</b> take home at ${num(pct)}%` : '');
     }
 }
+
+// Amounts stay blurred until hovered, or tapped on a touch screen
+document.addEventListener('click', event => {
+    const secret = event.target.closest('.secret');
+    document.querySelectorAll('.secret.revealed').forEach(el => { if (el !== secret) el.classList.remove('revealed'); });
+    if (secret) secret.classList.toggle('revealed');
+});
 
 function setPayOpen(open) {
     payOpen = open;

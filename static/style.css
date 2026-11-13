@@ -1940,3 +1940,33 @@ input[type="datetime-local"] {
         gap: 12px 20px;
     }
 }
+
+/* pay text matches the stat labels */
+.pay-toggle,
+.pay-label,
+.pay-input .affix,
+.pay-input input,
+.pay-breakdown {
+    font-size: 9pt;
+}
+.pay-label {
+    margin-bottom: 3px;
+}
+
+/* money is unreadable until hovered (or tapped on touch screens) */
+.secret {
+    filter: blur(10px);
+    user-select: none;
+    cursor: pointer;
+    transition: filter 0.2s ease;
+}
+.secret.revealed {
+    filter: none;
+    user-select: auto;
+}
+@media (hover: hover) {
+    .secret:hover {
+        filter: none;
+        user-select: auto;
+    }
+}
