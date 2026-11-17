@@ -1018,8 +1018,21 @@ function budgetNums(usedHours, low, high) {
 let projectsById = {};
 let payOpen = false;
 const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
-const payRateInput = document.getElementById('pay-rate');
-const payPctInput = document.getElementById('pay-pct');
+
+// A project's rates over time: [{from: null | 'YYYY-MM', rate, pct}], sorted, first one is the start
+function projectRates(project) {
+    const rates = (project && project.pay_rates) || [];
+    return rates.slice().sort((a, b) => (a.from || '').localeCompare(b.from || ''));
+}
+
+// The rate and take-home share that applied in a given month (m is 0-11)
+function payFor(rates, year, m) {
+    const key = `${year}-${pad(m + 1)}`;
+    let found = null;
+    rates.forEach(r => { if (!r.from || r.from <= key) found = r; });
+    if (!found || !(found.rate > 0)) return { rate: 0, pct: 100 };
+    return { rate: found.rate, pct: found.pct === null || found.pct === undefined ? 100 : found.pct };
+}
 
 function parseAmount(text) {
     const value = parseFloat(String(text).replace(/[$,%\s]/g, ''));
@@ -1030,18 +1043,10 @@ function parseAmount(text) {
 function renderPay(monthSeconds) {
     if (monthSeconds === undefined) monthSeconds = timeEntries.reduce((t, e) => t + durationSeconds(viewOf(e)), 0);
     const project = projectsById[globalProjectId] || {};
-    const rate = project.hourly_rate;
-    const pct = project.take_home_pct === null || project.take_home_pct === undefined ? 100 : project.take_home_pct;
-    const hasRate = rate !== null && rate !== undefined && rate > 0;
-
-    // don't overwrite a field while it's being typed in
-    if (document.activeElement !== payRateInput) payRateInput.value = hasRate ? num(rate) : '';
-    if (document.activeElement !== payPctInput) {
-        payPctInput.value = project.take_home_pct === null || project.take_home_pct === undefined ? '' : num(project.take_home_pct);
-    }
-
+    const rates = projectRates(project);
+    if (payOpen && editorProjectId !== globalProjectId) renderPayEditor();   // switched firm with the panel open
     const breakdown = document.getElementById('pay-breakdown');
-    if (!hasRate) {
+    if (!rates.some(r => r.rate > 0)) {
         breakdown.innerHTML = '<span class="dim">Add this firm\'s hourly rate to see pay and pace.</span>';
         return;
     }
@@ -1054,21 +1059,27 @@ function renderPay(monthSeconds) {
     const yearStart = new Date(selectedYear, 0, 1);
     const yearEnd = new Date(selectedYear + 1, 0, 1);
     const name = shortMonths[selectedMonth];
+    const here = payFor(rates, selectedYear, selectedMonth);
 
-    const split = pct < 100;
-    const row = (label, seconds, note) => {
-        const gross = seconds / 3600 * rate;
-        return `<tr><th>${label}${note ? ` <span class="dim">${note}</span>` : ''}</th>` +
-            `<td>${hoursOf(seconds)}</td><td>${money.format(gross)}</td>` +
-            (split ? `<td>${money.format(gross * pct / 100)}</td>` : '') + '</tr>';
+    // money for hours at the selected month's rate
+    const at = (seconds, pay = here) => {
+        const gross = seconds / 3600 * pay.rate;
+        return { seconds, gross, take: gross * pay.pct / 100 };
     };
+    const scale = (amount, factor) => ({ seconds: amount.seconds * factor, gross: amount.gross * factor, take: amount.take * factor });
+
+    const split = rates.some(r => r.rate > 0 && r.pct !== null && r.pct !== undefined && r.pct < 100);
+    const row = (label, amount, note) =>
+        `<tr><th>${label}${note ? ` <span class="dim">${note}</span>` : ''}</th>` +
+        `<td>${hoursOf(amount.seconds)}</td><td>${money.format(amount.gross)}</td>` +
+        (split ? `<td>${money.format(amount.take)}</td>` : '') + '</tr>';
     const table = rows =>
         `<table class="pay-table"><thead><tr><th></th><th>Hours</th><th>Gross</th>${split ? `<th>Take home</th>` : ''}</tr></thead>` +
         `<tbody>${rows}</tbody></table>`;
 
     // a month that hasn't started has nothing to project from
     if (now < monthStart) {
-        breakdown.innerHTML = table(row(`${name} total`, monthSeconds));
+        breakdown.innerHTML = table(row(`${name} total`, at(monthSeconds)));
         return;
     }
 
@@ -1080,28 +1091,38 @@ function renderPay(monthSeconds) {
     const yearElapsed = weekdaysBetween(yearStart, asOf);
     const yearTotal = weekdaysBetween(yearStart, yearEnd);
 
-    // year to date through the selected month, from the daily totals the histogram loads
-    let yearToDate = Math.max((monthTotals.year_projects || {})[globalProjectId] || 0, monthSeconds);
+    // year to date through the selected month, each month at its own rate
+    let yearToDate;
     if (hist.key === `${globalProjectId}:${selectedYear}`) {
         const cutoff = dayKey(asOf);
-        yearToDate = Object.entries(hist.days).reduce((t, [day, secs]) => day < cutoff ? t + secs : t, 0);
+        const perMonth = Array(12).fill(0);
+        Object.entries(hist.days).forEach(([day, secs]) => {
+            if (day < cutoff) perMonth[parseInt(day.slice(5, 7), 10) - 1] += secs;
+        });
+        yearToDate = perMonth.reduce((sum, secs, m) => {
+            const amount = at(secs, payFor(rates, selectedYear, m));
+            return { seconds: sum.seconds + amount.seconds, gross: sum.gross + amount.gross, take: sum.take + amount.take };
+        }, { seconds: 0, gross: 0, take: 0 });
+    } else {
+        // daily totals not loaded yet: approximate at this month's rate until they arrive
+        yearToDate = at(Math.max((monthTotals.year_projects || {})[globalProjectId] || 0, monthSeconds));
     }
 
-    let rows = row(current ? 'This month' : `${name} total`, monthSeconds);
+    let rows = row(current ? 'This month' : `${name} total`, at(monthSeconds));
     if (current && monthElapsed) {
-        rows += row('Month pace', monthSeconds * monthTotal / monthElapsed, `${monthElapsed} of ${monthTotal} weekdays`);
+        rows += row('Month pace', at(monthSeconds * monthTotal / monthElapsed), `${monthElapsed} of ${monthTotal} weekdays`);
     }
     if (asOf >= yearEnd) {
         rows += row('Year total', yearToDate);
     } else {
         rows += row(current ? 'Year to date' : `Year through ${name}`, yearToDate);
         if (yearElapsed) {
-            rows += row('Year pace', yearToDate * yearTotal / yearElapsed, `${yearElapsed} of ${yearTotal} weekdays`);
+            rows += row('Year pace', scale(yearToDate, yearTotal / yearElapsed), `${yearElapsed} of ${yearTotal} weekdays`);
         }
     }
     if (monthElapsed) {
-        // every weekday of the year at the selected month's weekday rate
-        rows += row(`Full year at ${name} pace`, monthSeconds / monthElapsed * yearTotal, `${yearTotal} weekdays`);
+        // every weekday of the year at the selected month's weekday hours and rate
+        rows += row(`Full year at ${name} pace`, at(monthSeconds / monthElapsed * yearTotal), `${yearTotal} weekdays`);
     }
     breakdown.innerHTML = table(rows);
 }
@@ -1120,7 +1141,7 @@ function setPayOpen(open) {
     document.getElementById('pay-panel').hidden = !open;
     document.getElementById('pay-toggle').setAttribute('aria-expanded', open);
     document.getElementById('summary').classList.toggle('pay-open', open);
-    if (open) loadHist();
+    if (open) { renderPayEditor(); loadHist(); }
 }
 
 /* ---------- hours histogram: year -> month -> week -> day ---------- */
@@ -1270,39 +1291,115 @@ function renderHist() {
 
 document.getElementById('pay-toggle').addEventListener('click', () => {
     setPayOpen(!payOpen);
-    if (payOpen && !payRateInput.value) payRateInput.focus();
+    if (payOpen) {
+        const first = payRatesEl.querySelector('.rate-rate');
+        if (first && !first.value) first.focus();
+    }
 });
 
-function onPayInput() {
+// Rate list editor: a starting rate, then any number of changes from a given month on
+const payRatesEl = document.getElementById('pay-rates');
+let editingRates = null;   // working copy while the panel is open, so typing doesn't reflow the list
+let editorProjectId = null;
+
+function renderPayEditor() {
     const project = projectsById[globalProjectId];
-    if (!project) return;
-    project.hourly_rate = parseAmount(payRateInput.value);
-    const pct = parseAmount(payPctInput.value);
-    project.take_home_pct = pct === null ? null : Math.min(pct, 100);
+    editorProjectId = globalProjectId;
+    if (!project) { payRatesEl.innerHTML = ''; return; }
+    editingRates = projectRates(project).map(r => Object.assign({}, r));
+    if (!editingRates.length || editingRates[0].from) editingRates.unshift({ from: null, rate: null, pct: null });
+
+    const years = [];
+    for (let y = today.getFullYear() - 3; y <= today.getFullYear() + 1; y++) years.push(y);
+    const value = v => (v === null || v === undefined) ? '' : num(v);
+
+    payRatesEl.innerHTML =
+        `<div class="pay-rate-row pay-rate-head"><span>From</span><span>Hourly rate</span><span>Take home</span><span></span></div>` +
+        editingRates.map((r, i) => {
+            const [y, m] = r.from ? r.from.split('-').map(Number) : [null, null];
+            const from = r.from
+                ? `<span class="pay-from"><select class="rate-month">${shortMonths.map((n, k) => `<option value="${k + 1}"${k + 1 === m ? ' selected' : ''}>${n}</option>`).join('')}</select>` +
+                  `<select class="rate-year">${years.map(yy => `<option${yy === y ? ' selected' : ''}>${yy}</option>`).join('')}</select></span>`
+                : `<span class="pay-from start">Start</span>`;
+            return `<div class="pay-rate-row" data-index="${i}">${from}` +
+                `<span class="pay-input"><span class="affix">$</span><input class="rate-rate" inputmode="decimal" autocomplete="off" placeholder="0" value="${value(r.rate)}"><span class="affix">/hr</span></span>` +
+                `<span class="pay-input"><input class="rate-pct" inputmode="decimal" autocomplete="off" placeholder="100" value="${value(r.pct)}"><span class="affix">%</span></span>` +
+                (i ? `<button class="icon-button rate-remove" title="Remove this rate change"><i class="fa-solid fa-xmark"></i></button>` : '<span></span>') +
+                `</div>`;
+        }).join('') +
+        `<button class="pay-add" id="pay-add-rate"><i class="fa-solid fa-plus"></i> Rate change</button>`;
+
+    payRatesEl.querySelectorAll('.pay-rate-row[data-index]').forEach(row => {
+        const r = editingRates[parseInt(row.dataset.index, 10)];
+        const month = row.querySelector('.rate-month'), year = row.querySelector('.rate-year');
+        const readFrom = () => { r.from = `${year.value}-${pad(month.value)}`; savePayRates(true); };
+        if (month) { month.addEventListener('change', readFrom); year.addEventListener('change', readFrom); }
+        [['.rate-rate', 'rate'], ['.rate-pct', 'pct']].forEach(([sel, field]) => {
+            const input = row.querySelector(sel);
+            input.addEventListener('input', () => {
+                let v = parseAmount(input.value);
+                if (field === 'pct' && v !== null) v = Math.min(v, 100);
+                r[field] = v;
+                applyRatesLocally();
+            });
+            input.addEventListener('change', () => savePayRates(false));
+            input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
+        });
+        const remove = row.querySelector('.rate-remove');
+        if (remove) remove.addEventListener('click', () => {
+            editingRates.splice(parseInt(row.dataset.index, 10), 1);
+            savePayRates(true);
+        });
+    });
+
+    document.getElementById('pay-add-rate').addEventListener('click', () => {
+        // a new rate from the month picked up top, starting from the rate in effect then
+        const { selectedMonth, selectedYear } = getMonthYear();
+        const key = `${selectedYear}-${pad(selectedMonth + 1)}`;
+        const base = payFor(editingRates, selectedYear, selectedMonth);
+        if (!editingRates.some(r => r.from === key)) {
+            editingRates.push({ from: key, rate: base.rate || null, pct: editingRates[editingRates.length - 1].pct });
+        }
+        savePayRates(true);
+        const inputs = payRatesEl.querySelectorAll('.rate-rate');
+        const row = [...payRatesEl.querySelectorAll('.pay-rate-row[data-index]')].find(el => el.querySelector('.rate-month') &&
+            `${el.querySelector('.rate-year').value}-${pad(el.querySelector('.rate-month').value)}` === key);
+        const target = row ? row.querySelector('.rate-rate') : inputs[inputs.length - 1];
+        if (target) { target.focus(); target.select(); }
+    });
+}
+
+function cleanRates(list) {
+    const byMonth = {};
+    list.forEach(r => { byMonth[r.from || ''] = { from: r.from || null, rate: r.rate, pct: r.pct }; });
+    return Object.values(byMonth).sort((a, b) => (a.from || '').localeCompare(b.from || ''));
+}
+
+function applyRatesLocally() {
+    const project = projectsById[globalProjectId];
+    if (!project || !editingRates) return;
+    project.pay_rates = cleanRates(editingRates);
     renderPay();
 }
 
-function savePay() {
+// rerender: rebuild the editor afterwards (order or rows changed)
+function savePayRates(rerender) {
     const project = projectsById[globalProjectId];
-    if (!project) return;
+    if (!project || !editingRates) return;
+    project.pay_rates = cleanRates(editingRates);
+    if (rerender) renderPayEditor();
+    renderPay();
     fetch('/projects', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectId: project.id, hourlyRate: project.hourly_rate, takeHomePct: project.take_home_pct })
+        body: JSON.stringify({ projectId: project.id, payRates: project.pay_rates })
     })
     .then(response => {
-        if (!response.ok) throw new Error('Pay rate not saved');
+        if (!response.ok) throw new Error('Pay rates not saved');
         localStorage.removeItem(`projects_cache_${globalUserId}`);
-        renderPay();
     })
     .catch(error => console.error(error));
 }
-
-[payRateInput, payPctInput].forEach(input => {
-    input.addEventListener('input', onPayInput);
-    input.addEventListener('change', savePay);
-    input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
-});
 
 /* ---------- this month's hours next to each project and task ---------- */
 

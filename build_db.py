@@ -1,4 +1,4 @@
-from sqlalchemy import text, Float, Boolean, create_engine, Column, Integer, String, ForeignKey, DateTime, func
+from sqlalchemy import text, Float, Text, Boolean, create_engine, Column, Integer, String, ForeignKey, DateTime, func
 from sqlalchemy.orm import relationship, sessionmaker, declarative_base, object_session
 from flask_login import UserMixin
 import json
@@ -37,6 +37,9 @@ class Project(Base):
     is_visible = Column(Boolean, default=True)
     hourly_rate = Column(Float)        # what this firm pays per hour
     take_home_pct = Column(Float)      # share of that you keep, 0-100
+    # rate changes over time, JSON: [{"from": null | "YYYY-MM", "rate": 110, "pct": 70}, ...]
+    # "from": null is the starting rate; each later entry applies from that month on
+    pay_rates = Column(Text)
 
 class Task(Base):
     __tablename__ = 'tasks'

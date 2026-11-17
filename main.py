@@ -231,7 +231,8 @@ def list_projects():
                     'is_visible':project.is_visible, 
                     'is_completed':project.is_completed,
                     'hourly_rate':project.hourly_rate,
-                    'take_home_pct':project.take_home_pct
+                    'take_home_pct':project.take_home_pct,
+                    'pay_rates':read_pay_rates(project)
                 }
                 for project in projects
             ]
@@ -493,6 +494,29 @@ def create_time():
 
 
 ## Update
+def clean_pay_rates(items):
+    """Sorted list of {from: None|'YYYY-MM', rate, pct}; one entry per month, the first is the start."""
+    by_month = {}
+    for item in items or []:
+        if not isinstance(item, dict):
+            continue
+        start = item.get('from')
+        if not (isinstance(start, str) and re.fullmatch(r'\d{4}-(0[1-9]|1[0-2])', start)):
+            start = None
+        rate, pct = to_hours(item.get('rate')), to_hours(item.get('pct'))
+        by_month[start] = {'from': start, 'rate': rate, 'pct': None if pct is None else min(pct, 100.0)}
+    return sorted(by_month.values(), key=lambda r: r['from'] or '')
+
+def read_pay_rates(project):
+    if project.pay_rates:
+        try:
+            return clean_pay_rates(json.loads(project.pay_rates))
+        except ValueError:
+            pass
+    if project.hourly_rate is not None:
+        return [{'from': None, 'rate': project.hourly_rate, 'pct': project.take_home_pct}]
+    return []
+
 # Update a project
 @app.route('/projects', methods=['PUT'])
 @login_required
@@ -514,6 +538,12 @@ def update_project():
             project.is_visible = is_visible
         if is_completed is not None:
             project.is_completed = is_completed
+        if 'payRates' in data:
+            rates = clean_pay_rates(data['payRates'])
+            project.pay_rates = json.dumps(rates)
+            # keep the single-rate columns pointing at the latest rate
+            project.hourly_rate = rates[-1]['rate'] if rates else None
+            project.take_home_pct = rates[-1]['pct'] if rates else None
         if 'hourlyRate' in data:
             project.hourly_rate = to_hours(data['hourlyRate'])
         if 'takeHomePct' in data:

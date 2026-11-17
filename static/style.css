@@ -2182,3 +2182,83 @@ button.hist-bar {
         margin-left: auto;
     }
 }
+
+/* rate list: Start, then changes from a month on */
+.pay-rates {
+    display: grid;
+    gap: 6px;
+    max-width: 460px;
+}
+.pay-rate-row {
+    display: grid;
+    grid-template-columns: 128px 104px 76px 24px;
+    align-items: center;
+    gap: 14px;
+}
+.pay-rate-head span {
+    font-size: 8pt;
+    color: var(--muted);
+}
+.pay-from {
+    font-size: 9pt;
+    color: var(--text-color);
+    display: flex;
+    gap: 4px;
+}
+.pay-from.start {
+    color: var(--muted);
+}
+.pay-from select {
+    font: inherit;
+    font-size: 9pt;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--faint);
+    color: var(--text-color);
+    padding: 3px 0;
+    outline: none;
+    cursor: pointer;
+}
+.pay-from select:focus {
+    border-bottom-color: var(--text-color);
+}
+.pay-from option {
+    background-color: var(--card-color);
+}
+.pay-rate-row .pay-input {
+    display: flex;
+}
+.pay-rate-row .pay-input input {
+    width: 100%;
+    min-width: 0;
+}
+.rate-remove {
+    font-size: 10px;
+    opacity: 0.4;
+}
+.pay-add {
+    justify-self: start;
+    margin-top: 4px;
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    font-size: 9pt;
+    color: var(--muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.pay-add:hover {
+    color: var(--text-color);
+}
+.pay-add i {
+    font-size: 9px;
+}
+@media (max-width: 860px) {
+    .pay-rate-row {
+        grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 0.8fr) 20px;
+        gap: 10px;
+    }
+}
