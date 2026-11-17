@@ -866,7 +866,17 @@ def month_totals():
             seconds = int(seconds or 0)
             projects[project_id] = projects.get(project_id, 0) + seconds
             tasks[task_id] = tasks.get(task_id, 0) + seconds
-        return jsonify({'projects': projects, 'tasks': tasks})
+
+        # whole selected year per project, for the year pace in the Pay panel
+        year_start = local_tz.localize(datetime(year, 1, 1))
+        year_end = local_tz.localize(datetime(year + 1, 1, 1))
+        year_rows = (session.query(Time.project_id, func.sum(Time.duration))
+                     .filter(Time.user_id == current_user.id, Time.is_visible == True,
+                             Time.end != None, Time.duration > 0,
+                             Time.start >= year_start, Time.start < year_end)
+                     .group_by(Time.project_id).all())
+        year_projects = {project_id: int(seconds or 0) for project_id, seconds in year_rows}
+        return jsonify({'projects': projects, 'tasks': tasks, 'year_projects': year_projects})
     finally:
         Session.remove()
 

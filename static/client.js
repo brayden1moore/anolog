@@ -1033,12 +1033,6 @@ function renderPay(monthSeconds) {
     const rate = project.hourly_rate;
     const pct = project.take_home_pct === null || project.take_home_pct === undefined ? 100 : project.take_home_pct;
     const hasRate = rate !== null && rate !== undefined && rate > 0;
-    const hours = monthSeconds / 3600;
-    const gross = hasRate ? hours * rate : 0;
-    const takeHome = gross * pct / 100;
-
-    document.getElementById('stat-pay-wrap').hidden = !hasRate;
-    document.getElementById('stat-pay').textContent = money.format(takeHome);
 
     // don't overwrite a field while it's being typed in
     if (document.activeElement !== payRateInput) payRateInput.value = hasRate ? num(rate) : '';
@@ -1048,20 +1042,54 @@ function renderPay(monthSeconds) {
 
     const breakdown = document.getElementById('pay-breakdown');
     if (!hasRate) {
-        breakdown.innerHTML = '<span class="dim">Add this firm\'s hourly rate to see the month\'s pay.</span>';
-    } else {
-        breakdown.innerHTML =
-            `${hoursOf(monthSeconds)} × ${money.format(rate)} = <b class="secret">${money.format(gross)}</b> gross` +
-            (pct < 100 ? `<span class="dim"> · </span><b class="secret">${money.format(takeHome)}</b> take home at ${num(pct)}%` : '');
+        breakdown.innerHTML = '<span class="dim">Add this firm\'s hourly rate to see pay and pace.</span>';
+        return;
     }
+
+    const { selectedMonth, selectedYear } = getMonthYear();
+    const yearSeconds = Math.max((monthTotals.year_projects || {})[globalProjectId] || 0, monthSeconds);
+    const month = periodPace(new Date(selectedYear, selectedMonth, 1), new Date(selectedYear, selectedMonth + 1, 1), monthSeconds);
+    const year = periodPace(new Date(selectedYear, 0, 1), new Date(selectedYear + 1, 0, 1), yearSeconds);
+
+    const split = pct < 100;
+    const row = (label, seconds, note) => {
+        const gross = seconds / 3600 * rate;
+        return `<tr><th>${label}${note ? ` <span class="dim">${note}</span>` : ''}</th>` +
+            `<td>${hoursOf(seconds)}</td><td>${money.format(gross)}</td>` +
+            (split ? `<td>${money.format(gross * pct / 100)}</td>` : '') + '</tr>';
+    };
+    let rows = row(month.state === 'past' ? 'Month total' : 'This month', monthSeconds);
+    if (month.state === 'current') rows += row('Month pace', month.projected, month.note);
+    rows += row(year.state === 'past' ? 'Year total' : 'Year to date', yearSeconds);
+    if (year.state === 'current') rows += row('Year pace', year.projected, year.note);
+
+    breakdown.innerHTML =
+        `<table class="pay-table"><thead><tr><th></th><th>Hours</th><th>Gross</th>${split ? `<th>Take home</th>` : ''}</tr></thead>` +
+        `<tbody>${rows}</tbody></table>` +
+        `<p class="pay-footnote">At ${money.format(rate)}/hr${split ? `, keeping ${num(pct)}%` : ''}. Pace projects your weekday average so far across the rest of the period.</p>`;
 }
 
-// Amounts stay blurred until hovered, or tapped on a touch screen
-document.addEventListener('click', event => {
-    const secret = event.target.closest('.secret');
-    document.querySelectorAll('.secret.revealed').forEach(el => { if (el !== secret) el.classList.remove('revealed'); });
-    if (secret) secret.classList.toggle('revealed');
-});
+function weekdaysBetween(start, end) {   // [start, end)
+    let count = 0;
+    for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
+        const day = d.getDay();
+        if (day !== 0 && day !== 6) count++;
+    }
+    return count;
+}
+
+// Projects a period's total from the weekdays worked through today.
+// Past periods are final; future ones have nothing to project.
+function periodPace(start, end, seconds) {
+    const now = new Date();
+    if (now >= end) return { state: 'past' };
+    if (now < start) return { state: 'future' };
+    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    const elapsed = weekdaysBetween(start, tomorrow);
+    const total = weekdaysBetween(start, end);
+    if (!elapsed) return { state: 'current', projected: seconds, note: '' };
+    return { state: 'current', projected: seconds * total / elapsed, note: `${elapsed} of ${total} weekdays` };
+}
 
 function setPayOpen(open) {
     payOpen = open;
@@ -1123,6 +1151,7 @@ function loadMonthTotals() {
         if (request !== monthTotalsRequest) return;
         monthTotals = data;
         applyListHours();
+        renderPay();
     })
     .catch(error => console.error(error));
 }

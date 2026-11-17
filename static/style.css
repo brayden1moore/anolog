@@ -1925,9 +1925,6 @@ input[type="datetime-local"] {
 .pay-breakdown .dim {
     color: var(--muted);
 }
-#stat-pay-wrap[hidden] {
-    display: none;
-}
 .stat span {
     white-space: nowrap;
 }
@@ -1953,20 +1950,70 @@ input[type="datetime-local"] {
     margin-bottom: 3px;
 }
 
-/* money is unreadable until hovered (or tapped on touch screens) */
-.secret {
-    filter: blur(10px);
-    user-select: none;
-    cursor: pointer;
-    transition: filter 0.2s ease;
+
+/* pay and pace table inside the Pay panel */
+.pay-table {
+    border-collapse: collapse;
+    font-size: 9pt;
+    font-variant-numeric: tabular-nums;
 }
-.secret.revealed {
-    filter: none;
-    user-select: auto;
+.pay-table th,
+.pay-table td {
+    padding: 4px 0;
+    text-align: right;
+    font-weight: 400;
+    white-space: nowrap;
 }
-@media (hover: hover) {
-    .secret:hover {
-        filter: none;
-        user-select: auto;
+.pay-table th + th,
+.pay-table td {
+    padding-left: 22px;
+}
+.pay-table thead th {
+    color: var(--muted);
+    font-size: 8pt;
+    padding-bottom: 6px;
+}
+.pay-table tbody th {
+    text-align: left;
+    color: var(--text-color);
+}
+.pay-table tbody tr + tr th,
+.pay-table tbody tr + tr td {
+    border-top: 1px solid var(--faint);
+}
+.pay-table .dim {
+    font-size: 8pt;
+}
+.pay-footnote {
+    margin: 10px 0 0;
+    font-size: 8pt;
+    color: var(--muted);
+}
+/* the open Pay panel grows the left side; keep the timer beside it, top-aligned */
+#summary-content {
+    flex: 1;
+    min-width: 0;
+}
+#summary.pay-open {
+    align-items: flex-start;
+}
+.pay-footnote {
+    max-width: 460px;
+}
+@media (max-width: 860px) {
+    .pay-table {
+        width: 100%;
+    }
+    .pay-table th + th,
+    .pay-table td {
+        padding-left: 10px;
+    }
+    /* weekday note drops under its label so the numbers fit */
+    .pay-table tbody th {
+        white-space: normal;
+    }
+    .pay-table tbody th .dim {
+        display: block;
+        margin-top: 1px;
     }
 }
