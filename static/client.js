@@ -1238,7 +1238,7 @@ function renderHist() {
     const viewSpan = hist.level === 'year'
         ? [new Date(yearNum, 0, 1), new Date(yearNum + 1, 0, 1)]
         : [new Date(yearNum, hist.month, 1), new Date(yearNum, hist.month + 1, 1)];
-    const showTotal = () => { readout.textContent = [hoursOf(total), ...paceBits(total, viewSpan)].join(' | '); };
+    const showTotal = () => { readout.textContent = [hoursOf(total), ...paceBits(total, viewSpan)].join(', '); };
     showTotal();
 
     const holder = document.getElementById('hist-bars');
@@ -1258,7 +1258,7 @@ function renderHist() {
         tick.textContent = bar.tick;
         el.append(track, tick);
         el.addEventListener('mouseenter', () => {
-            readout.textContent = [bar.label, hoursOf(bar.seconds), ...(bar.span ? paceBits(bar.seconds, bar.span) : [])].join(' | ');
+            readout.textContent = [bar.label, hoursOf(bar.seconds), ...(bar.span ? paceBits(bar.seconds, bar.span) : [])].join(', ');
         });
         el.addEventListener('mouseleave', showTotal);
         if (bar.drill) el.addEventListener('click', bar.drill);
