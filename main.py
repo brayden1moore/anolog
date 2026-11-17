@@ -846,6 +846,31 @@ def sync_buckets(session, scope, items):
         if bucket_id not in kept:
             bucket.is_visible = False
 
+# Seconds per local day for one project over a year, for the Pay panel histogram
+@app.route('/daily', methods=['GET'])
+@login_required
+def daily_hours():
+    session = Session()
+    try:
+        project_id = request.args.get('project_id')
+        local_tz = safe_tz(request.args.get('tz_name'))
+        year = int(request.args.get('year', datetime.now().year))
+        start = local_tz.localize(datetime(year, 1, 1))
+        end = local_tz.localize(datetime(year + 1, 1, 1))
+        rows = (session.query(Time.start, Time.duration)
+                .filter(Time.user_id == current_user.id, Time.project_id == project_id,
+                        Time.is_visible == True, Time.end != None, Time.duration > 0,
+                        Time.start >= start, Time.start < end).all())
+        days = {}
+        for started, duration in rows:
+            if started.tzinfo is None:
+                started = pytz.UTC.localize(started)
+            key = started.astimezone(local_tz).strftime('%Y-%m-%d')
+            days[key] = days.get(key, 0) + int(duration or 0)
+        return jsonify(days)
+    finally:
+        Session.remove()
+
 # Seconds logged per project and per task in a month, for the sidebar totals
 @app.route('/month_totals', methods=['GET'])
 @login_required

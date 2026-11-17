@@ -1101,6 +1101,130 @@ function setPayOpen(open) {
     document.getElementById('pay-panel').hidden = !open;
     document.getElementById('pay-toggle').setAttribute('aria-expanded', open);
     document.getElementById('summary').classList.toggle('pay-open', open);
+    if (open) loadHist();
+}
+
+/* ---------- hours histogram: year -> month -> week -> day ---------- */
+
+const shortMonths = monthNames.map(m => m.slice(0, 3));
+const shortDays = dayNames.map(d => d.slice(0, 3));
+let hist = { key: null, days: {}, level: 'year', month: null, weekStart: null };
+
+function dayKey(date) {
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function addDays(date, n) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate() + n);
+}
+
+function shortDate(date) {
+    return `${shortMonths[date.getMonth()]} ${date.getDate()}`;
+}
+
+// force: refetch even if this project and year are already loaded (after an edit)
+function loadHist(force) {
+    if (!payOpen || globalProjectId === undefined) return;
+    const { selectedYear } = getMonthYear();
+    const key = `${globalProjectId}:${selectedYear}`;
+    if (key !== hist.key) hist.level = 'year';   // new project or year: start from the top
+    if (!force && key === hist.key) { renderHist(); return; }
+    fetch(`/daily?project_id=${globalProjectId}&year=${selectedYear}&tz_name=${localTz}`)
+    .then(response => {
+        if (!response.ok) throw new Error('Could not load daily hours');
+        return response.json();
+    })
+    .then(days => {
+        if (key !== `${globalProjectId}:${getMonthYear().selectedYear}`) return;
+        hist.key = key;
+        hist.days = days;
+        renderHist();
+    })
+    .catch(error => console.error(error));
+}
+
+function sumDays(from, to, inMonth) {   // [from, to), optionally only days within one month
+    let seconds = 0;
+    for (let d = new Date(from); d < to; d = addDays(d, 1)) {
+        if (inMonth !== undefined && d.getMonth() !== inMonth) continue;
+        seconds += hist.days[dayKey(d)] || 0;
+    }
+    return seconds;
+}
+
+function histBars() {
+    const year = parseInt(hist.key.split(':')[1], 10);
+    const today = new Date();
+    if (hist.level === 'year') {
+        const { selectedMonth } = getMonthYear();
+        return shortMonths.map((name, m) => ({
+            label: `${monthNames[m]} ${year}`,
+            seconds: sumDays(new Date(year, m, 1), new Date(year, m + 1, 1)),
+            on: m === selectedMonth,
+            drill: () => { hist.level = 'month'; hist.month = m; renderHist(); }
+        }));
+    }
+    if (hist.level === 'month') {
+        const bars = [];
+        const last = new Date(year, hist.month + 1, 1);
+        for (let start = startOfWeek(new Date(year, hist.month, 1)); start < last; start = addDays(start, 7)) {
+            const from = start < new Date(year, hist.month, 1) ? new Date(year, hist.month, 1) : start;
+            const to = addDays(start, 7) > last ? addDays(last, -1) : addDays(start, 6);
+            const weekStart = start;
+            bars.push({
+                label: `${shortDate(from)}–${to.getDate()}`,
+                seconds: sumDays(start, addDays(start, 7), hist.month),
+                on: today >= start && today < addDays(start, 7),
+                drill: () => { hist.level = 'week'; hist.weekStart = weekStart; renderHist(); }
+            });
+        }
+        return bars;
+    }
+    return [0, 1, 2, 3, 4, 5, 6].map(i => {
+        const d = addDays(hist.weekStart, i);
+        return { label: `${shortDays[d.getDay()]}, ${shortDate(d)}`, seconds: hist.days[dayKey(d)] || 0, on: sameDay(d, today) };
+    });
+}
+
+function renderHist() {
+    if (!hist.key) return;
+    const year = hist.key.split(':')[1];
+    const bars = histBars();
+    const max = Math.max(...bars.map(b => b.seconds), 1);
+    const total = bars.reduce((t, b) => t + b.seconds, 0);
+
+    // breadcrumbs: every level above the current one is a way back up
+    const crumbs = [{ text: year, level: 'year' }];
+    if (hist.level !== 'year') crumbs.push({ text: shortMonths[hist.month], level: 'month' });
+    if (hist.level === 'week') {
+        crumbs.push({ text: `${shortDate(hist.weekStart)}–${shortDate(addDays(hist.weekStart, 6))}`, level: 'week' });
+    }
+    document.getElementById('hist-crumbs').innerHTML = crumbs.map((c, i) => i === crumbs.length - 1
+        ? `<span class="current">${c.text}</span>`
+        : `<button data-level="${c.level}">${c.text}</button>`).join('<span class="sep">›</span>');
+    document.querySelectorAll('#hist-crumbs button').forEach(b => {
+        b.addEventListener('click', () => { hist.level = b.dataset.level; renderHist(); });
+    });
+
+    const readout = document.getElementById('hist-readout');
+    const showTotal = () => { readout.textContent = hoursOf(total); };
+    showTotal();
+
+    const holder = document.getElementById('hist-bars');
+    holder.className = `hist-bars level-${hist.level}`;
+    holder.innerHTML = '';
+    bars.forEach(bar => {
+        const el = document.createElement(bar.drill ? 'button' : 'div');
+        el.className = 'hist-bar' + (bar.on ? ' on' : '') + (bar.seconds ? '' : ' zero');
+        el.setAttribute('aria-label', `${bar.label}: ${hoursOf(bar.seconds)}`);
+        const fill = document.createElement('i');
+        fill.style.height = bar.seconds ? `${Math.max(4, bar.seconds / max * 100)}%` : '2px';
+        el.appendChild(fill);
+        el.addEventListener('mouseenter', () => { readout.textContent = `${bar.label} · ${hoursOf(bar.seconds)}`; });
+        el.addEventListener('mouseleave', showTotal);
+        if (bar.drill) el.addEventListener('click', bar.drill);
+        holder.appendChild(el);
+    });
 }
 
 document.getElementById('pay-toggle').addEventListener('click', () => {
@@ -1183,6 +1307,7 @@ function applyListHours() {
 
 function loadBudgets() {
     loadMonthTotals();
+    loadHist(true);
     if (globalProjectId === undefined) return;
     const projectId = globalProjectId;
     const request = ++budgetRequest;

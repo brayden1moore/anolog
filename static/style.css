@@ -2009,3 +2009,99 @@ input[type="datetime-local"] {
         margin-top: 1px;
     }
 }
+
+/* hours histogram in the Pay panel */
+.hist {
+    margin: 18px 0 14px;
+    max-width: 520px;
+}
+.hist-cap {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    font-size: 9pt;
+    color: var(--muted);
+    margin-bottom: 8px;
+    font-variant-numeric: tabular-nums;
+}
+.hist-crumbs button {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: var(--muted);
+    cursor: pointer;
+}
+.hist-crumbs button:hover {
+    color: var(--text-color);
+}
+.hist-crumbs .current {
+    color: var(--text-color);
+}
+.hist-crumbs .sep {
+    margin: 0 6px;
+    opacity: 0.6;
+}
+.hist-readout {
+    white-space: nowrap;
+}
+.hist-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    height: 56px;
+}
+.hist-bar {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    align-items: flex-end;
+    background: none;
+    border: none;
+    padding: 0;
+    min-width: 0;
+}
+button.hist-bar {
+    cursor: pointer;
+}
+.hist-bar i {
+    display: block;
+    width: 100%;
+    border-radius: 3px 3px 1px 1px;
+    background-color: var(--nugget);
+    opacity: 0.32;
+    transition: opacity 0.15s ease, height 0.3s var(--ease);
+}
+.hist-bar.on i {
+    opacity: 0.65;
+}
+.hist-bar:hover i {
+    opacity: 1;
+}
+.hist-bar.zero i {
+    opacity: 0.12;
+}
+.hist-bars.level-month,
+.hist-bars.level-week {
+    gap: 8px;
+}
+/* keep the histogram quiet: shorter, narrower bars */
+.hist {
+    max-width: 420px;
+}
+.hist-bars {
+    height: 40px;
+    gap: 6px;
+}
+.hist-bars.level-month,
+.hist-bars.level-week {
+    gap: 10px;
+}
+.hist-bar {
+    justify-content: center;
+}
+.hist-bar i {
+    width: 70%;
+    border-radius: 2px 2px 1px 1px;
+}
