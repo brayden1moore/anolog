@@ -1062,11 +1062,17 @@ function renderPay(monthSeconds) {
     if (month.state === 'current') rows += row('Month pace', month.projected, month.note);
     rows += row(year.state === 'past' ? 'Year total' : 'Year to date', yearSeconds);
     if (year.state === 'current') rows += row('Year pace', year.projected, year.note);
+    if (year.state === 'current' && month.state === 'current' && month.perWeekday !== null) {
+        // what's logged this year, plus the rest of the year at this month's weekday rate
+        const now = new Date();
+        const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+        const remaining = weekdaysBetween(tomorrow, new Date(selectedYear + 1, 0, 1));
+        rows += row('Year at month pace', yearSeconds + month.perWeekday * remaining, 'rest of year at this month\'s rate');
+    }
 
     breakdown.innerHTML =
         `<table class="pay-table"><thead><tr><th></th><th>Hours</th><th>Gross</th>${split ? `<th>Take home</th>` : ''}</tr></thead>` +
-        `<tbody>${rows}</tbody></table>` +
-        `<p class="pay-footnote">At ${money.format(rate)}/hr${split ? `, keeping ${num(pct)}%` : ''}. Pace projects your weekday average so far across the rest of the period.</p>`;
+        `<tbody>${rows}</tbody></table>`;
 }
 
 function weekdaysBetween(start, end) {   // [start, end)
@@ -1087,8 +1093,9 @@ function periodPace(start, end, seconds) {
     const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
     const elapsed = weekdaysBetween(start, tomorrow);
     const total = weekdaysBetween(start, end);
-    if (!elapsed) return { state: 'current', projected: seconds, note: '' };
-    return { state: 'current', projected: seconds * total / elapsed, note: `${elapsed} of ${total} weekdays` };
+    if (!elapsed) return { state: 'current', projected: seconds, note: '', perWeekday: null };
+    return { state: 'current', projected: seconds * total / elapsed, note: `${elapsed} of ${total} weekdays`,
+             perWeekday: seconds / elapsed };
 }
 
 function setPayOpen(open) {

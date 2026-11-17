@@ -1984,11 +1984,6 @@ input[type="datetime-local"] {
 .pay-table .dim {
     font-size: 8pt;
 }
-.pay-footnote {
-    margin: 10px 0 0;
-    font-size: 8pt;
-    color: var(--muted);
-}
 /* the open Pay panel grows the left side; keep the timer beside it, top-aligned */
 #summary-content {
     flex: 1;
@@ -1996,9 +1991,6 @@ input[type="datetime-local"] {
 }
 #summary.pay-open {
     align-items: flex-start;
-}
-.pay-footnote {
-    max-width: 460px;
 }
 @media (max-width: 860px) {
     .pay-table {
