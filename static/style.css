@@ -2105,3 +2105,59 @@ button.hist-bar {
     width: 70%;
     border-radius: 2px 2px 1px 1px;
 }
+
+/* histogram v2: label under each bar, month -> days */
+.hist {
+    max-width: 460px;
+}
+.hist-bars {
+    height: auto;
+    gap: 2px;
+}
+.hist-bars.level-month,
+.hist-bars.level-week {
+    gap: 1px;
+}
+.hist-bar {
+    flex-direction: column;
+    align-items: stretch;
+    height: auto;
+}
+.hist-track {
+    height: 40px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+.hist-tick {
+    margin-top: 5px;
+    font-size: 7.5pt;
+    line-height: 1;
+    text-align: center;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
+}
+.hist-bar.on .hist-tick,
+.hist-bar:hover .hist-tick {
+    color: var(--text-color);
+}
+.hist-bar.weekend .hist-tick {
+    opacity: 0.5;
+}
+.level-month .hist-tick {
+    font-size: 6.5pt;
+}
+.level-month .hist-bar i {
+    width: 64%;
+}
+
+.hist-tick {
+    display: flex;
+    justify-content: center;
+    overflow: visible;
+}
+.hist-bars.sparse .hist-tick.minor {
+    visibility: hidden;
+}

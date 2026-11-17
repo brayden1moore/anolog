@@ -1108,7 +1108,7 @@ function setPayOpen(open) {
 
 const shortMonths = monthNames.map(m => m.slice(0, 3));
 const shortDays = dayNames.map(d => d.slice(0, 3));
-let hist = { key: null, days: {}, level: 'year', month: null, weekStart: null };
+let hist = { key: null, days: {}, level: 'year', month: null };
 
 function dayKey(date) {
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
@@ -1159,30 +1159,24 @@ function histBars() {
         const { selectedMonth } = getMonthYear();
         return shortMonths.map((name, m) => ({
             label: `${monthNames[m]} ${year}`,
+            tick: name,
             seconds: sumDays(new Date(year, m, 1), new Date(year, m + 1, 1)),
             on: m === selectedMonth,
             drill: () => { hist.level = 'month'; hist.month = m; renderHist(); }
         }));
     }
-    if (hist.level === 'month') {
-        const bars = [];
-        const last = new Date(year, hist.month + 1, 1);
-        for (let start = startOfWeek(new Date(year, hist.month, 1)); start < last; start = addDays(start, 7)) {
-            const from = start < new Date(year, hist.month, 1) ? new Date(year, hist.month, 1) : start;
-            const to = addDays(start, 7) > last ? addDays(last, -1) : addDays(start, 6);
-            const weekStart = start;
-            bars.push({
-                label: `${shortDate(from)}–${to.getDate()}`,
-                seconds: sumDays(start, addDays(start, 7), hist.month),
-                on: today >= start && today < addDays(start, 7),
-                drill: () => { hist.level = 'week'; hist.weekStart = weekStart; renderHist(); }
-            });
-        }
-        return bars;
-    }
-    return [0, 1, 2, 3, 4, 5, 6].map(i => {
-        const d = addDays(hist.weekStart, i);
-        return { label: `${shortDays[d.getDay()]}, ${shortDate(d)}`, seconds: hist.days[dayKey(d)] || 0, on: sameDay(d, today) };
+    // a month: one bar per day
+    const days = new Date(year, hist.month + 1, 0).getDate();
+    return Array.from({ length: days }, (_, i) => {
+        const d = new Date(year, hist.month, i + 1);
+        return {
+            label: `${shortDays[d.getDay()]}, ${shortDate(d)}`,
+            tick: String(i + 1),
+            minor: i !== 0 && (i + 1) % 5 !== 0,
+            seconds: hist.days[dayKey(d)] || 0,
+            on: sameDay(d, today),
+            weekend: d.getDay() === 0 || d.getDay() === 6
+        };
     });
 }
 
@@ -1196,9 +1190,6 @@ function renderHist() {
     // breadcrumbs: every level above the current one is a way back up
     const crumbs = [{ text: year, level: 'year' }];
     if (hist.level !== 'year') crumbs.push({ text: shortMonths[hist.month], level: 'month' });
-    if (hist.level === 'week') {
-        crumbs.push({ text: `${shortDate(hist.weekStart)}–${shortDate(addDays(hist.weekStart, 6))}`, level: 'week' });
-    }
     document.getElementById('hist-crumbs').innerHTML = crumbs.map((c, i) => i === crumbs.length - 1
         ? `<span class="current">${c.text}</span>`
         : `<button data-level="${c.level}">${c.text}</button>`).join('<span class="sep">›</span>');
@@ -1215,16 +1206,24 @@ function renderHist() {
     holder.innerHTML = '';
     bars.forEach(bar => {
         const el = document.createElement(bar.drill ? 'button' : 'div');
-        el.className = 'hist-bar' + (bar.on ? ' on' : '') + (bar.seconds ? '' : ' zero');
+        el.className = 'hist-bar' + (bar.on ? ' on' : '') + (bar.seconds ? '' : ' zero') + (bar.weekend ? ' weekend' : '');
         el.setAttribute('aria-label', `${bar.label}: ${hoursOf(bar.seconds)}`);
+        const track = document.createElement('span');
+        track.className = 'hist-track';
         const fill = document.createElement('i');
         fill.style.height = bar.seconds ? `${Math.max(4, bar.seconds / max * 100)}%` : '2px';
-        el.appendChild(fill);
-        el.addEventListener('mouseenter', () => { readout.textContent = `${bar.label} · ${hoursOf(bar.seconds)}`; });
+        track.appendChild(fill);
+        const tick = document.createElement('span');
+        tick.className = 'hist-tick' + (bar.minor ? ' minor' : '');
+        tick.textContent = bar.tick;
+        el.append(track, tick);
+        el.addEventListener('mouseenter', () => { readout.textContent = `${bar.label} | ${hoursOf(bar.seconds)}`; });
         el.addEventListener('mouseleave', showTotal);
         if (bar.drill) el.addEventListener('click', bar.drill);
         holder.appendChild(el);
     });
+    // too narrow to number every day: keep the 1st and every 5th
+    holder.classList.toggle('sparse', holder.clientWidth / bars.length < 13);
 }
 
 document.getElementById('pay-toggle').addEventListener('click', () => {
