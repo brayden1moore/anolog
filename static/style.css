@@ -2161,3 +2161,24 @@ button.hist-bar {
 .hist-bars.sparse .hist-tick.minor {
     visibility: hidden;
 }
+
+.hist-readout {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.hist-crumbs {
+    flex: none;
+}
+
+@media (max-width: 860px) {
+    .hist-cap {
+        flex-wrap: wrap;
+        row-gap: 2px;
+    }
+    .hist-readout {
+        white-space: normal;
+        text-align: right;
+        margin-left: auto;
+    }
+}

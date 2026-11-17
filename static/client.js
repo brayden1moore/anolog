@@ -1047,9 +1047,13 @@ function renderPay(monthSeconds) {
     }
 
     const { selectedMonth, selectedYear } = getMonthYear();
-    const yearSeconds = Math.max((monthTotals.year_projects || {})[globalProjectId] || 0, monthSeconds);
-    const month = periodPace(new Date(selectedYear, selectedMonth, 1), new Date(selectedYear, selectedMonth + 1, 1), monthSeconds);
-    const year = periodPace(new Date(selectedYear, 0, 1), new Date(selectedYear + 1, 0, 1), yearSeconds);
+    const now = new Date();
+    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    const monthStart = new Date(selectedYear, selectedMonth, 1);
+    const monthEnd = new Date(selectedYear, selectedMonth + 1, 1);
+    const yearStart = new Date(selectedYear, 0, 1);
+    const yearEnd = new Date(selectedYear + 1, 0, 1);
+    const name = shortMonths[selectedMonth];
 
     const split = pct < 100;
     const row = (label, seconds, note) => {
@@ -1058,19 +1062,48 @@ function renderPay(monthSeconds) {
             `<td>${hoursOf(seconds)}</td><td>${money.format(gross)}</td>` +
             (split ? `<td>${money.format(gross * pct / 100)}</td>` : '') + '</tr>';
     };
-    let rows = row(month.state === 'past' ? 'Month total' : 'This month', monthSeconds);
-    if (month.state === 'current') rows += row('Month pace', month.projected, month.note);
-    rows += row(year.state === 'past' ? 'Year total' : 'Year to date', yearSeconds);
-    if (year.state === 'current') rows += row('Year pace', year.projected, year.note);
-    if (month.state === 'current' && month.perWeekday !== null) {
-        // every weekday of the year at this month's weekday rate, as if every month matched this one
-        const yearWeekdays = weekdaysBetween(new Date(selectedYear, 0, 1), new Date(selectedYear + 1, 0, 1));
-        rows += row('Full year at month pace', month.perWeekday * yearWeekdays, `${yearWeekdays} weekdays`);
-    }
-
-    breakdown.innerHTML =
+    const table = rows =>
         `<table class="pay-table"><thead><tr><th></th><th>Hours</th><th>Gross</th>${split ? `<th>Take home</th>` : ''}</tr></thead>` +
         `<tbody>${rows}</tbody></table>`;
+
+    // a month that hasn't started has nothing to project from
+    if (now < monthStart) {
+        breakdown.innerHTML = table(row(`${name} total`, monthSeconds));
+        return;
+    }
+
+    // everything is measured as of the end of the selected month, or today if that's sooner
+    const current = monthEnd > tomorrow;
+    const asOf = current ? tomorrow : monthEnd;
+    const monthElapsed = weekdaysBetween(monthStart, asOf);
+    const monthTotal = weekdaysBetween(monthStart, monthEnd);
+    const yearElapsed = weekdaysBetween(yearStart, asOf);
+    const yearTotal = weekdaysBetween(yearStart, yearEnd);
+
+    // year to date through the selected month, from the daily totals the histogram loads
+    let yearToDate = Math.max((monthTotals.year_projects || {})[globalProjectId] || 0, monthSeconds);
+    if (hist.key === `${globalProjectId}:${selectedYear}`) {
+        const cutoff = dayKey(asOf);
+        yearToDate = Object.entries(hist.days).reduce((t, [day, secs]) => day < cutoff ? t + secs : t, 0);
+    }
+
+    let rows = row(current ? 'This month' : `${name} total`, monthSeconds);
+    if (current && monthElapsed) {
+        rows += row('Month pace', monthSeconds * monthTotal / monthElapsed, `${monthElapsed} of ${monthTotal} weekdays`);
+    }
+    if (asOf >= yearEnd) {
+        rows += row('Year total', yearToDate);
+    } else {
+        rows += row(current ? 'Year to date' : `Year through ${name}`, yearToDate);
+        if (yearElapsed) {
+            rows += row('Year pace', yearToDate * yearTotal / yearElapsed, `${yearElapsed} of ${yearTotal} weekdays`);
+        }
+    }
+    if (monthElapsed) {
+        // every weekday of the year at the selected month's weekday rate
+        rows += row(`Full year at ${name} pace`, monthSeconds / monthElapsed * yearTotal, `${yearTotal} weekdays`);
+    }
+    breakdown.innerHTML = table(rows);
 }
 
 function weekdaysBetween(start, end) {   // [start, end)
@@ -1080,20 +1113,6 @@ function weekdaysBetween(start, end) {   // [start, end)
         if (day !== 0 && day !== 6) count++;
     }
     return count;
-}
-
-// Projects a period's total from the weekdays worked through today.
-// Past periods are final; future ones have nothing to project.
-function periodPace(start, end, seconds) {
-    const now = new Date();
-    if (now >= end) return { state: 'past' };
-    if (now < start) return { state: 'future' };
-    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-    const elapsed = weekdaysBetween(start, tomorrow);
-    const total = weekdaysBetween(start, end);
-    if (!elapsed) return { state: 'current', projected: seconds, note: '', perWeekday: null };
-    return { state: 'current', projected: seconds * total / elapsed, note: `${elapsed} of ${total} weekdays`,
-             perWeekday: seconds / elapsed };
 }
 
 function setPayOpen(open) {
@@ -1139,6 +1158,7 @@ function loadHist(force) {
         hist.key = key;
         hist.days = days;
         renderHist();
+        renderPay();   // year to date through the selected month uses these
     })
     .catch(error => console.error(error));
 }
@@ -1158,7 +1178,8 @@ function histBars() {
     if (hist.level === 'year') {
         const { selectedMonth } = getMonthYear();
         return shortMonths.map((name, m) => ({
-            label: `${monthNames[m]} ${year}`,
+            label: name,
+            span: [new Date(year, m, 1), new Date(year, m + 1, 1)],
             tick: name,
             seconds: sumDays(new Date(year, m, 1), new Date(year, m + 1, 1)),
             on: m === selectedMonth,
@@ -1180,6 +1201,20 @@ function histBars() {
     });
 }
 
+// Hours per week and per weekday over [start, end), counting only up to today
+function paceBits(seconds, [start, end]) {
+    const now = new Date();
+    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    const stop = end < tomorrow ? end : tomorrow;
+    if (stop <= start) return [];
+    const days = Math.round((stop - start) / 86400000);
+    const weekdays = weekdaysBetween(start, stop);
+    const hours = seconds / 3600;
+    const bits = [`${(hours / (days / 7)).toFixed(1)} / wk`];
+    if (weekdays) bits.push(`${(hours / weekdays).toFixed(1)} / day`);
+    return bits;
+}
+
 function renderHist() {
     if (!hist.key) return;
     const year = hist.key.split(':')[1];
@@ -1198,7 +1233,12 @@ function renderHist() {
     });
 
     const readout = document.getElementById('hist-readout');
-    const showTotal = () => { readout.textContent = hoursOf(total); };
+    // the whole view: the year so far, or the month being looked at
+    const yearNum = parseInt(year, 10);
+    const viewSpan = hist.level === 'year'
+        ? [new Date(yearNum, 0, 1), new Date(yearNum + 1, 0, 1)]
+        : [new Date(yearNum, hist.month, 1), new Date(yearNum, hist.month + 1, 1)];
+    const showTotal = () => { readout.textContent = [hoursOf(total), ...paceBits(total, viewSpan)].join(' | '); };
     showTotal();
 
     const holder = document.getElementById('hist-bars');
@@ -1217,7 +1257,9 @@ function renderHist() {
         tick.className = 'hist-tick' + (bar.minor ? ' minor' : '');
         tick.textContent = bar.tick;
         el.append(track, tick);
-        el.addEventListener('mouseenter', () => { readout.textContent = `${bar.label} | ${hoursOf(bar.seconds)}`; });
+        el.addEventListener('mouseenter', () => {
+            readout.textContent = [bar.label, hoursOf(bar.seconds), ...(bar.span ? paceBits(bar.seconds, bar.span) : [])].join(' | ');
+        });
         el.addEventListener('mouseleave', showTotal);
         if (bar.drill) el.addEventListener('click', bar.drill);
         holder.appendChild(el);
