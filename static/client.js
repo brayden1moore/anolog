@@ -1062,12 +1062,10 @@ function renderPay(monthSeconds) {
     if (month.state === 'current') rows += row('Month pace', month.projected, month.note);
     rows += row(year.state === 'past' ? 'Year total' : 'Year to date', yearSeconds);
     if (year.state === 'current') rows += row('Year pace', year.projected, year.note);
-    if (year.state === 'current' && month.state === 'current' && month.perWeekday !== null) {
-        // what's logged this year, plus the rest of the year at this month's weekday rate
-        const now = new Date();
-        const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-        const remaining = weekdaysBetween(tomorrow, new Date(selectedYear + 1, 0, 1));
-        rows += row('Year at month pace', yearSeconds + month.perWeekday * remaining, 'rest of year at this month\'s rate');
+    if (month.state === 'current' && month.perWeekday !== null) {
+        // every weekday of the year at this month's weekday rate, as if every month matched this one
+        const yearWeekdays = weekdaysBetween(new Date(selectedYear, 0, 1), new Date(selectedYear + 1, 0, 1));
+        rows += row('Full year at month pace', month.perWeekday * yearWeekdays, `${yearWeekdays} weekdays`);
     }
 
     breakdown.innerHTML =
