@@ -1148,8 +1148,10 @@ def export_csv():
             filename = f"anolog_tasks_{the_time}.csv"
         elif time:
             data = (
-                session.query(Time, Task.name)
+                session.query(Time, Task.name, Scope.name, Bucket.name, Bucket.is_visible)
                 .join(Task, Time.task_id == Task.id)
+                .outerjoin(Scope, Time.scope_id == Scope.id)
+                .outerjoin(Bucket, Time.bucket_id == Bucket.id)
                 .filter(Time.project_id == time, Time.is_visible == True, Time.start >= datetime(selected_year, selected_month, 1), Time.start < datetime(next_year, next_month, 1))
                 .order_by(Time.start.asc())
                 .all()
@@ -1192,23 +1194,28 @@ def export_csv():
             if model == Time:                
                 wb = Workbook()
                 wb.remove(wb.active)
-                columns_list = list(model.__table__.columns)
-                
-                # Convert to DataFrame
+                pacific = pytz.timezone('US/Pacific')
+
+                def local(value):
+                    if value and getattr(value, 'tzinfo', None):
+                        return value.astimezone(pacific).replace(tzinfo=None)
+                    return value
+
+                # Convert to DataFrame; scope and bucket by name (a deleted bucket reads as no bucket)
                 rows_data = []
-                for row, project in data:
-                    row_dict = {}
-                    for column in columns_list[4:-1]:
-                        value = getattr(row, column.name)
-                        if column.name in ['start', 'end'] and value and hasattr(value, 'tzinfo') and value.tzinfo:
-                            value = value.astimezone(pytz.timezone('US/Pacific')).replace(tzinfo=None)
-                        row_dict[column.name] = value
-                    row_dict['Project'] = project
-                    row_dict['Pours'] = getattr(row, 'duration') / 3600
-                    rows_data.append(row_dict)
-                
-                df = pd.DataFrame(rows_data)
-                df.columns = [str(i.name).title() for i in columns_list[4:-1]] + ['Project','Hours']
+                for row, project, scope_name, bucket_name, bucket_visible in data:
+                    rows_data.append({
+                        'Start': local(row.start),
+                        'End': local(row.end),
+                        'Duration': row.duration,
+                        'Description': row.description,
+                        'Project': project,
+                        'Scope': scope_name or '',
+                        'Bucket': bucket_name if bucket_name and bucket_visible is not False else '',
+                        'Hours': (row.duration or 0) / 3600,
+                    })
+
+                df = pd.DataFrame(rows_data, columns=['Start', 'End', 'Duration', 'Description', 'Project', 'Scope', 'Bucket', 'Hours'])
                 df = df.loc[df['Start'] >= datetime(selected_year, selected_month, 1)].rename(columns={'Start':'Start (Pacific)',
                                                                                                        'End':'End (Pacific)'})
                 
